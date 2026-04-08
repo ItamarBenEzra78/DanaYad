@@ -1842,6 +1842,15 @@ let _lineDriftVal = 0;
 function updateLineDrift(val){
   _lineDriftVal = parseFloat(val);
   document.getElementById('line-drift-val').textContent = val + '°';
+  applyLineDriftToScreen(_lineDriftVal);
+}
+
+function applyLineDriftToScreen(deg){
+  document.querySelectorAll('#output-edit > div').forEach(div => {
+    if(div.classList.contains('page-break-marker')) return;
+    div.style.transform = deg === 0 ? '' : 'rotate('+deg+'deg)';
+    div.style.transformOrigin = deg === 0 ? '' : 'right center';
+  });
 }
 
 /**
