@@ -1311,12 +1311,41 @@ function buildPrintPages(){
   const styleProps = ['fontFamily','fontSize','lineHeight','letterSpacing',
     'color','whiteSpace','padding','direction','fontWeight'];
 
-  // Capture background styles from the page editor
-  const bgColor    = cs.backgroundColor;
-  const bgImage    = cs.backgroundImage;
-  const bgSize     = cs.backgroundSize;
-  const bgPosition = cs.backgroundPosition;
-  const bgRepeat   = cs.backgroundRepeat;
+  // Read the current background type from the editor
+  const bgType = editor.dataset.bgType || 'paper';
+
+  // Background CSS definitions matching the stylesheet
+  const bgDefs = {
+    paper: {
+      backgroundColor: '#fff',
+      backgroundImage: 'linear-gradient(90deg,rgba(0,0,0,.02) 1px,transparent 1px),linear-gradient(rgba(0,0,0,.02) 1px,transparent 1px)',
+      backgroundSize: '20px 20px',
+      backgroundPosition: '',
+      backgroundRepeat: ''
+    },
+    lined: {
+      backgroundColor: '#FFFEF8',
+      backgroundImage: 'repeating-linear-gradient(180deg,transparent,transparent calc(1.6em - 1px),rgba(180,200,220,0.35) calc(1.6em - 1px),rgba(180,200,220,0.35) 1.6em)',
+      backgroundSize: '100% 1.6em',
+      backgroundPosition: '0 60px',
+      backgroundRepeat: ''
+    },
+    dotted: {
+      backgroundColor: '#FEFEFA',
+      backgroundImage: 'radial-gradient(circle,rgba(0,0,0,0.12) 0.8px,transparent 0.8px)',
+      backgroundSize: '20px 20px',
+      backgroundPosition: '',
+      backgroundRepeat: ''
+    },
+    plain: {
+      backgroundColor: '#fff',
+      backgroundImage: 'none',
+      backgroundSize: '',
+      backgroundPosition: '',
+      backgroundRepeat: ''
+    }
+  };
+  const bg = bgDefs[bgType] || bgDefs.paper;
 
   const container = document.createElement('div');
   container.id = 'print-container';
@@ -1328,15 +1357,7 @@ function buildPrintPages(){
 
     const page = document.createElement('div');
     page.className = 'print-page';
-    page.style.cssText = 'width:794px;height:1123px;overflow:hidden;position:relative;';
-    // Apply page background
-    page.style.backgroundColor = bgColor;
-    page.style.backgroundImage = bgImage;
-    page.style.backgroundSize  = bgSize;
-    page.style.backgroundPosition = bgPosition;
-    page.style.backgroundRepeat = bgRepeat;
-    page.style.printColorAdjust = 'exact';
-    page.style.webkitPrintColorAdjust = 'exact';
+    page.style.cssText = 'width:794px;height:1123px;overflow:hidden;position:relative;background:transparent;';
 
     // Clone content, offset so this page's portion is visible
     const inner = document.createElement('div');
@@ -1353,6 +1374,13 @@ function buildPrintPages(){
       inner.style[prop] = cs[prop];
     }
     inner.style.overflowWrap = cs.overflowWrap || cs.wordWrap;
+
+    // Apply background to inner (matches editor padding/alignment)
+    inner.style.backgroundColor = bg.backgroundColor;
+    inner.style.backgroundImage = bg.backgroundImage;
+    if(bg.backgroundSize) inner.style.backgroundSize = bg.backgroundSize;
+    if(bg.backgroundPosition) inner.style.backgroundPosition = bg.backgroundPosition;
+    if(bg.backgroundRepeat) inner.style.backgroundRepeat = bg.backgroundRepeat;
 
     page.appendChild(inner);
     container.appendChild(page);
