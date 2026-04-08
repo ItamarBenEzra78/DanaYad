@@ -13,7 +13,8 @@
       "Read(//c/Program Files \\(x86\\)/**)",
       "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" sections_1_to_4.R)",
       "Bash(/c/Program Files/R/R-4.5.3/bin/Rscript.exe:*)",
-      "Bash([ -f \"/c/Users/User/Documents/CognitiveProject/plots/$f\" ])"
+      "Bash([ -f \"/c/Users/User/Documents/CognitiveProject/plots/$f\" ])",
+      "Bash(npx netlify-cli:*)"
     ]
   }
 }
