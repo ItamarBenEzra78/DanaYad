@@ -1887,6 +1887,11 @@ function stripLineDrift(root){
 function applyLineDrift(root){
   if(_lineDriftVal === 0) return;
 
+  const rotCss = 'display:inline-block;width:100%;' +
+    'transform:rotate(' + _lineDriftVal.toFixed(1) + 'deg);' +
+    'transform-origin:right center;';
+
+  // Collect all text nodes (not just ones with \n)
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const textNodes = [];
   let node;
@@ -1895,36 +1900,36 @@ function applyLineDrift(root){
       node.parentElement.closest('.page-break-marker') ||
       node.parentElement.classList.contains('hw-line-drift')
     )) continue;
-    if(node.textContent.indexOf('\n') === -1) continue;
+    if(node.textContent.trim().length === 0 && node.textContent.indexOf('\n') === -1) continue;
     textNodes.push(node);
   }
 
-  let lineIdx = 0;
   textNodes.forEach(tNode => {
     const text = tNode.textContent;
-    const parts = text.split('\n');
-    if(parts.length <= 1) return;
 
+    // If no newlines, wrap the whole text node
+    if(text.indexOf('\n') === -1){
+      if(text.trim().length === 0) return;
+      const span = document.createElement('span');
+      span.className = 'hw-line-drift';
+      span.textContent = text;
+      span.style.cssText = rotCss;
+      tNode.parentNode.replaceChild(span, tNode);
+      return;
+    }
+
+    // Split at newlines
+    const parts = text.split('\n');
     const frag = document.createDocumentFragment();
     parts.forEach((part, i) => {
       if(i > 0) frag.appendChild(document.createTextNode('\n'));
+      if(part.length === 0) return;
 
-      if(part.length === 0){
-        lineIdx++;
-        return;
-      }
-
-      const lineSpan = document.createElement('span');
-      lineSpan.className = 'hw-line-drift';
-      lineSpan.textContent = part;
-
-      lineSpan.style.cssText =
-        'display:inline-block;width:100%;' +
-        'transform:rotate(' + _lineDriftVal.toFixed(1) + 'deg);' +
-        'transform-origin:right center;';
-
-      frag.appendChild(lineSpan);
-      lineIdx++;
+      const span = document.createElement('span');
+      span.className = 'hw-line-drift';
+      span.textContent = part;
+      span.style.cssText = rotCss;
+      frag.appendChild(span);
     });
 
     tNode.parentNode.replaceChild(frag, tNode);
