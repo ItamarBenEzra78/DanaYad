@@ -861,7 +861,7 @@ function _doReflow(){
   }
 
   // Re-apply line drift for visual preview
-  if(_lineDriftVal > 0) applyLineDrift(editor);
+  if(_lineDriftVal !== 0) applyLineDrift(editor);
 
   updatePageIndicator(totalPages);
 }
@@ -1866,7 +1866,7 @@ function updateLineDrift(val){
   const editor = document.getElementById('output-edit');
   if(editor){
     stripLineDrift(editor);
-    if(_lineDriftVal > 0) applyLineDrift(editor);
+    if(_lineDriftVal !== 0) applyLineDrift(editor);
   }
 }
 
@@ -1945,12 +1945,12 @@ buildPrintPages = function(){
   const result = _origBuildPrintPages();
 
   // Re-apply drift to editor for preview
-  if(editor && _lineDriftVal > 0) applyLineDrift(editor);
+  if(editor && _lineDriftVal !== 0) applyLineDrift(editor);
 
   if(result){
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
       // Line drift on clone (save/restore global flag)
-      if(_lineDriftVal > 0){
+      if(_lineDriftVal !== 0){
         const saved = _lineDriftApplied;
         _lineDriftApplied = false;
         applyLineDrift(inner);
@@ -1978,7 +1978,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // Reapply on blur for visual preview
   editor.addEventListener('blur', () => {
-    if(_lineDriftVal > 0 && !_lineDriftApplied) applyLineDrift(editor);
+    if(_lineDriftVal !== 0 && !_lineDriftApplied) applyLineDrift(editor);
   });
 });
 
