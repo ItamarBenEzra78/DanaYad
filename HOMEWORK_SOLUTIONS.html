@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פתרון עבודת בית - רגרסיה לינארית</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            padding: 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .toc h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .toc ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .toc li {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            transition: transform 0.2s;
+        }
+
+        .toc li:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .toc a {
+            color: #2c3e50;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .exercise {
+            margin-bottom: 50px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            border-left: 5px solid #3498db;
+        }
+
+        .exercise h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+        }
+
+        .exercise h2::before {
+            content: "📊";
+            margin-left: 10px;
+        }
+
+        .exercise h3 {
+            color: #495057;
+            margin: 25px 0 15px 0;
+            font-size: 1.3em;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px;
+        }
+
+        .data-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .data-box h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .formula {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .result {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .conclusion {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .table th, .table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+
+        .table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .table tr:hover {
+            background: #e3f2fd;
+        }
+
+        .files-section {
+            background: #343a40;
+            color: white;
+            padding: 30px;
+            margin-top: 40px;
+            border-radius: 10px;
+        }
+
+        .files-section h2 {
+            margin-bottom: 20px;
+            color: #ffc107;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .file-item {
+            background: #495057;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .file-item::before {
+            content: "📄";
+            margin-left: 10px;
+            font-size: 1.5em;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .math {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .toc ul {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>פתרון עבודת בית</h1>
+            <div class="subtitle">רגרסיה לינארית - סטטיסטיקה מתקדמת</div>
+            <div style="margin-top: 15px; font-size: 0.9em; opacity: 0.8;">
+                תאריך הגשה: 8 באפריל 2026 | סטודנט: [שם הסטודנט]
+            </div>
+        </div>
+
+        <div class="toc">
+            <h2>תוכן עניינים</h2>
+            <ul>
+                <li><a href="#ex1">תרגיל 1: קוביות והשקלה</a></li>
+                <li><a href="#ex2">תרגיל 2: אלכוהול וזמן תגובה</a></li>
+                <li><a href="#ex3">תרגיל 3: רגרסיה ללא חותך</a></li>
+                <li><a href="#ex4">תרגיל 4: השוואת מכונות ייצור</a></li>
+                <li><a href="#ex5">תרגיל 5: השוואת אומדים</a></li>
+                <li><a href="#ex6">תרגיל 6: ניתוח ב-R</a></li>
+                <li><a href="#files">קבצים שנוצרו</a></li>
+            </ul>
+        </div>
+
+        <div class="content">
+            <div id="ex1" class="exercise">
+                <h2>תרגיל 1: קוביות והשקלה</h2>
+
+                <div class="data-box">
+                    <h4>נתונים</h4>
+                    <p>• 7 שקילות של כלי עם קוביות</p>
+                    <p>• X (מספר קוביות): [4, 2, 2, 1, 4, 6, 3]</p>
+                    <p>• Y (משקל בגרמים): [585, 412, 397, 303, 596, 814, 511]</p>
+                </div>
+
+                <h3>א. המשמעות הפיסיקלית</h3>
+                <ul>
+                    <li><strong>β₀ (חותך בישרה)</strong>: משקל הכלי עצמו (הטארה) - בגרמים</li>
+                    <li><strong>β₁ (שיפוע)</strong>: משקל ממוצע של קובייה אחת - בגרמים</li>
+                </ul>
+
+                <h3>ב. אומדי OLS</h3>
+                <div class="formula">
+                    β̂₁ = Σ(xᵢ - x̄)(yᵢ - ȳ) / Σ(xᵢ - x̄)² = 100.38 גרם<br>
+                    β̂₀ = ȳ - β̂₁·x̄ = 227.14 גרם
+                </div>
+
+                <h3>ג. אמידת שונות השגיאה</h3>
+                <div class="formula">
+                    SSE = Σ(yᵢ - ŷᵢ)² = 671.97<br>
+                    σ̂² = SSE/(n-2) = 134.39 (גרם)²<br>
+                    σ̂ = 11.59 גרם
+                </div>
+
+                <h3>ד. בדיקת השערה: H₀: β₁ = 0 (α = 0.05)</h3>
+                <div class="result">
+                    <strong>סטטיסטיקה:</strong><br>
+                    SE(β̂₁) = √(σ̂²/Sₓₓ) = 2.996<br>
+                    t-statistic = 100.38 / 2.996 = 33.53<br>
+                    p-value &lt; 0.001<br>
+                    t_critical = 2.571 (df = 5)
+                </div>
+
+                <div class="conclusion">
+                    ✅ <strong>דחייה של H₀</strong> - קיים קשר מובהק בין מספר הקוביות למשקל הכולל
+                </div>
+            </div>
+
+            <div id="ex2" class="exercise">
+                <h2>תרגיל 2: אלכוהול וזמן תגובה</h2>
+
+                <div class="data-box">
+                    <h4>נתונים</h4>
+                    <p>• 10 נבדקים</p>
+                    <p>• X (כוסות בירה): [0, 2, 4, 6, 1, 3, 5, 8, 4, 2]</p>
+                    <p>• Y (הפרש זמן ms): [110, 210, 409, 262, 162, 57, 310, 210, 106, 9]</p>
+                </div>
+
+                <h3>א. בדיקת קשר בין כמות בירה להפרש בזמן תגובה</h3>
+                <div class="formula">
+                    β̂₁ = Sₓᵧ / Sₓₓ = 2292 / 52.5 = 43.66 ms/כוס
+                </div>
+
+                <div class="result">
+                    <strong>סטטיסטיקה:</strong><br>
+                    SE(β̂₁) = √(σ̂²/Sₓₓ) = 6.67<br>
+                    t-statistic = 43.66 / 6.67 = 6.54<br>
+                    p-value &lt; 0.001
+                </div>
+
+                <div class="conclusion">
+                    ✅ <strong>דחייה של H₀</strong> - קיים קשר מובהק וחיובי בין כמות הבירה להפרש בזמן תגובה<br>
+                    <em>כל כוס בירה נוספת מעלה את זמן התגובה בממוצע ב-43.66 מילישניות</em>
+                </div>
+
+                <h3>ב. בדיקת השערה: H₀: β₀ = 0</h3>
+                <div class="result">
+                    <strong>חישובים:</strong><br>
+                    β̂₀ = ȳ - β̂₁·x̄ = 32.19<br>
+                    SE(β̂₀) = √[σ̂²(1/n + x̄²/Sₓₓ)] = 32.31<br>
+                    t-statistic = 32.19 / 32.31 = 0.996<br>
+                    p-value = 0.342
+                </div>
+
+                <div class="conclusion">
+                    ❌ <strong>לא דחייה של H₀</strong> - לא ניתן לדחות שהחותך שווה לאפס
+                </div>
+
+                <p><strong>משמעות בהקשר למחקר:</strong></p>
+                <ul>
+                    <li>כאשר מספר כוסות הבירה = 0, הפער בזמן התגובה עשוי להיות 0</li>
+                    <li>זה מעניין אך מפתיע מבחינה ביולוגית</li>
+                    <li>התוצאה עלולה להיות תוצאת קו במדגם זה</li>
+                </ul>
+            </div>
+
+            <div id="ex3" class="exercise">
+                <h2>תרגיל 3: רגרסיה ללא חותך</h2>
+
+                <div class="formula">
+                    מודל: yᵢ = β·xᵢ + εᵢ<br>
+                    כאשר εᵢ ~ N(0, σ²) בלתי מתואמות
+                </div>
+
+                <h3>א. המשוואה הנורמלית</h3>
+                <div class="formula">
+                    ∂/∂β Σ(yᵢ - β·xᵢ)² = 0<br>
+                    ⟹ β̂ = Σxᵢ·yᵢ / Σxᵢ²
+                </div>
+
+                <h3>ב. הוכחה שהאומד מתפלג נורמלית</h3>
+                <div class="formula">
+                    β̂ = Σxᵢ·yᵢ / Σxᵢ² = β + Σxᵢ·εᵢ / Σxᵢ²<br>
+                    מאחר ו-εᵢ ~ N(0, σ²) בלתי מתואמות:<br>
+                    β̂ ~ N(β, σ²/Σxᵢ²)
+                </div>
+
+                <h3>ג. שונות משותפת של ȳ ו-β̂₁</h3>
+                <p><strong>לא בהכרח אפס!</strong></p>
+                <ul>
+                    <li>ȳ תלויה בכל εᵢ (דרך ε̄)</li>
+                    <li>β̂ גם תלויה בכל εᵢ</li>
+                    <li>שיתוף הסיכון (common noise) זהה יוצר מתאם שלילי</li>
+                </ul>
+            </div>
+
+            <div id="ex4" class="exercise">
+                <h2>תרגיל 4: השוואת מכונות ייצור</h2>
+
+                <div class="data-box">
+                    <h4>נתונים</h4>
+                    <p>• 6 מחזורי ייצור</p>
+                    <p>• X (חומר גלם ק"ג): [4, 6, 8, 7, 2, 5]</p>
+                    <p>• מכונה א': [67, 101, 150, 131, 24, 95]</p>
+                    <p>• מכונה ב': [74, 113, 159, 136, 23, 94]</p>
+                </div>
+
+                <h3>א. משמעות הפרמטרים</h3>
+                <ul>
+                    <li><strong>α₀/β₀</strong>: מספר בסיסי של סביבונים כשלונים (טארה)</li>
+                    <li><strong>α₁/β₁</strong>: כמה סביבונים נוספים לכל ק"ג חומר גלם</li>
+                    <li><strong>δᵢ/εᵢ</strong>: סטייה מהמודל</li>
+                </ul>
+
+                <h3>ב. בדיקת השערה: H₀: σ²ₐ = σ²ᵦ</h3>
+                <div class="result">
+                    <strong>אמידות:</strong><br>
+                    מכונה א': σ̂²ₐ = 290.53<br>
+                    מכונה ב': σ̂²ᵦ = 280.03<br>
+                    F-statistic = 290.53/280.03 = 1.0376<br>
+                    F_critical (α=0.05, df=4,4) = 6.388
+                </div>
+
+                <div class="conclusion">
+                    ❌ <strong>לא דחייה</strong> - לא קיים הבדל מובהק בשונויות
+                </div>
+
+                <h3>ג. קביעת טווחי שימוש</h3>
+                <div class="formula">
+                    מכונה א': ŷ = -16.1143 + 20.77x<br>
+                    מכונה ב': ŷ = -18.87 + 22.25x<br>
+                    נקודת הצומת: x = 1.862 ק"ג
+                </div>
+
+                <div class="result">
+                    <strong>המלצה:</strong><br>
+                    • x &lt; 1.86 ק"ג: השתמשו <strong>מכונה א'</strong><br>
+                    • x &gt; 1.86 ק"ג: השתמשו <strong>מכונה ב'</strong>
+                </div>
+            </div>
+
+            <div id="ex5" class="exercise">
+                <h2>תרגיל 5: השוואת אומדים</h2>
+
+                <div class="formula">
+                    מודל: yᵢ = β·xᵢ + εᵢ (ללא חותך)
+                </div>
+
+                <h3>השוואת האומדים</h3>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>אומד</th>
+                            <th>חסר הטיה?</th>
+                            <th>OLS?</th>
+                            <th>שונות</th>
+                            <th>דירוג</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>(a) OLS עם חותך</td>
+                            <td>✓ כן</td>
+                            <td>✓ כן</td>
+                            <td>σ²/Sₓₓ (מינימלית)</td>
+                            <td>⭐⭐⭐ הטוב ביותר</td>
+                        </tr>
+                        <tr>
+                            <td>(b) OLS ללא חותך</td>
+                            <td>✓ כן</td>
+                            <td>✓ כן</td>
+                            <td>σ²/Σxᵢ²</td>
+                            <td>⭐⭐ טוב כשודאים אין חותך</td>
+                        </tr>
+                        <tr>
+                            <td>(c) ממוצעים פשוטים</td>
+                            <td>✗ לא</td>
+                            <td>✗ לא</td>
+                            <td>גבוהה מאוד</td>
+                            <td>⭐ לא טוב</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="conclusion">
+                    <strong>מסקנה:</strong> אומד (a) הוא הטוב ביותר!<br>
+                    הוא Best Linear Unbiased Estimator (BLUE)
+                </div>
+            </div>
+
+            <div id="ex6" class="exercise">
+                <h2>תרגיל 6: ניתוח ב-R</h2>
+
+                <div class="data-box">
+                    <h4>קובץ נתונים</h4>
+                    <p>• Exc1.csv: 50 תצפיות, 5 משתנים (Y, X1, X2, X3, X4)</p>
+                </div>
+
+                <h3>תוצאות הניתוח</h3>
+
+                <div class="result">
+                    <strong>1. חציון של X₂:</strong> 525<br>
+                    <strong>2. קורלציה בין X₃ ו-Y:</strong> r = -0.172 (חלש, לא מובהק)<br>
+                    <strong>3. עמודה X₅:</strong> X₁ + X₃ (נוספה בהצלחה)
+                </div>
+
+                <h3>4-5. ויזואליזציות</h3>
+                <ul>
+                    <li><strong>BoxPlot של X₅:</strong> <a href="boxplot_x5.pdf" target="_blank">boxplot_x5.pdf</a></li>
+                    <li><strong>עקומת צפיפות של X₄:</strong> <a href="density_x4.pdf" target="_blank">density_x4.pdf</a></li>
+                </ul>
+
+                <h3>6. מודל רגרסיה: Y ~ X₁</h3>
+                <div class="formula">
+                    Ŷ = 8.7159 + 0.0051·X₁
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>מקדם</th>
+                            <th>ערך</th>
+                            <th>t-statistic</th>
+                            <th>p-value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>β̂₀ (intercept)</td>
+                            <td>8.7159</td>
+                            <td>11.70</td>
+                            <td>&lt; 0.001</td>
+                        </tr>
+                        <tr>
+                            <td>β̂₁ (X₁)</td>
+                            <td>0.0051</td>
+                            <td>0.832</td>
+                            <td>0.409</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="result">
+                    <strong>מדדי טיב הסגר:</strong><br>
+                    R² = 0.0134 (1.34%)<br>
+                    Adjusted R² = -0.0059
+                </div>
+
+                <div class="conclusion">
+                    <strong>הערכה:</strong> טיב סגר נמוך מאוד. X₁ בלבדו לא מנבא טוב של Y<br>
+                    נדרשים משתנים נוספים או טרנספורמציות
+                </div>
+
+                <p><strong>עלילת רגרסיה:</strong> <a href="regression_plot.pdf" target="_blank">regression_plot.pdf</a></p>
+            </div>
+
+            <div id="files" class="files-section">
+                <h2>קבצים שנוצרו במהלך הפתרון</h2>
+                <div class="files-grid">
+                    <div class="file-item">solution.py - תרגילים 1 ו-2</div>
+                    <div class="file-item">solution_part2.py - תרגילים 3 ו-4</div>
+                    <div class="file-item">solution_part3.py - תרגיל 5</div>
+                    <div class="file-item">solution_part6.R - תרגיל 6</div>
+                    <div class="file-item">Exc1.csv - קובץ נתונים</div>
+                    <div class="file-item">COMPLETE_SOLUTIONS.md - פתרון מלא</div>
+                    <div class="file-item">SOLUTIONS_SUMMARY.txt - סיכום</div>
+                    <div class="file-item">boxplot_x5.pdf - ויזואליזציה</div>
+                    <div class="file-item">density_x4.pdf - ויזואליזציה</div>
+                    <div class="file-item">regression_plot.pdf - ויזואליזציה</div>
+                </div>
+            </div>
+
+            <div class="success">
+                🎉 כל העבודה הושלמה בהצלחה! ✓<br>
+                <small>נוצר באמצעות Python, R ו-HTML</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scrolling for table of contents
+        document.querySelectorAll('.toc a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            });
+        });
+
+        // Add some interactive effects
+        document.querySelectorAll('.exercise').forEach(ex => {
+            ex.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
+            });
+
+            ex.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+            });
+        });
+    </script>
+</body>
+</html>

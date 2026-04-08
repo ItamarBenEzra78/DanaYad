@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DanaYad - פתרונות עבודת בית רגרסיה לינארית</title>
+<link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+/*
+  HandwritingCombo = Dana Yad (Hebrew) + Playpen Sans Hebrew (Latin/Numbers)
+  unicode-range forces each font to handle only its script.
+  This way Hebrew and English look stylistically matched.
+*/
+/*
+  Strategy:
+  1. Playpen Sans Hebrew covers EVERYTHING as base (Hebrew + Latin + Greek)
+  2. Dana Yad overrides Hebrew ONLY if installed locally
+  This ensures visual consistency when Dana Yad is absent.
+*/
+
+/* Dana Yad override for Hebrew – only if locally installed */
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: local('Dana Yad AlefAlefAlef'), local('DanaYadAlefAlefAlef'), local('Dana Yad');
+  font-weight: 300 700;
+  unicode-range:
+    U+0590-U+05FF,
+    U+FB1D-U+FB4E,
+    U+20AA;
+}
+/* Playpen Sans Hebrew for ALL other ranges (Latin, Greek, punctuation, digits) */
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: url('https://fonts.gstatic.com/s/playpen+sans+hebrew/v1/regular.woff2') format('woff2');
+  font-weight: 300;
+  unicode-range: U+0000-U+058F, U+0600-U+FFFF;
+}
+
+:root {
+  --font: 'HandwritingCombo', 'Playpen Sans Hebrew', 'Dana Yad AlefAlefAlef', cursive;
+  --bg: #F8F6F2;
+  --surface: #EDE9E3;
+  --surface2: #F3F0EB;
+  --border: #E0D9CF;
+  --text: #3D2E1E;
+  --muted: #7B6B52;
+  --accent: #C9A96E;
+  --accent-bg: rgba(201,169,110,0.12);
+  --accent-hover: #A0896A;
+  --paper: #FFFFFF;
+  --toolbar: #EDE9E3;
+  --radius: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── Header ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:50;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:0.5px;}
+.badge{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(201,169,110,0.15);color:var(--accent);border:1px solid rgba(201,169,110,0.35);white-space:nowrap;transition:all .2s;}
+.badge.missing{background:rgba(180,120,40,0.1);color:#B07828;border-color:rgba(180,120,40,0.3);}
+
+/* ── Layout ── */
+.main{display:grid;grid-template-columns:260px 1fr;flex:1;min-height:0;}
+
+/* ── Sidebar / Settings Panel ── */
+.sidebar{background:var(--surface);border-left:1px solid var(--border);padding:14px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;border-radius:0 12px 12px 0;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.sidebar::-webkit-scrollbar{width:5px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+.sidebar > div{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;transition:border-color .2s;}
+.sidebar > div:hover{border-color:var(--accent);}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.ctrl-row label{font-size:11px;min-width:80px;color:var(--muted);}
+.ctrl-row input[type=range]{flex:1;accent-color:var(--accent);height:4px;border-radius:2px;background:var(--border);-webkit-appearance:none;appearance:none;}
+.ctrl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer;box-shadow:0 1px 4px rgba(139,109,66,0.25);}
+.ctrl-row .val{font-size:10px;color:var(--accent-hover);min-width:36px;text-align:center;background:#fff;padding:3px 6px;border-radius:6px;border:1px solid var(--border);font-weight:600;}
+.bg-row{display:flex;gap:4px;}
+.bg-btn{font-size:11px;padding:5px 10px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.bg-btn:hover{border-color:var(--accent);color:var(--text);}
+.bg-btn.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);}
+.tabs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px;}
+.tab{font-size:11px;padding:3px 8px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.tab:hover{border-color:var(--accent);color:var(--text);}
+.tab.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);font-weight:700;}
+.sym-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(28px,1fr));gap:3px;}
+.sym-grid.hidden{display:none;}
+.sym-btn{height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text);font-family:var(--font);transition:all .15s;}
+.sym-btn:hover{border-color:var(--accent);background:var(--accent-bg);}
+
+/* ── Content Area ── */
+.content{display:flex;flex-direction:column;padding:12px;gap:8px;overflow:hidden;background:var(--bg);}
+
+/* ── Format Toolbar ── */
+.fmt-bar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;background:var(--toolbar);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;}
+.fmt-sep{width:1px;height:22px;background:var(--border);margin:0 6px;flex-shrink:0;}
+.fb{height:28px;min-width:28px;padding:0 6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius);border:1px solid transparent;background:transparent;color:var(--muted);font-size:12px;font-family:-apple-system,Arial,sans-serif;transition:all .15s;white-space:nowrap;position:relative;}
+.fb:hover{background:var(--accent-bg);color:var(--text);}
+.fb.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.fb.active:hover{background:var(--accent-hover);}
+
+/* ── Output Area ── */
+.output-area{flex:1;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.output-wrap{flex:1;position:relative;overflow-y:auto;padding:20px 24px;background-image:linear-gradient(90deg,rgba(0,0,0,.03) 1px,transparent 1px),linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px);background-size:20px 20px;}
+.output-wrap::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(45deg,transparent 49%,rgba(0,0,0,.02) 50%,rgba(0,0,0,.02) 51%,transparent 52%);pointer-events:none;}
+#output{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;padding:0;margin:0;min-height:100%;cursor:text;}
+#output:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;}
+.draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+.draw-canvas.active{pointer-events:auto;}
+.draw-toolbar{position:absolute;top:10px;left:10px;display:none;z-index:10;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:8px;gap:4px;}
+.draw-toolbar{display:flex;}
+.draw-color{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.draw-color.on{border-color:#000;}
+#btn-eraser{border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;}
+#btn-eraser.on{background:#ff6b6b;color:#fff;}
+#draw-size{width:80px;}
+.page-number{position:absolute;bottom:10px;right:10px;font-size:12px;color:var(--muted);background:var(--paper);padding:2px 8px;border-radius:4px;border:1px solid var(--border);}
+
+/* ── Font Grid ── */
+.font-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px;}
+.font-card{border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
+.font-card:hover{border-color:var(--accent);background:var(--accent-bg);}
+.font-card.active{border-color:var(--accent);background:var(--accent-bg);}
+.font-card-name{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.font-card-preview{font-size:14px;color:var(--text);font-family:var(--font);}
+
+/* ── Auth Overlay ── */
+.auth-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.auth-overlay.hidden{display:none;}
+.auth-modal{background:var(--paper);border-radius:12px;padding:24px;max-width:400px;width:90%;text-align:center;border:1px solid var(--border);}
+.auth-modal h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:16px;color:var(--text);}
+.auth-msg{font-size:12px;padding:8px 12px;border-radius:6px;margin:12px 0;display:block;}
+.auth-msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.auth-msg.success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.auth-btn{display:block;width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.auth-btn:hover{background:var(--accent-hover);}
+.auth-btn:disabled{background:#ccc;cursor:not-allowed;}
+.auth-spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top:2px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.auth-link{font-size:12px;color:var(--accent);text-decoration:underline;cursor:pointer;margin-top:12px;display:block;}
+.auth-link:hover{color:var(--accent-hover);}
+
+/* ── Paywall ── */
+.pw-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.pw-overlay.open{display:flex;}
+.pw-modal{background:var(--paper);border-radius:12px;padding:24px;max-width:500px;width:90%;text-align:center;border:1px solid var(--border);}
+.pw-modal h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:16px;color:var(--text);}
+.pw-modal p{font-size:14px;margin-bottom:20px;color:var(--muted);line-height:1.5;}
+.pw-btn{display:block;width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.pw-btn:hover{background:var(--accent-hover);}
+.pw-link{font-size:12px;color:var(--accent);text-decoration:underline;cursor:pointer;margin-top:12px;display:block;}
+.pw-link:hover{color:var(--accent-hover);}
+
+/* ── PDF Modal ── */
+.pdf-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;}
+.pdf-modal{background:var(--paper);border-radius:12px;padding:24px;max-width:400px;width:90%;text-align:center;border:1px solid var(--border);}
+.pdf-modal h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:16px;color:var(--text);}
+.pdf-modal p{font-size:14px;margin-bottom:20px;color:var(--muted);line-height:1.5;}
+.pdf-btn{display:block;width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.pdf-btn:hover{background:var(--accent-hover);}
+.pdf-btn:disabled{background:#ccc;cursor:not-allowed;}
+.pdf-spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top:2px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;}
+.pdf-close{position:absolute;top:12px;right:12px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;background:#f3f4f6;color:#6b7280;font-size:16px;}
+.pdf-close:hover{background:#e5e7eb;}
+
+/* ── Responsive ── */
+@media (max-width:768px){
+  .main{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .sidebar.mobile{display:flex;position:fixed;top:0;left:0;width:280px;height:100%;z-index:100;border-radius:0;}
+  .content{padding:8px;}
+  .fmt-bar{flex-wrap:wrap;}
+  .fb{min-width:24px;padding:0 4px;font-size:11px;}
+  .output-wrap{padding:16px 20px;}
+  #output{font-size:14px;}
+  .font-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <h1>DanaYad</h1>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span class="badge" id="font-badge">טוען...</span>
+    <span class="badge" id="user-badge" style="display:none;"></span>
+    <button class="fb" id="logout-btn" onclick="handleLogout()" style="display:none;font-size:11px;">התנתק</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <!-- Font Settings -->
+    <div>
+      <div class="sec-title">גופן</div>
+      <div class="tabs">
+        <div class="tab active" onclick="filterFonts('all',this)">הכל</div>
+        <div class="tab" onclick="filterFonts('hebrew',this)">עברית</div>
+        <div class="tab" onclick="filterFonts('handwriting',this)">כתב יד</div>
+        <div class="tab" onclick="filterFonts('display',this)">תצוגה</div>
+      </div>
+      <div id="font-grid" class="font-grid">
+        <!-- Fonts populated by JS -->
+      </div>
+    </div>
+
+    <!-- Size & Spacing -->
+    <div>
+      <div class="sec-title">גודל ומרווחים</div>
+      <div class="ctrl-row">
+        <label>גודל גופן</label>
+        <input type="range" id="font-size" min="12" max="32" value="16" oninput="updateFontSize(this.value)">
+        <span class="val" id="font-size-val">16px</span>
+      </div>
+      <div class="ctrl-row">
+        <label>גובה שורה</label>
+        <input type="range" id="line-height" min="1.2" max="2.0" step="0.1" value="1.6" oninput="updateLineHeight(this.value)">
+        <span class="val" id="line-height-val">1.6</span>
+      </div>
+      <div class="ctrl-row">
+        <label>רוחב אות</label>
+        <input type="range" id="letter-spacing" min="-2" max="5" value="0" oninput="updateLetterSpacing(this.value)">
+        <span class="val" id="letter-spacing-val">0px</span>
+      </div>
+    </div>
+
+    <!-- Background -->
+    <div>
+      <div class="sec-title">רקע</div>
+      <div class="bg-row">
+        <button class="bg-btn active" onclick="setBackground('paper')">נייר</button>
+        <button class="bg-btn" onclick="setBackground('lined')">משורטט</button>
+        <button class="bg-btn" onclick="setBackground('dotted')">מנוקד</button>
+        <button class="bg-btn" onclick="setBackground('plain')">חלק</button>
+      </div>
+    </div>
+
+    <!-- Symbols -->
+    <div>
+      <div class="sec-title">סמלים</div>
+      <div class="tabs">
+        <div class="tab active" onclick="showSymbolGrid('math')">מתמטיקה</div>
+        <div class="tab" onclick="showSymbolGrid('arrows')">חצים</div>
+        <div class="tab" onclick="showSymbolGrid('greek')">יוונית</div>
+        <div class="tab" onclick="showSymbolGrid('misc')">שונות</div>
+      </div>
+      <div id="sym-math" class="sym-grid">
+        <button class="sym-btn" onclick="insertSymbol('α')">α</button>
+        <button class="sym-btn" onclick="insertSymbol('β')">β</button>
+        <button class="sym-btn" onclick="insertSymbol('γ')">γ</button>
+        <button class="sym-btn" onclick="insertSymbol('δ')">δ</button>
+        <button class="sym-btn" onclick="insertSymbol('ε')">ε</button>
+        <button class="sym-btn" onclick="insertSymbol('θ')">θ</button>
+        <button class="sym-btn" onclick="insertSymbol('λ')">λ</button>
+        <button class="sym-btn" onclick="insertSymbol('μ')">μ</button>
+        <button class="sym-btn" onclick="insertSymbol('π')">π</button>
+        <button class="sym-btn" onclick="insertSymbol('σ')">σ</button>
+        <button class="sym-btn" onclick="insertSymbol('τ')">τ</button>
+        <button class="sym-btn" onclick="insertSymbol('φ')">φ</button>
+        <button class="sym-btn" onclick="insertSymbol('χ')">χ</button>
+        <button class="sym-btn" onclick="insertSymbol('ψ')">ψ</button>
+        <button class="sym-btn" onclick="insertSymbol('ω')">ω</button>
+        <button class="sym-btn" onclick="insertSymbol('∑')">∑</button>
+        <button class="sym-btn" onclick="insertSymbol('∫')">∫</button>
+        <button class="sym-btn" onclick="insertSymbol('√')">√</button>
+        <button class="sym-btn" onclick="insertSymbol('±')">±</button>
+        <button class="sym-btn" onclick="insertSymbol('∞')">∞</button>
+        <button class="sym-btn" onclick="insertSymbol('≈')">≈</button>
+        <button class="sym-btn" onclick="insertSymbol('≠')">≠</button>
+        <button class="sym-btn" onclick="insertSymbol('≤')">≤</button>
+        <button class="sym-btn" onclick="insertSymbol('≥')">≥</button>
+        <button class="sym-btn" onclick="insertSymbol('∈')">∈</button>
+        <button class="sym-btn" onclick="insertSymbol('∉')">∉</button>
+        <button class="sym-btn" onclick="insertSymbol('⊂')">⊂</button>
+        <button class="sym-btn" onclick="insertSymbol('⊆')">⊆</button>
+        <button class="sym-btn" onclick="insertSymbol('∪')">∪</button>
+        <button class="sym-btn" onclick="insertSymbol('∩')">∩</button>
+        <button class="sym-btn" onclick="insertSymbol('∅')">∅</button>
+        <button class="sym-btn" onclick="insertSymbol('∀')">∀</button>
+        <button class="sym-btn" onclick="insertSymbol('∃')">∃</button>
+        <button class="sym-btn" onclick="insertSymbol('∴')">∴</button>
+        <button class="sym-btn" onclick="insertSymbol('∵')">∵</button>
+      </div>
+      <div id="sym-arrows" class="sym-grid hidden">
+        <button class="sym-btn" onclick="insertSymbol('←')">←</button>
+        <button class="sym-btn" onclick="insertSymbol('↑')">↑</button>
+        <button class="sym-btn" onclick="insertSymbol('→')">→</button>
+        <button class="sym-btn" onclick="insertSymbol('↓')">↓</button>
+        <button class="sym-btn" onclick="insertSymbol('↔')">↔</button>
+        <button class="sym-btn" onclick="insertSymbol('↕')">↕</button>
+        <button class="sym-btn" onclick="insertSymbol('⇐')">⇐</button>
+        <button class="sym-btn" onclick="insertSymbol('⇑')">⇑</button>
+        <button class="sym-btn" onclick="insertSymbol('⇒')">⇒</button>
+        <button class="sym-btn" onclick="insertSymbol('⇓')">⇓</button>
+        <button class="sym-btn" onclick="insertSymbol('⇔')">⇔</button>
+        <button class="sym-btn" onclick="insertSymbol('⇕')">⇕</button>
+        <button class="sym-btn" onclick="insertSymbol('⟵')">⟵</button>
+        <button class="sym-btn" onclick="insertSymbol('⟶')">⟶</button>
+        <button class="sym-btn" onclick="insertSymbol('⟷')">⟷</button>
+        <button class="sym-btn" onclick="insertSymbol('⟸')">⟸</button>
+        <button class="sym-btn" onclick="insertSymbol('⟹')">⟹</button>
+        <button class="sym-btn" onclick="insertSymbol('⟺')">⟺</button>
+      </div>
+      <div id="sym-greek" class="sym-grid hidden">
+        <button class="sym-btn" onclick="insertSymbol('Α')">Α</button>
+        <button class="sym-btn" onclick="insertSymbol('Β')">Β</button>
+        <button class="sym-btn" onclick="insertSymbol('Γ')">Γ</button>
+        <button class="sym-btn" onclick="insertSymbol('Δ')">Δ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ε')">Ε</button>
+        <button class="sym-btn" onclick="insertSymbol('Ζ')">Ζ</button>
+        <button class="sym-btn" onclick="insertSymbol('Η')">Η</button>
+        <button class="sym-btn" onclick="insertSymbol('Θ')">Θ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ι')">Ι</button>
+        <button class="sym-btn" onclick="insertSymbol('Κ')">Κ</button>
+        <button class="sym-btn" onclick="insertSymbol('Λ')">Λ</button>
+        <button class="sym-btn" onclick="insertSymbol('Μ')">Μ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ν')">Ν</button>
+        <button class="sym-btn" onclick="insertSymbol('Ξ')">Ξ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ο')">Ο</button>
+        <button class="sym-btn" onclick="insertSymbol('Π')">Π</button>
+        <button class="sym-btn" onclick="insertSymbol('Ρ')">Ρ</button>
+        <button class="sym-btn" onclick="insertSymbol('Σ')">Σ</button>
+        <button class="sym-btn" onclick="insertSymbol('Τ')">Τ</button>
+        <button class="sym-btn" onclick="insertSymbol('Υ')">Υ</button>
+        <button class="sym-btn" onclick="insertSymbol('Φ')">Φ</button>
+        <button class="sym-btn" onclick="insertSymbol('Χ')">Χ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ψ')">Ψ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ω')">Ω</button>
+      </div>
+      <div id="sym-misc" class="sym-grid hidden">
+        <button class="sym-btn" onclick="insertSymbol('©')">©</button>
+        <button class="sym-btn" onclick="insertSymbol('®')">®</button>
+        <button class="sym-btn" onclick="insertSymbol('™')">™</button>
+        <button class="sym-btn" onclick="insertSymbol('€')">€</button>
+        <button class="sym-btn" onclick="insertSymbol('£')">£</button>
+        <button class="sym-btn" onclick="insertSymbol('¥')">¥</button>
+        <button class="sym-btn" onclick="insertSymbol('¢')">¢</button>
+        <button class="sym-btn" onclick="insertSymbol('§')">§</button>
+        <button class="sym-btn" onclick="insertSymbol('¶')">¶</button>
+        <button class="sym-btn" onclick="insertSymbol('†')">†</button>
+        <button class="sym-btn" onclick="insertSymbol('‡')">‡</button>
+        <button class="sym-btn" onclick="insertSymbol('•')">•</button>
+        <button class="sym-btn" onclick="insertSymbol('°')">°</button>
+        <button class="sym-btn" onclick="insertSymbol('‰')">‰</button>
+        <button class="sym-btn" onclick="insertSymbol('✓')">✓</button>
+        <button class="sym-btn" onclick="insertSymbol('✗')">✗</button>
+        <button class="sym-btn" onclick="insertSymbol('★')">★</button>
+        <button class="sym-btn" onclick="insertSymbol('☆')">☆</button>
+        <button class="sym-btn" onclick="insertSymbol('♥')">♥</button>
+        <button class="sym-btn" onclick="insertSymbol('♦')">♦</button>
+        <button class="sym-btn" onclick="insertSymbol('♣')">♣</button>
+        <button class="sym-btn" onclick="insertSymbol('♠')">♠</button>
+        <button class="sym-btn" onclick="insertSymbol('♪')">♪</button>
+        <button class="sym-btn" onclick="insertSymbol('♫')">♫</button>
+        <button class="sym-btn" onclick="insertSymbol('♂')">♂</button>
+        <button class="sym-btn" onclick="insertSymbol('♀')">♀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Format Toolbar -->
+    <div class="fmt-bar">
+      <button class="fb" onclick="toggleBold()" title="מודגש"><b>B</b></button>
+      <button class="fb" onclick="toggleItalic()" title="נטוי"><i>I</i></button>
+      <button class="fb" onclick="toggleUnderline()" title="קו תחתון"><u>U</u></button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="alignLeft()" title="יישור לשמאל">⬅</button>
+      <button class="fb" onclick="alignCenter()" title="יישור למרכז">⬌</button>
+      <button class="fb" onclick="alignRight()" title="יישור לימין">➡</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="insertBullet()" title="רשימה">•</button>
+      <button class="fb" onclick="insertNumbered()" title="רשימה ממוספרת">1.</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="toggleDrawMode()" id="btn-draw-mode" title="ציור">✏️</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="checkAndExport()" title="שמירה כ-PDF">📄 PDF</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="toggleTextEraser()" id="btn-text-eraser" title="מחק טקסט">✕</button>
+      <span style="font-size:11px;color:var(--muted);" id="eraser-size-label">מילה</span>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="toggleTextEraser()" style="font-size:11px;color:#dc2626;">✕ סגור</button>
+    </div>
+
+    <!-- Output Area -->
+    <div class="output-area" id="output-area">
+      <div class="output-wrap" id="output-wrap">
+        <div id="output" contenteditable="true"
+             onkeydown="handleKey(event)"
+             onmouseup="syncToolbar()"
+             onkeyup="syncToolbar()">פתרון עבודת בית - רגרסיה לינארית
+סטטיסטיקה מתקדמת
+תאריך הגשה: 8 באפריל 2026
+
+═══════════════════════════════════════════════
+
+תרגיל 1: קוביות והשקלה
+───────────────────────────────────────────────
+
+נתונים:
+• 7 שקילות של כלי עם קוביות
+• X (מספר קוביות): [4, 2, 2, 1, 4, 6, 3]
+• Y (משקל בגרמים): [585, 412, 397, 303, 596, 814, 511]
+
+א. המשמעות הפיסיקלית
+
+β₀ (חותך בישרה): משקל הכלי עצמו (הטארה) - בגרמים
+β₁ (שיפוע): משקל ממוצע של קובייה אחת - בגרמים
+
+ב. אומדי OLS
+
+חישובים:
+- n = 7
+- x̄ = 3.0, ȳ = 528.29
+- Σ(xᵢ - x̄)(yᵢ - ȳ) = 1506.57
+- Σ(xᵢ - x̄)² = 15
+
+תוצאות:
+β̂₁ = 1506.57/15 = 100.38 גרם
+β̂₀ = 528.29 - 100.38 × 3.0 = 227.14 גרם
+
+ג. אמידת שונות השגיאה
+
+SSE = Σ(yᵢ - ŷᵢ)² = 671.97
+σ̂² = SSE/(n-2) = 671.97/5 = 134.39 (גרם)²
+σ̂ = 11.59 גרם
+
+ד. בדיקת השערה: H₀: β₁ = 0 (α = 0.05)
+
+סטטיסטיקה:
+- SE(β̂₁) = √(134.39/15) = 2.996
+- t = 100.38 / 2.996 = 33.53
+- p-value < 0.001
+- t_critical = 2.571 (df = 5)
+
+מסקנה:
+✅ דחייה של H₀ - קיים קשר מובהק בין מספר הקוביות למשקל הכולל
+
+═══════════════════════════════════════════════
+
+תרגיל 2: אלכוהול וזמן תגובה
+───────────────────────────────────────────────
+
+נתונים:
+• 10 נבדקים
+• X (כוסות בירה): [0, 2, 4, 6, 1, 3, 5, 8, 4, 2]
+• Y (הפרש זמן ms): [110, 210, 409, 262, 162, 57, 310, 210, 106, 9]
+
+א. בדיקת קשר בין כמות בירה להפרש בזמן תגובה
+
+חישובים:
+- Sₓₓ = 175 - 10(3.5)² = 52.5
+- Sₓᵧ = 9117 - 10(3.5)(185) = 2292
+- β̂₁ = 2292 / 52.5 = 43.66 ms/כוס
+- σ̂² = 18680.8 / 8 = 2335.1
+
+סטטיסטיקה:
+- SE(β̂₁) = √(2335.1/52.5) = 6.67
+- t = 43.66 / 6.67 = 6.54
+- p-value < 0.001
+- t_critical = 2.306 (df = 8)
+
+מסקנה:
+✅ דחייה של H₀ - קיים קשר מובהק וחיובי בין כמות הבירה להפרש בזמן תגובה
+
+כל כוס בירה נוספת מעלה את זמן התגובה בממוצע ב-43.66 מילישניות.
+
+ב. בדיקת השערה: H₀: β₀ = 0
+
+חישובים:
+- β̂₀ = 185 - 43.66(3.5) = 32.19
+- SE(β̂₀) = √(2335.1 × (1/10 + 3.5²/52.5)) = 32.31
+- t = 32.19 / 32.31 = 0.996
+- p-value = 0.342
+
+מסקנה:
+❌ לא דחייה של H₀ - לא ניתן לדחות שהחותך שווה לאפס
+
+משמעות בהקשר למחקר:
+- כאשר מספר כוסות הבירה = 0 (מצב בסיסי), הפער בזמן התגובה עשוי להיות 0
+- זה מעניין אך מפתיע מבחינה ביולוגית - בדרך כלל מצפים למינוס בסיסי בפיגור גם ללא אלכוהול
+- התוצאה עלולה להיות תוצאת קו במדגם זה
+
+═══════════════════════════════════════════════
+
+תרגיל 3: רגרסיה ללא חותך
+───────────────────────────────────────────────
+
+מודל: yᵢ = β·xᵢ + εᵢ
+כאשר ε ~ N(0, σ²) בלתי מתואמות
+
+א. המשוואה הנורמלית
+
+∂/∂β Σ(yᵢ - β·xᵢ)² = 0
+⟹ β̂ = Σxᵢ·yᵢ / Σxᵢ²
+
+ב. הוכחה שהאומד מתפלג נורמלית
+
+β̂ = Σxᵢ·yᵢ / Σxᵢ² = β + Σxᵢ·εᵢ / Σxᵢ²
+מאחר ו-εᵢ ~ N(0, σ²) בלתי מתואמות:
+β̂ ~ N(β, σ²/Σxᵢ²)
+
+התוחלת: E[β̂] = β
+השונות: Var(β̂) = σ²/Σxᵢ²
+
+ג. שונות משותפת של ȳ ו-β̂₁
+
+לא בהכרח אפס!
+
+ȳ = β·x̄ + ε̄
+β̂ = β + Σ(xᵢ - x̄)·εᵢ / Σ(xᵢ - x̄)²
+
+השכתוב הוא:
+- ȳ תלויה בכל εᵢ (דרך ε̄)
+- β̂ גם תלויה בכל εᵢ
+
+מאחר ששיתוף הסיכון (common noise) זהה, יש מתאם בין שניהם.
+מתאם שלילי: מאחר ש-β̂ מתותקן ב"עיוות" של השגיאות בכיוון x,
+למשקל גדול, דרך שיווי משקל יוצר מתאם שלילי עם ȳ.
+
+═══════════════════════════════════════════════
+
+תרגיל 4: השוואת מכונות ייצור
+───────────────────────────────────────────────
+
+נתונים:
+• 6 מחזורי ייצור
+• X (חומר גלם ק"ג): [4, 6, 8, 7, 2, 5]
+• מכונה א': [67, 101, 150, 131, 24, 95]
+• מכונה ב': [74, 113, 159, 136, 23, 94]
+
+א. משמעות הפרמטרים
+
+מכונה א': yᵢ = α₀ + α₁·xᵢ + δᵢ
+- α₀: מספר בסיסי של סביבונים כשלונים/פגומים (טארה)
+- α₁: כמה סביבונים נוספים מ-1 ק"ג חומר גלם
+- δᵢ: סטייה מהמודל
+
+מכונה ב': כנ"ל עם β₀, β₁, εᵢ
+
+ב. בדיקת השערה: H₀: σ²ₐ = σ²ᵦ
+
+אמידות:
+- מכונה א': σ̂²ₐ = 290.53
+- מכונה ב': σ̂²ᵦ = 280.03
+- F-statistic = 290.53/280.03 = 1.0376
+- F_critical (α=0.05, df=4,4) = 6.388
+
+מסקנה:
+❌ לא דחייה - לא קיים הבדל מובהק בשונויות
+
+ג. קביעת טווחי שימוש
+
+משוואות רגרסיה:
+- מכונה א': ŷ = -16.1143 + 20.77·x
+- מכונה ב': ŷ = -18.87 + 22.25·x
+
+נקודת הצומת: x = 1.862 ק"ג
+
+המלצה:
+• x < 1.86 ק"ג: השתמש מכונה א'
+• x > 1.86 ק"ג: השתמש מכונה ב'
+
+═══════════════════════════════════════════════
+
+תרגיל 5: השוואת אומדים
+───────────────────────────────────────────────
+
+מודל: yᵢ = β·xᵢ + εᵢ (ללא חותך)
+
+השוואת האומדים:
+
+אומד (a): β̂ = Σxᵢ·yᵢ - n·x̄·ȳ / Σxᵢ² - n·x̄²
+- חסר הטיה? ✓ כן (OLS)
+- אומד OLS? ✓ כן
+- שונות: σ²/Sₓₓ (מינימלית)
+- דירוג: ⭐⭐⭐ הטוב ביותר (BLUE)
+
+אומד (b): β̂ = Σxᵢ·yᵢ / Σxᵢ²
+- חסר הטיה? ✓ כן
+- אומד OLS? ✓ כן (עבור מודל ללא חותך)
+- שונות: σ²/Σxᵢ²
+- דירוג: ⭐⭐ טוב כשודאים אין חותך
+
+אומד (c): β̂ = Σyᵢ / Σxᵢ
+- חסר הטיה? ✗ לא
+- אומד OLS? ✗ לא
+- שונות: גבוהה מאוד
+- דירוג: ⭐ לא טוב
+
+מסקנה:
+אומד (a) הוא הטוב ביותר!
+הוא Best Linear Unbiased Estimator (BLUE)
+
+═══════════════════════════════════════════════
+
+תרגיל 6: ניתוח ב-R
+───────────────────────────────────────────────
+
+קובץ נתונים: Exc1.csv (50 תצפיות, 5 משתנים)
+
+תוצאות הניתוח:
+
+1. חציון של X₂ = 525
+
+2. קורלציה בין X₃ ו-Y = -0.172
+   (מתאם שלילי חלש, לא מובהק)
+
+3. עמודה X₅ = X₁ + X₃ (נוספה בהצלחה)
+
+4-5. ויזואליזציות:
+   • BoxPlot של X₅: boxplot_x5.pdf
+   • עקומת צפיפות של X₄: density_x4.pdf
+
+6. מודל רגרסיה: Y ~ X₁
+
+משוואה: Ŷ = 8.7159 + 0.0051·X₁
+
+מקדמים:
+• β̂₀ = 8.7159 (מובהק: p < 0.001)
+• β̂₁ = 0.0051 (לא מובהק: p = 0.409)
+
+סטטיסטיקה:
+• t(β₀) = 11.70
+• t(β₁) = 0.832
+• R² = 0.0134 (1.34%)
+• Adjusted R² = -0.0059
+
+הערכה:
+טיב סגר נמוך מאוד (R² = 1.34%)
+X₁ בלבדו לא הוא מנבא טוב של Y
+צריך משתנים נוספים או טרנספורמציות
+
+עלילת רגרסיה: regression_plot.pdf
+
+═══════════════════════════════════════════════
+
+סיכום כל התרגילים:
+─────────────────
+
+1. קוביות: קשר מובהק (p < 0.001)
+2. אלכוהול: +43.66 ms לכוס, חותך לא מובהק
+3. רגרסיה ללא חותך: ניתוח תיאורטי
+4. מכונות: נקודת הצומת x = 1.86 ק"ג
+5. אומדים: (a) הוא הטוב ביותר (BLUE)
+6. R: R² = 1.34%, צריך משתנים נוספים
+
+כל הפתרונות נבדקו ונמצאו נכונים.
+העבודה הושלמה בהצלחה! ✓</div>
+        <canvas id="draw-canvas" class="draw-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-modal">
+    <h2>ברוכים הבאים ל-DanaYad</h2>
+    <p>התחברו עם Google כדי להתחיל לכתוב</p>
+    <div id="auth-msg"></div>
+    <button class="auth-btn" id="google-btn">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      התחבר עם Google
+    </button>
+    <div class="auth-link" onclick="document.getElementById('auth-overlay').classList.add('hidden')">המשך ללא התחברות</div>
+  </div>
+</div>
+
+<!-- Paywall -->
+<div class="pw-overlay" id="pw-overlay">
+  <div class="pw-modal">
+    <h2>שדרגו לפרימיום</h2>
+    <p>יצרתם 3 קבצי PDF בחינם! שדרגו לפרימיום כדי להמשיך ליצור קבצי PDF ללא הגבלה.</p>
+    <button class="pw-btn" onclick="startStripeCheckout()">שדרג עכשיו - 19.90 ₪/חודש</button>
+    <div class="pw-link" onclick="document.getElementById('pw-overlay').classList.remove('open')">אולי מאוחר יותר</div>
+  </div>
+</div>
+
+<!-- PDF Modal -->
+<div class="pdf-overlay" id="pdf-overlay" onclick="closePdfModal(event)">
+  <div class="pdf-modal" onclick="event.stopPropagation()">
+    <div class="pdf-close" onclick="closePdfModal()">×</div>
+    <h2>📄 שמירה כ-PDF</h2>
+    <p>הקובץ יישמר עם הגופן והעיצוב הנוכחיים</p>
+    <button class="pdf-btn" id="pdf-btn" onclick="exportToPdf()">
+      <span id="pdf-spinner" class="pdf-spinner" style="display:none;"></span>
+      שמור כ-PDF
+    </button>
+  </div>
+</div>
+
+<script>
+// ══ Core Functions ══
+function updateFontSize(val){document.getElementById('output').style.fontSize=val+'px';document.getElementById('font-size-val').textContent=val+'px';}
+function updateLineHeight(val){document.getElementById('output').style.lineHeight=val;document.getElementById('line-height-val').textContent=val;}
+function updateLetterSpacing(val){document.getElementById('output').style.letterSpacing=val+'px';document.getElementById('letter-spacing-val').textContent=val+'px';}
+
+function setBackground(type){
+  const wrap=document.getElementById('output-wrap');
+  wrap.className='output-wrap';
+  if(type==='lined')wrap.classList.add('lined');
+  else if(type==='dotted')wrap.classList.add('dotted');
+  document.querySelectorAll('.bg-btn').forEach(b=>{b.classList.toggle('active',b.textContent.includes(type==='paper'?'נייר':type==='lined'?'משורטט':type==='dotted'?'מנוקד':'חלק'));});
+}
+
+function showSymbolGrid(type){
+  document.querySelectorAll('.sym-grid').forEach(g=>g.classList.add('hidden'));
+  document.getElementById('sym-'+type).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.textContent.includes(type==='math'?'מתמטיקה':type==='arrows'?'חצים':type==='greek'?'יוונית':'שונות')));
+}
+
+function insertSymbol(sym){
+  const ed=document.getElementById('output');
+  const sel=window.getSelection();
+  if(sel.rangeCount){
+    const range=sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(sym));
+    range.collapse(false);
+    ed.focus();
+  }
+  scheduleUpdate();
+}
+
+function toggleBold(){document.execCommand('bold');syncToolbar();}
+function toggleItalic(){document.execCommand('italic');syncToolbar();}
+function toggleUnderline(){document.execCommand('underline');syncToolbar();}
+
+function alignLeft(){document.execCommand('justifyLeft');syncToolbar();}
+function alignCenter(){document.execCommand('justifyCenter');syncToolbar();}
+function alignRight(){document.execCommand('justifyRight');syncToolbar();}
+
+function insertBullet(){document.execCommand('insertUnorderedList');syncToolbar();}
+function insertNumbered(){document.execCommand('insertOrderedList');syncToolbar();}
+
+function syncToolbar(){
+  const cmds=['bold','italic','underline','justifyLeft','justifyCenter','justifyRight','insertUnorderedList','insertOrderedList'];
+  cmds.forEach(cmd=>{document.querySelector(`[onclick*="${cmd}"]`).classList.toggle('active',document.queryCommandState(cmd));});
+}
+
+// ══ Text Eraser ══
+let eraserSize=2; // 1=char, 2=word, 3=line
+
+function toggleTextEraser(){
+  const btn=document.getElementById('btn-text-eraser');
+  const label=document.getElementById('eraser-size-label');
+  if(btn.classList.contains('active')){
+    btn.classList.remove('active');
+    label.style.display='none';
+  } else {
+    btn.classList.add('active');
+    label.style.display='inline';
+    eraserSize=2;
+    label.textContent='מילה';
+  }
+}
+
+function handleKey(e){
+  if(!document.getElementById('btn-text-eraser').classList.contains('active'))return;
+  if(e.key==='Backspace'||e.key==='Delete'){
+    e.preventDefault();
+    eraseAtCursor(eraserSize);
+  }
+}
+
+function eraseAtCursor(size){
+  const ed=document.getElementById('output');
+
+  // Find the text node at cursor position
+  let range;
+  if(document.caretRangeFromPoint){
+    range=document.caretRangeFromPoint(e.clientX,e.clientY);
+  } else if(document.caretPositionFromPoint){
+    const pos=document.caretPositionFromPoint(e.clientX,e.clientY);
+    if(pos){range=document.createRange();range.setStart(pos.offsetNode,pos.offset);range.collapse(true);}
+  }
+  if(!range)return;
+
+  const node=range.startContainer;
+  if(node.nodeType!==3)return; // only text nodes
+  const offset=range.startOffset;
+  const text=node.textContent;
+  if(!text||text.trim()==='')return;
+
+  if(size===1){
+    // Erase single character
+    if(offset<text.length){
+      node.textContent=text.slice(0,offset)+text.slice(offset+1);
+    } else if(text.length>0){
+      node.textContent=text.slice(0,-1);
+    }
+  } else if(size===2){
+    // Erase word at cursor
+    // Find word boundaries around offset
+    let start=offset,end=offset;
+    while(start>0&&!/\s/.test(text[start-1]))start--;
+    while(end<text.length&&!/\s/.test(text[end]))end++;
+    // Also eat trailing space
+    if(end<text.length&&/\s/.test(text[end]))end++;
+    if(start!==end){
+      node.textContent=text.slice(0,start)+text.slice(end);
+    }
+  } else if(size===3){
+    // Erase entire line (parent block element)
+    let block=node.parentNode;
+    while(block&&block!==ed&&!['DIV','P','BR'].includes(block.nodeName)){
+      block=block.parentNode;
+    }
+    if(block&&block!==ed){
+      block.remove();
+    } else {
+      // No block wrapper — erase the entire text node content
+      node.textContent='';
+    }
+  }
+
+  // Clean up empty nodes
+  ed.querySelectorAll('*').forEach(el=>{
+    if(el.textContent.trim()===''&&el!==ed&&el.childNodes.length===0)el.remove();
+  });
+
+  scheduleUpdate();
+}
+
+// ══ Drawing Canvas ══
+let drawMode=false,isDrawing=false,lastX=0,lastY=0;
+let drawColor='#1a1a1a',eraserMode=false;
+
+function toggleDrawMode(){
+  drawMode=!drawMode;
+  const canvas=document.getElementById('draw-canvas');
+  const toolbar=document.getElementById('draw-toolbar');
+  const btn=document.getElementById('btn-draw-mode');
+  canvas.classList.toggle('active',drawMode);
+  toolbar.style.display=drawMode?'flex':'none';
+  btn.classList.toggle('on',drawMode);
+  if(drawMode){
+    resizeCanvas();
+    btn.style.background='var(--accent-bg)';
+    btn.style.borderColor='var(--accent)';
+  } else {
+    btn.style.background='';
+    btn.style.borderColor='';
+  }
+}
+
+function resizeCanvas(){
+  const canvas=document.getElementById('draw-canvas');
+  const wrap=document.getElementById('output-wrap');
+  // preserve existing drawing
+  const tmp=document.createElement('canvas');
+  tmp.width=canvas.width;tmp.height=canvas.height;
+  tmp.getContext('2d').drawImage(canvas,0,0);
+  canvas.width=wrap.offsetWidth;
+  canvas.height=wrap.offsetHeight;
+  canvas.getContext('2d').drawImage(tmp,0,0);
+}
+
+function getPos(e,canvas){
+  const r=canvas.getBoundingClientRect();
+  if(e.touches){
+    return{x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};
+  }
+  return{x:e.clientX-r.left,y:e.clientY-r.top};
+}
+
+function startDraw(e){
+  if(!drawMode)return;
+  e.preventDefault();
+  isDrawing=true;
+  const canvas=document.getElementById('draw-canvas');
+  const pos=getPos(e,canvas);
+  lastX=pos.x;lastY=pos.y;
+}
+
+function draw(e){
+  if(!drawMode||!isDrawing)return;
+  e.preventDefault();
+  const canvas=document.getElementById('draw-canvas');
+  const ctx=canvas.getContext('2d');
+  const pos=getPos(e,canvas);
+  ctx.beginPath();
+  ctx.moveTo(lastX,lastY);
+  ctx.lineTo(pos.x,pos.y);
+  ctx.strokeStyle=eraserMode?'rgba(255,255,255,1)':drawColor;
+  ctx.lineWidth=eraserMode?parseFloat(document.getElementById('draw-size').value)*4:parseFloat(document.getElementById('draw-size').value);
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  if(eraserMode){
+    ctx.globalCompositeOperation='destination-out';
+  } else {
+    ctx.globalCompositeOperation='source-over';
+    // slight opacity for more natural ink feel
+    ctx.globalAlpha=0.88;
+  }
+  ctx.stroke();
+  ctx.globalAlpha=1;
+  ctx.globalCompositeOperation='source-over';
+  lastX=pos.x;lastY=pos.y;
+}
+
+function endDraw(e){isDrawing=false;}
+
+function setDrawColor(c,el){
+  drawColor=c;
+  eraserMode=false;
+  document.querySelectorAll('.draw-color').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('btn-eraser').classList.remove('on');
+}
+
+function toggleEraser(){
+  eraserMode=!eraserMode;
+  document.getElementById('btn-eraser').classList.toggle('on',eraserMode);
+}
+
+function clearCanvas(){
+  if(!confirm('למחוק את כל הציור?'))return;
+  const canvas=document.getElementById('draw-canvas');
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+// Attach canvas events after DOM ready
+document.addEventListener('DOMContentLoaded',()=>{
+  const canvas=document.getElementById('draw-canvas');
+  if(!canvas)return;
+  canvas.addEventListener('mousedown',startDraw);
+  canvas.addEventListener('mousemove',draw);
+  canvas.addEventListener('mouseup',endDraw);
+  canvas.addEventListener('mouseleave',endDraw);
+  canvas.addEventListener('touchstart',startDraw,{passive:false});
+  canvas.addEventListener('touchmove',draw,{passive:false});
+  canvas.addEventListener('touchend',endDraw);
+  window.addEventListener('resize',()=>{if(drawMode)resizeCanvas();});
+});
+
+// ══ Font Library ══
+const FONTS=[
+  // Hebrew handwriting (web-safe or Google Fonts)
+  {name:'Playpen Sans',css:'Playpen Sans Hebrew',google:'Playpen+Sans+Hebrew:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:700},
+  {name:'Secular One',css:'Secular One',google:'Secular+One',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Rubik',css:'Rubik',google:'Rubik:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Heebo',css:'Heebo',google:'Heebo:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Assistant',css:'Assistant',google:'Assistant:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Varela Round',css:'Varela Round',google:'Varela+Round',preview:'שלום Hello',cat:'hebrew',weight:400},
+  // Handwriting (Latin-focused, good fallback for non-Hebrew)
+  {name:'Caveat',css:'Caveat',google:'Caveat:wght@400;700',preview:'Hello אבג',cat:'handwriting',weight:700},
+  {name:'Kalam',css:'Kalam',google:'Kalam:wght@400;700',preview:'Hello אבג',cat:'handwriting',weight:700},
+  {name:'Patrick Hand',css:'Patrick Hand SC',google:'Patrick+Hand+SC',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Indie Flower',css:'Indie Flower',google:'Indie+Flower',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Shadows Into Light',css:'Shadows Into Light',google:'Shadows+Into+Light',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Dancing Script',css:'Dancing Script',google:'Dancing+Script:wght@400;700',preview:'Hello אבג',cat:'handwriting',weight:700},
+  {name:'Architects Daughter',css:'Architects Daughter',google:'Architects+Daughter',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Permanent Marker',css:'Permanent Marker',google:'Permanent+Marker',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Rock Salt',css:'Rock Salt',google:'Rock+Salt',preview:'Hello abc',cat:'handwriting',weight:400},
+  {name:'Just Another Hand',css:'Just Another Hand',google:'Just+Another+Hand',preview:'Hello abc',cat:'handwriting',weight:400},
+  {name:'Reenie Beanie',css:'Reenie Beanie',google:'Reenie+Beanie',preview:'Hello abc',cat:'handwriting',weight:400},
+  {name:'Covered By Grace',css:'Covered By Your Grace',google:'Covered+By+Your+Grace',preview:'Hello abc',cat:'handwriting',weight:400},
+  // Display
+  {name:'Pacifico',css:'Pacifico',google:'Pacifico',preview:'Hello abc',cat:'display',weight:400},
+  {name:'Fredoka One',css:'Fredoka One',google:'Fredoka+One',preview:'Hello אבג',cat:'display',weight:400},
+  {name:'Righteous',css:'Righteous',google:'Righteous',preview:'Hello abc',cat:'display',weight:400},
+  {name:'Amatic SC',css:'Amatic SC',google:'Amatic+SC:wght@400;700',preview:'Hello abc',cat:'display',weight:700},
+  {name:'Comfortaa',css:'Comfortaa',google:'Comfortaa:wght@400;700',preview:'Hello אבג',cat:'display',weight:400},
+];
+
+let currentFont=FONTS[0];
+let loadedFonts=new Set();
+
+function loadGoogleFont(font){
+  if(loadedFonts.has(font.css))return;
+  loadedFonts.add(font.css);
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href=`https://fonts.googleapis.com/css2?family=${font.google}&display=swap`;
+  document.head.appendChild(link);
+}
+
+function applyFont(font){
+  currentFont=font;
+  loadGoogleFont(font);
+  // Update CSS variable
+  document.documentElement.style.setProperty('--font',`'${font.css}','Playpen Sans Hebrew',cursive`);
+  // Update output
+  const out=document.getElementById('output');
+  out.style.fontFamily=`'${font.css}','Playpen Sans Hebrew',cursive`;
+  out.style.fontWeight=font.weight;
+  // Update font preview in toolbar
+  const prev=document.querySelector('.font-preview');
+  if(prev){prev.style.fontFamily=`'${font.css}',cursive`;prev.textContent='אבג abc';}
+  // Mark active card
+  document.querySelectorAll('.font-card').forEach(c=>c.classList.toggle('active',c.dataset.css===font.css));
+  renderOutput();
+}
+
+function filterFonts(cat,btn){
+  document.querySelectorAll('.font-cat').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildFontGrid(cat);
+}
+
+function buildFontGrid(cat='all'){
+  const grid=document.getElementById('font-grid');
+  grid.innerHTML='';
+  const filtered=cat==='all'?FONTS:FONTS.filter(f=>f.cat===cat);
+  filtered.forEach(font=>{
+    const card=document.createElement('div');
+    card.className='font-card'+(font.css===currentFont.css?' active':'');
+    card.dataset.css=font.css;
+    // Load font for preview
+    loadGoogleFont(font);
+    card.innerHTML=`
+      <span class="font-card-name">${font.name}</span>
+      <span class="font-card-preview" style="font-family:'${font.css}',cursive;font-weight:${font.weight};">${font.preview}</span>
+    `;
+    card.onclick=()=>applyFont(font);
+    grid.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════
+// CONFIGURATION – Replace with your own keys
+// ════════════════════════════════════════════
+const SUPABASE_URL='https://tcxplzwmgmqayufccnzn.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHBsendtZ21xYXl1ZmNjbnpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Nzk3MzYsImV4cCI6MjA5MTE1NTczNn0.8CVdyt9FAaN2Wtue_1llhvwThWRqPYJ2FbEO_nZ1osg';
+const STRIPE_PK='pk_test_YOUR_STRIPE_PUBLISHABLE_KEY';
+const STRIPE_PRICE_ID='price_YOUR_PRICE_ID'; // 19.90 ILS/month
+const ADMIN_EMAIL='itamar4747@gmail.com';
+
+// ══ Supabase Init ══
+const _sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+let _user=null;
+let _profile=null;
+
+// ══ Auth UI ══
+function showAuthMsg(text,type){
+  const el=document.getElementById('auth-msg');
+  el.textContent=text;
+  el.className='auth-msg '+type;
+}
+
+async function handleGoogleLogin(){
+  const btn=document.getElementById('google-btn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="auth-spinner"></span> מתחבר...';
+
+  const {error}=await _sb.auth.signInWithOAuth({
+    provider:'google',
+    options:{
+      redirectTo:window.location.origin+window.location.pathname
+    }
+  });
+
+  if(error){
+    btn.disabled=false;
+    btn.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> התחבר עם Google';
+    showAuthMsg('שגיאה בהתחברות: '+error.message,'error');
+  }
+  // Page will redirect to Google — no further action needed
+}
+
+async function handleLogout(){
+  await _sb.auth.signOut();
+  _user=null;_profile=null;
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('user-badge').style.display='none';
+  document.getElementById('logout-btn').style.display='none';
+}
+
+// ══ Admin & Subscription ══
+function dyIsAdmin(){
+  if(_profile&&_profile.role==='admin')return true;
+  if(_user&&_user.email&&_user.email.toLowerCase()===ADMIN_EMAIL)return true;
+  return false;
+}
+
+async function loadProfile(user){
+  const {data}=await _sb.from('profiles').select('*').eq('id',user.id).single();
+  if(data){_profile=data;}
+  else{
+    // Profile may not exist yet (trigger delay) – create with admin check
+    const role=user.email.toLowerCase()===ADMIN_EMAIL?'admin':'user';
+    _profile={id:user.id,email:user.email,role,subscription_status:'inactive'};
+  }
+}
+
+function hasActiveSubscription(){
+  if(dyIsAdmin())return true;
+  if(!_profile)return false;
+  if(_profile.subscription_status==='active')return true;
+  // Check URL for successful Stripe return
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('payment')==='success')return true;
+  return false;
+}
+
+// ══ DanaYad Export Gate (3 free exports via localStorage) ══
+var DY_FREE=3;
+var DY_KEY='dy_exports_used';
+
+function getExportsUsed(){
+  return parseInt(localStorage.getItem(DY_KEY)||'0');
+}
+
+function checkAndExport(){
+  // Admin — always free
+  if(dyIsAdmin()){openPdfModal();return;}
+  // Paid subscriber — always free
+  if(hasActiveSubscription()){openPdfModal();return;}
+  // Free tier — allow 3 exports
+  var used=getExportsUsed();
+  if(used<DY_FREE){
+    localStorage.setItem(DY_KEY,used+1);
+    openPdfModal();
+    return;
+  }
+  // Exhausted free exports — show paywall
+  document.getElementById('pw-overlay').classList.add('open');
+}
+
+// ══ Stripe Checkout ══
+async function startStripeCheckout(){
+  if(!_user){showAuthMsg('יש להתחבר תחילה','error');return;}
+  try{
+    // Option A: Use Supabase Edge Function (recommended for production)
+    // const {data}=await _sb.functions.invoke('create-checkout-session',{
+    //   body:{userId:_user.id,email:_user.email,priceId:STRIPE_PRICE_ID}
+    // });
+    // window.location.href=data.url;
+
+    // Option B: Direct Stripe Payment Link (simpler setup)
+    // Replace with your Stripe Payment Link URL
+    const paymentUrl='https://buy.stripe.com/YOUR_PAYMENT_LINK'
+      +'?client_reference_id='+encodeURIComponent(_user.id)
+      +'?prefilled_email='+encodeURIComponent(_user.email);
+    window.open(paymentUrl,'_blank');
+  }catch(err){
+    alert('שגיאה בפתיחת דף תשלום: '+err.message);
+  }
+}
+
+// ══ App Init (after auth) ══
+async function initApp(user){
+  _user=user;
+  try{await loadProfile(user);}catch(e){/* profile load failed, continue anyway */}
+
+  // Hide auth overlay
+  document.getElementById('auth-overlay').classList.add('hidden');
+
+  // Show user info in header
+  const badge=document.getElementById('user-badge');
+  badge.style.display='';
+  badge.textContent=dyIsAdmin()?'👑 '+user.email:user.email;
+  if(dyIsAdmin())badge.style.background='#fef3c7';
+  document.getElementById('logout-btn').style.display='';
+
+  // Never show paywall on login — let user work freely.
+  // Paywall only appears when free exports are exhausted (in checkAndExport).
+  document.getElementById('pw-overlay').classList.remove('open');
+}
+
+// ══ Session Check on Load (non-blocking, 3s timeout) ══
+async function checkSession(){
+  try{
+    // Race between session check and 3-second timeout
+    const result=await Promise.race([
+      _sb.auth.getSession(),
+      new Promise(resolve=>setTimeout(()=>resolve({data:{session:null},timedOut:true}),3000))
+    ]);
+
+    if(result.timedOut){
+      // Supabase took too long — app is already visible, just show auth button in header
+      console.warn('Supabase session check timed out — app loaded without auth');
+      return;
+    }
+
+    const session=result.data?.session;
+    if(session&&session.user){
+      await initApp(session.user);
+    }else{
+      // No session — show auth overlay
+      document.getElementById('auth-overlay').classList.remove('hidden');
+    }
+  }catch(err){
+    console.warn('Auth check failed:',err);
+    // App is already visible, user can still use it
+  }
+}
+
+// Listen for auth changes (e.g., Google OAuth redirect back)
+_sb.auth.onAuthStateChange(async(event,session)=>{
+  if(event==='SIGNED_IN'&&session?.user){
+    await initApp(session.user);
+  }
+  if(event==='SIGNED_OUT'){
+    document.getElementById('auth-overlay').classList.remove('hidden');
+  }
+});
+
+// ══ Font detection + session (app loads immediately) ══
+window.onload=()=>{
+  // Start auth check in background — doesn't block app
+  checkSession();
+
+  // Font detection
+  const badge=document.getElementById('font-badge');
+  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+  ctx.font='20px monospace';const w1=ctx.measureText('א').width;
+  ctx.font="20px 'Dana Yad AlefAlefAlef'";const w2=ctx.measureText('א').width;
+  ctx.font='20px monospace';const w3=ctx.measureText('a').width;
+  ctx.font="20px 'Playpen Sans Hebrew'";const w4=ctx.measureText('a').width;
+  const danaOk=w1!==w2,caveatOk=w3!==w4;
+  if(danaOk&&caveatOk){badge.textContent='✓ דנה יד + Playpen';}
+  else if(danaOk){badge.textContent='✓ דנה יד | Playpen נטען';}
+  else{badge.textContent='⚠ דנה יד לא מותקן';badge.classList.add('missing');}
+
+  // Build font grid on load
+  buildFontGrid();
+
+  // Add page number to first page
+  const wrap=document.getElementById('output-wrap');
+  if(!wrap.querySelector('.page-number')){
+    const pn=document.createElement('div');
+    pn.className='page-number';
+    pn.textContent='1';
+    wrap.appendChild(pn);
+  }
+
+  // Focus the output for immediate typing
+  document.getElementById('output').focus();
+};
+
+// ══ PDF Export ══
+function openPdfModal(){
+  document.getElementById('pdf-overlay').classList.add('open');
+}
+
+function closePdfModal(){
+  document.getElementById('pdf-overlay').classList.remove('open');
+}
+
+function exportToPdf(){
+  const btn=document.getElementById('pdf-btn');
+  const spinner=document.getElementById('pdf-spinner');
+  btn.disabled=true;
+  spinner.style.display='inline-block';
+  btn.innerHTML='<span id="pdf-spinner" class="pdf-spinner"></span> מייצא...';
+
+  const wrap=document.getElementById('output-wrap');
+  const canvas=document.getElementById('draw-canvas');
+
+  html2canvas(wrap,{
+    scale:2,
+    useCORS:true,
+    allowTaint:false,
+    backgroundColor:'#FFFFFF',
+    width:wrap.offsetWidth,
+    height:wrap.offsetHeight
+  }).then(canvasImg=>{
+    const imgData=canvasImg.toDataURL('image/png');
+    const pdf=new jspdf.jsPDF({
+      orientation:'portrait',
+      unit:'mm',
+      format:'a4'
+    });
+
+    const imgWidth=210; // A4 width in mm
+    const pageHeight=297; // A4 height in mm
+    const imgHeight=canvasImg.height*imgWidth/canvasImg.width;
+    let heightLeft=imgHeight;
+    let position=0;
+
+    pdf.addImage(imgData,'PNG',0,position,imgWidth,imgHeight);
+    heightLeft-=pageHeight;
+
+    while(heightLeft>=0){
+      position=heightLeft-imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData,'PNG',0,position,imgWidth,imgHeight);
+      heightLeft-=pageHeight;
+    }
+
+    // Add drawing if exists
+    if(canvas&&canvas.width>0&&canvas.height>0){
+      const drawData=canvas.toDataURL('image/png');
+      pdf.addPage();
+      pdf.addImage(drawData,'PNG',0,0,imgWidth,canvas.height*imgWidth/canvas.width);
+    }
+
+    pdf.save('DanaYad_Export.pdf');
+
+    btn.disabled=false;
+    spinner.style.display='none';
+    btn.innerHTML='שמור כ-PDF';
+    closePdfModal();
+  }).catch(err=>{
+    console.error('PDF export failed:',err);
+    alert('שגיאה בייצוא PDF: '+err.message);
+    btn.disabled=false;
+    spinner.style.display='none';
+    btn.innerHTML='שמור כ-PDF';
+  });
+}
+
+// ══ Schedule Update (debounced) ══
+let updateTimer=null;
+function scheduleUpdate(){
+  if(updateTimer)clearTimeout(updateTimer);
+  updateTimer=setTimeout(renderOutput,100);
+}
+
+// ══ Render Output (for special effects) ══
+function renderOutput(){
+  // Placeholder for future handwriting effects
+  // For now, just ensure content is visible
+  const out=document.getElementById('output');
+  if(out.textContent.trim()===''){
+    out.innerHTML='<br>';
+  }
+}
+</script>
+</body>
+</html>

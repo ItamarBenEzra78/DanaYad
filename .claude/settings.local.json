@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npx netlify:*)",
+      "Bash(netlify login:*)",
+      "Bash(netlify deploy:*)",
+      "Bash(Rscript sections_1_to_4.R)",
+      "Bash(where.exe Rscript)",
+      "Read(//c/Program Files/R/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" sections_1_to_4.R)",
+      "Bash(/c/Program Files/R/R-4.5.3/bin/Rscript.exe:*)",
+      "Bash([ -f \"/c/Users/User/Documents/CognitiveProject/plots/$f\" ])"
+    ]
+  }
+}

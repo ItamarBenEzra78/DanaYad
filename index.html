@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DanaYad</title>
+<link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/*
+  HandwritingCombo = Dana Yad (Hebrew) + Playpen Sans Hebrew (Latin/Numbers)
+  unicode-range forces each font to handle only its script.
+  This way Hebrew and English look stylistically matched.
+*/
+/*
+  Strategy:
+  1. Playpen Sans Hebrew covers EVERYTHING as base (Hebrew + Latin + Greek)
+  2. Dana Yad overrides Hebrew ONLY if installed locally
+  This ensures visual consistency when Dana Yad is absent.
+*/
+
+/* Dana Yad override for Hebrew – only if locally installed */
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: local('Dana Yad AlefAlefAlef'), local('DanaYadAlefAlefAlef'), local('Dana Yad');
+  font-weight: 300 700;
+  unicode-range:
+    U+0590-U+05FF,
+    U+FB1D-U+FB4E,
+    U+20AA;
+}
+/* Playpen Sans Hebrew for ALL other ranges (Latin, Greek, punctuation, digits) */
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: url('https://fonts.gstatic.com/s/playpen+sans+hebrew/v1/regular.woff2') format('woff2');
+  font-weight: 300;
+  unicode-range: U+0000-U+058F, U+0600-U+FFFF;
+}
+
+:root {
+  --font: 'HandwritingCombo', 'Playpen Sans Hebrew', 'Dana Yad AlefAlefAlef', cursive;
+  --bg: #F8F6F2;
+  --surface: #EDE9E3;
+  --surface2: #F3F0EB;
+  --border: #E0D9CF;
+  --text: #3D2E1E;
+  --muted: #7B6B52;
+  --accent: #C9A96E;
+  --accent-bg: rgba(201,169,110,0.12);
+  --accent-hover: #A0896A;
+  --paper: #FFFFFF;
+  --toolbar: #EDE9E3;
+  --radius: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── Header ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:50;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:0.5px;}
+.badge{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(201,169,110,0.15);color:var(--accent);border:1px solid rgba(201,169,110,0.35);white-space:nowrap;transition:all .2s;}
+.badge.missing{background:rgba(180,120,40,0.1);color:#B07828;border-color:rgba(180,120,40,0.3);}
+
+/* ── Layout ── */
+.main{display:grid;grid-template-columns:260px 1fr;flex:1;min-height:0;}
+
+/* ── Sidebar / Settings Panel ── */
+.sidebar{background:var(--surface);border-left:1px solid var(--border);padding:14px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;border-radius:0 12px 12px 0;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.sidebar::-webkit-scrollbar{width:5px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+.sidebar > div{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;transition:border-color .2s;}
+.sidebar > div:hover{border-color:var(--accent);}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.ctrl-row label{font-size:11px;min-width:80px;color:var(--muted);}
+.ctrl-row input[type=range]{flex:1;accent-color:var(--accent);height:4px;border-radius:2px;background:var(--border);-webkit-appearance:none;appearance:none;}
+.ctrl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer;box-shadow:0 1px 4px rgba(139,109,66,0.25);}
+.ctrl-row .val{font-size:10px;color:var(--accent-hover);min-width:36px;text-align:center;background:#fff;padding:3px 6px;border-radius:6px;border:1px solid var(--border);font-weight:600;}
+.bg-row{display:flex;gap:4px;}
+.bg-btn{font-size:11px;padding:5px 10px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.bg-btn:hover{border-color:var(--accent);color:var(--text);}
+.bg-btn.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);}
+.tabs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px;}
+.tab{font-size:11px;padding:3px 8px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.tab:hover{border-color:var(--accent);color:var(--text);}
+.tab.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);font-weight:700;}
+.sym-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(28px,1fr));gap:3px;}
+.sym-grid.hidden{display:none;}
+.sym-btn{height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text);font-family:var(--font);transition:all .15s;}
+.sym-btn:hover{border-color:var(--accent);background:var(--accent-bg);}
+
+/* ── Content Area ── */
+.content{display:flex;flex-direction:column;padding:12px;gap:8px;overflow:hidden;background:var(--bg);}
+
+/* ── Format Toolbar ── */
+.fmt-bar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;background:var(--toolbar);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;}
+.fmt-sep{width:1px;height:22px;background:var(--border);margin:0 6px;flex-shrink:0;}
+.fb{height:28px;min-width:28px;padding:0 6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius);border:1px solid transparent;background:transparent;color:var(--muted);font-size:12px;font-family:-apple-system,Arial,sans-serif;transition:all .15s;white-space:nowrap;position:relative;}
+.fb:hover{background:var(--accent-bg);color:var(--text);border-color:var(--accent);}
+.fb.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.fb[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:10px;padding:4px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:99;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.csw{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid var(--border);flex-shrink:0;transition:all .15s;}
+.csw:hover,.csw.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(201,169,110,0.25);}
+
+/* Font preview badge in toolbar */
+.font-preview{font-family:var(--font);font-size:14px;padding:0 8px;color:var(--muted);letter-spacing:1px;}
+
+/* Editor — hidden */
+.editor-wrap{display:none;}
+#editor{display:none;}
+
+/* ── Action Buttons ── */
+.toolbar2{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.btn{font-size:12px;padding:6px 14px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:#fff;color:var(--text);transition:all .15s;font-weight:500;}
+.btn:hover{background:var(--accent-bg);border-color:var(--accent);}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn.primary:hover{background:var(--accent-hover);}
+
+/* ── Output – A4 Pages ── */
+.output-area{flex:1;overflow-y:auto;background:#DDD8D0;padding:36px 0;display:flex;flex-direction:column;align-items:center;gap:40px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.output-area::-webkit-scrollbar{width:6px;}
+.output-area::-webkit-scrollbar-thumb{background:#c4bbae;border-radius:8px;}
+.output-wrap{
+  width:210mm;min-height:297mm;background:var(--paper);
+  border:1px solid #E0D9CF;border-radius:2px;
+  padding:20mm 25mm;
+  position:relative;
+  box-shadow:0 2px 12px rgba(139,109,66,0.10);
+  flex-shrink:0;
+  transition:box-shadow .3s;
+}
+.output-wrap:hover{box-shadow:0 4px 20px rgba(139,109,66,0.15);}
+.page-number{
+  position:absolute;bottom:8mm;left:50%;transform:translateX(-50%);
+  font-size:11px;color:#c4b89a;font-family:-apple-system,sans-serif;
+  pointer-events:none;
+}
+
+/* ── Drawing ── */
+.draw-canvas{position:absolute;inset:0;cursor:crosshair;z-index:10;display:none;touch-action:none;}
+.draw-canvas.active{display:block;}
+.draw-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--toolbar);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;}
+.draw-color{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid var(--border);flex-shrink:0;transition:all .15s;}
+.draw-color.on,.draw-color:hover{border-color:var(--accent);box-shadow:0 0 0 2px rgba(201,169,110,0.25);}
+.draw-size-val{font-size:10px;color:var(--accent-hover);min-width:24px;background:#fff;padding:3px 6px;border-radius:6px;border:1px solid var(--border);text-align:center;}
+
+/* ── Font Picker ── */
+.font-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.font-card{
+  cursor:pointer;border-radius:var(--radius);border:1.5px solid var(--border);
+  background:#fff;padding:8px 10px;
+  transition:all .2s;display:flex;flex-direction:column;gap:3px;
+}
+.font-card:hover{border-color:var(--accent);background:var(--accent-bg);}
+.font-card.active{border-color:var(--accent);background:var(--accent-bg);}
+.font-card-name{font-size:9px;color:var(--muted);font-family:-apple-system,sans-serif;text-transform:uppercase;letter-spacing:.05em;}
+.font-card-preview{font-size:16px;color:var(--text);line-height:1.3;direction:rtl;}
+.font-cat-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+.font-cat{font-size:10px;padding:3px 9px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;}
+.font-cat:hover{border-color:var(--accent);color:var(--text);}
+.font-cat.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* ── Page backgrounds ── */
+.output-wrap.lined{background-image:repeating-linear-gradient(transparent,transparent calc(var(--lh-px,56px) - 1px),#ddd8c8 calc(var(--lh-px,56px) - 1px),#ddd8c8 var(--lh-px,56px));background-position:0 20mm;}
+.output-wrap.grid-bg{background-image:linear-gradient(#e8e4d8 1px,transparent 1px),linear-gradient(90deg,#e8e4d8 1px,transparent 1px);background-size:28px 28px;background-position:0 20mm;}
+
+/* ── Output Text ── */
+#output{
+  font-family: var(--font);
+  font-size:28px;line-height:2;letter-spacing:0.5px;
+  color:var(--text);direction:rtl;word-break:break-word;
+  font-weight: 300;
+  -webkit-text-stroke: 0px currentColor;
+  opacity: 0.88;
+  filter: contrast(1.08) brightness(0.96);
+  outline:none;
+  min-height:100%;
+  cursor:text;
+  white-space:pre-wrap;
+}
+#output:empty::before{content:'לחץ כאן והתחל לכתוב...';color:#c4b89a;font-family:-apple-system,Arial,sans-serif;font-size:16px;pointer-events:none;}
+.marker-hl{background:rgba(255,235,59,0.45);padding:1px 0;border-radius:2px;}
+.w{display:inline-block;}
+.w.fmt-bold{-webkit-text-stroke:0.55px currentColor;}
+.w.fmt-italic{font-style:italic;}
+.w.fmt-under{text-decoration:underline;}
+.w.fmt-strike{text-decoration:line-through;}
+.w.fmt-hl{background:#fff176;padding:0 1px;border-radius:2px;}
+
+/* ── Responsive ── */
+@media(max-width:700px){
+  .main{grid-template-columns:1fr;}
+  .sidebar{border-left:none;border-top:1px solid var(--border);order:2;border-radius:0;}
+  .content{order:1;}
+  .output-wrap{width:100%;min-height:400px;padding:15px 20px;}
+  .output-area{padding:15px 0;gap:24px;}
+}
+
+/* ── PDF Modal ── */
+.pdf-overlay{display:none;position:fixed;inset:0;background:rgba(61,46,30,0.45);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;}
+.pdf-overlay.open{display:flex;}
+.pdf-modal{
+  background:#fff;border:1px solid var(--border);border-radius:14px;padding:28px;
+  width:400px;max-width:90vw;display:flex;flex-direction:column;gap:16px;
+  box-shadow:0 12px 48px rgba(139,109,66,0.18);
+}
+.pdf-modal h2{font-size:17px;font-weight:700;color:var(--text);}
+.pdf-opt-row{display:flex;flex-direction:column;gap:6px;}
+.pdf-opt-row label{font-size:12px;color:var(--muted);}
+.pdf-opt-row select,.pdf-opt-row input[type=range]{width:100%;accent-color:var(--accent);}
+.pdf-opt-row select{
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:8px 12px;font-size:13px;background:#fff;color:var(--text);
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237B6B52' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:12px center;
+}
+.pdf-btn-row{display:flex;gap:8px;margin-top:4px;}
+.pdf-preview-wrap{
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--paper);padding:16px;min-height:80px;
+  font-family:var(--font);font-size:18px;direction:rtl;
+  line-height:2;color:var(--text);max-height:160px;overflow:auto;
+}
+.pdf-preview-wrap.lined{background-image:repeating-linear-gradient(transparent,transparent calc(var(--prev-lh,36px) - 1px),#ddd8c8 calc(var(--prev-lh,36px) - 1px),#ddd8c8 var(--prev-lh,36px));}
+.pdf-preview-wrap.grid-bg{background-image:linear-gradient(#e8e4d8 1px,transparent 1px),linear-gradient(90deg,#e8e4d8 1px,transparent 1px);background-size:24px 24px;}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;display:none;}
+.progress-bar-inner{height:100%;background:var(--accent);width:0;transition:width .3s;border-radius:2px;}
+
+/* ── Auth Gate ── */
+.auth-overlay{display:flex;position:fixed;inset:0;background:var(--bg);z-index:10000;align-items:center;justify-content:center;font-family:-apple-system,'Segoe UI',Arial,sans-serif;}
+.auth-overlay.hidden{display:none;}
+.auth-box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:400px;max-width:92vw;box-shadow:0 12px 48px rgba(139,109,66,0.12);}
+.auth-logo{text-align:center;font-family:'Playfair Display',Georgia,serif;font-size:32px;font-weight:800;color:var(--accent);margin-bottom:4px;}
+.auth-sub{text-align:center;font-size:14px;color:var(--muted);margin-bottom:28px;}
+.google-btn{width:100%;padding:14px;border-radius:var(--radius);background:#fff;color:var(--text);border:1.5px solid var(--border);font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s;font-family:-apple-system,'Segoe UI',sans-serif;}
+.google-btn:hover{border-color:var(--accent);box-shadow:0 2px 12px rgba(201,169,110,0.2);}
+.google-btn:active{transform:scale(0.98);}
+.google-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.auth-msg{font-size:13px;text-align:center;padding:10px;border-radius:var(--radius);display:none;}
+.auth-msg.error{display:block;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.auth-msg.success{display:block;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.auth-spinner{display:inline-block;width:18px;height:18px;border:2.5px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Paywall ── */
+.pw-overlay{display:none;position:fixed;inset:0;background:rgba(61,46,30,0.5);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;}
+.pw-overlay.open{display:flex;}
+.pw-box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:36px 30px;width:380px;max-width:92vw;text-align:center;box-shadow:0 12px 48px rgba(139,109,66,0.15);}
+.pw-icon{font-size:40px;margin-bottom:14px;}
+.pw-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.pw-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;}
+.pw-price{font-size:42px;font-weight:900;color:var(--accent);letter-spacing:-1px;}
+.pw-period{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.pw-cta{width:100%;padding:14px;border-radius:var(--radius);background:var(--accent);color:white;border:none;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;transition:all .2s;}
+.pw-cta:hover{background:var(--accent-hover);}
+.pw-cancel{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none;text-decoration:underline;transition:color .15s;}
+.pw-cancel:hover{color:var(--text);}
+@keyframes wave{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+
+/* ── Text Eraser ── */
+.eraser-toolbar{
+  display:none;align-items:center;gap:6px;flex-wrap:wrap;
+  background:#FFF5F5;border:1px solid #FECACA;
+  border-radius:var(--radius);padding:5px 10px;
+}
+.eraser-toolbar.active{display:flex;}
+.eraser-cursor-char{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='16' viewBox='0 0 12 16'%3E%3Crect x='2' y='0' width='8' height='14' rx='2' fill='%23f87171' opacity='0.7'/%3E%3C/svg%3E") 6 14, crosshair;}
+.eraser-cursor-word{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16' viewBox='0 0 28 16'%3E%3Crect x='1' y='0' width='26' height='14' rx='3' fill='%23f87171' opacity='0.6'/%3E%3C/svg%3E") 14 14, crosshair;}
+.eraser-cursor-line{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='16' viewBox='0 0 48 16'%3E%3Crect x='0' y='0' width='48' height='14' rx='3' fill='%23f87171' opacity='0.5'/%3E%3C/svg%3E") 24 14, crosshair;}
+</style>
+
+<!-- SVG filters for handwriting imperfection -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden;">
+  <defs>
+    <filter id="hw-imperfect" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+      <!-- Turbulence noise field – seed changes on each render -->
+      <feTurbulence id="hw-turb"
+        type="turbulence"
+        baseFrequency="0.022 0.03"
+        numOctaves="4"
+        seed="42"
+        stitchTiles="stitch"
+        result="noise"/>
+      <!-- Displace pixels based on noise – scale=0 means off -->
+      <feDisplacementMap id="hw-disp"
+        in="SourceGraphic" in2="noise"
+        scale="0"
+        xChannelSelector="R" yChannelSelector="G"
+        result="warped"/>
+      <!-- Very subtle ink bleed -->
+      <feGaussianBlur id="hw-blur" in="warped" stdDeviation="0" result="soft"/>
+      <feBlend in="soft" in2="warped" mode="multiply"/>
+    </filter>
+  </defs>
+</svg>
+
+</head>
+<body>
+
+<!-- Auth Gate (no loading screen – app loads immediately) -->
+<div class="auth-overlay hidden" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">✍️ DanaYad</div>
+    <div class="auth-sub">ממיר כתב יד חכם לסטודנטים</div>
+    <div id="auth-msg" class="auth-msg"></div>
+    <button class="google-btn" id="google-btn" onclick="handleGoogleLogin()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      התחבר עם Google
+    </button>
+    <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:16px;">בלחיצה אתה מסכים לתנאי השימוש</p>
+  </div>
+</div>
+
+<!-- Paywall Modal -->
+<div class="pw-overlay" id="pw-overlay">
+  <div class="pw-box">
+    <div class="pw-icon">🔒</div>
+    <div class="pw-title">נגמרו הייצואים החינמיים</div>
+    <div class="pw-sub">שדרג ל-DanaYad Pro וקבל ייצואים ללא הגבלה, PDF איכות גבוהה, וכל הפיצ'רים.</div>
+    <div class="pw-price">₪19.90</div>
+    <div class="pw-period">לחודש · ביטול בכל עת</div>
+    <button class="pw-cta" onclick="startStripeCheckout()">שדרג עכשיו ←</button><br>
+    <button class="pw-cancel" onclick="document.getElementById('pw-overlay').classList.remove('open')">אולי מאוחר יותר</button>
+    <button class="pw-cancel" onclick="handleLogout()" style="margin-top:8px;">התנתק</button>
+  </div>
+</div>
+
+<header>
+  <h1>✍️ ממיר דנה יד</h1>
+  <div style="display:flex;gap:9px;align-items:center;">
+    <span style="font-size:11px;color:var(--muted)">סמן טקסט ✦ לחץ עיצוב</span>
+    <span class="badge" id="font-badge">בודק פונטים...</span>
+    <span class="badge" id="user-badge" style="display:none;"></span>
+    <button class="btn" id="logout-btn" onclick="handleLogout()" style="font-size:11px;padding:4px 10px;display:none;">התנתק</button>
+  </div>
+</header>
+
+<div class="main">
+<aside class="sidebar">
+  <div>
+    <div class="sec-title">עיצוב</div>
+    <div class="ctrl-row"><label>גודל גופן</label><input type="range" min="14" max="72" value="28" step="1" id="ctrl-size"><span class="val" id="val-size">28px</span></div>
+    <div class="ctrl-row"><label>מרווח שורות</label><input type="range" min="1" max="4" value="2" step="0.1" id="ctrl-lh"><span class="val" id="val-lh">2.0</span></div>
+    <div class="ctrl-row"><label>צפיפות אותיות</label><input type="range" min="-5" max="15" value="0" step="0.5" id="ctrl-ls"><span class="val" id="val-ls">0px</span></div>
+    <div class="ctrl-row"><label>דהייה</label><input type="range" min="10" max="100" value="100" step="1" id="ctrl-op"><span class="val" id="val-op">100%</span></div>
+    <div class="ctrl-row"><label>אנושיות</label><input type="range" min="0" max="10" value="4" step="0.5" id="ctrl-human"><span class="val" id="val-human">4.0</span></div>
+    <div class="ctrl-row"><label>פגמי אותיות</label><input type="range" min="0" max="10" value="0" step="0.5" id="ctrl-imperfect"><span class="val" id="val-imperfect">0</span></div>
+    <div class="ctrl-row"><label>דיו מטושטשת</label><input type="range" min="0" max="1.5" value="0" step="0.05" id="ctrl-blur"><span class="val" id="val-blur">0</span></div>
+    <div class="ctrl-row"><label>סטיית שורה</label><input type="range" min="0" max="10" value="0" step="0.5" id="ctrl-drift"><span class="val" id="val-drift">0</span></div>
+    <div class="ctrl-row"><label>עובי עיפרון</label><input type="range" min="0" max="1" value="0.3" step="0.05" id="ctrl-pencil"><span class="val" id="val-pencil">0.3</span></div>
+  </div>
+  <div>
+    <div class="sec-title">רקע</div>
+    <div class="bg-row">
+      <button class="bg-btn active" onclick="setBg('plain',this)">רגיל</button>
+      <button class="bg-btn" onclick="setBg('lined',this)">שורות</button>
+      <button class="bg-btn" onclick="setBg('grid',this)">ריבועים</button>
+    </div>
+  </div>
+  <div>
+    <div class="sec-title">פונט</div>
+    <div class="font-cat-tabs" id="font-cat-tabs">
+      <button class="font-cat active" onclick="filterFonts('all',this)">הכל</button>
+      <button class="font-cat" onclick="filterFonts('hebrew',this)">עברית</button>
+      <button class="font-cat" onclick="filterFonts('handwriting',this)">כתב יד</button>
+      <button class="font-cat" onclick="filterFonts('display',this)">דיספליי</button>
+    </div>
+    <div class="font-grid" id="font-grid"></div>
+  </div>
+
+  <div>
+    <div class="sec-title">סמלים</div>
+    <div class="tabs" id="sym-tabs"></div>
+    <div id="sym-panels"></div>
+  </div>
+</aside>
+
+<div class="content">
+  <!-- FORMAT TOOLBAR -->
+  <div class="fmt-bar">
+    <!-- Font preview -->
+    <span class="font-preview" title="עברית = דנה יד | אנגלית/מספרים = Playpen Sans Hebrew">אבג abc</span>
+    <div class="fmt-sep"></div>
+    <button class="fb" style="font-weight:800;font-size:13px;" data-tip="הדגשה (Ctrl+B)" id="btn-bold" onclick="fmt('bold')"><b>B</b></button>
+    <button class="fb" style="font-style:italic;font-size:13px;" data-tip="נטייה (Ctrl+I)" id="btn-italic" onclick="fmt('italic')"><i>I</i></button>
+    <button class="fb" style="text-decoration:underline;" data-tip="קו תחתון (Ctrl+U)" id="btn-underline" onclick="fmt('underline')">U</button>
+    <button class="fb" style="text-decoration:line-through;" data-tip="קו חוצה" id="btn-strikeThrough" onclick="fmt('strikeThrough')">S</button>
+    <button class="fb" data-tip="סימון צהוב" onclick="fmtHL()" style="background:#fff176;color:#5a4a00;font-weight:700;font-size:11px;border:1px solid #e6c800;">HL</button>
+    <button class="fb" id="btn-marker" data-tip="מרקר (Ctrl+M)" onclick="toggleMarker()" style="background:rgba(255,235,59,0.45);color:#8d6e00;font-weight:700;font-size:11px;border:1px solid #e6c800;">🖍</button>
+
+    <div class="fmt-sep"></div>
+    <button class="fb" data-tip="ימין" onclick="setAlign('right')">⬛→</button>
+    <button class="fb" data-tip="מרכז" onclick="setAlign('center')">≡≡</button>
+    <button class="fb" data-tip="שמאל" onclick="setAlign('left')">←⬛</button>
+
+    <div class="fmt-sep"></div>
+    <span style="font-size:11px;color:var(--muted);padding:0 2px;">צבע:</span>
+    <span class="csw on" style="background:#1a1a1a" onclick="setColor('#1a1a1a',this)"></span>
+    <span class="csw" style="background:#1a56c4" onclick="setColor('#1a56c4',this)"></span>
+    <span class="csw" style="background:#b91c1c" onclick="setColor('#b91c1c',this)"></span>
+    <span class="csw" style="background:#166534" onclick="setColor('#166534',this)"></span>
+    <span class="csw" style="background:#92400e" onclick="setColor('#92400e',this)"></span>
+    <span class="csw" style="background:#6b21a8" onclick="setColor('#6b21a8',this)"></span>
+
+    <div class="fmt-sep"></div>
+    <button class="fb" data-tip="קטן" onclick="adjSize(-2)">A−</button>
+    <button class="fb" data-tip="גדול" onclick="adjSize(2)">A+</button>
+    <div class="fmt-sep"></div>
+    <button class="fb" data-tip="הסר עיצוב" onclick="fmt('removeFormat')" style="font-size:11px;padding:0 6px;">✕</button>
+    <div class="fmt-sep"></div>
+    <button class="fb" data-tip="הטה סלקציה" onclick="applySelectionEffect('skew')" style="font-style:italic;">⟨I⟩</button>
+    <button class="fb" data-tip="גל בסלקציה" onclick="applySelectionEffect('wave')">〜</button>
+    <button class="fb" data-tip="הגדל סלקציה" onclick="applySelectionEffect('big')">↑A</button>
+    <button class="fb" data-tip="הקטן סלקציה" onclick="applySelectionEffect('small')">↓a</button>
+    <button class="fb" data-tip="עט כהה לסלקציה" onclick="applySelectionEffect('bold-ink')" style="font-weight:900;">●</button>
+    <div class="fmt-sep"></div>
+    <button class="fb" id="btn-draw-mode" data-tip="מצב ציור על הדף" onclick="toggleDrawMode()" style="font-size:13px;">✏️</button>
+    <div class="fmt-sep"></div>
+    <button class="fb" id="btn-text-eraser" data-tip="מחק טקסט" onclick="toggleTextEraser()" style="font-size:13px;color:#dc2626;">🧽</button>
+  </div>
+
+  <div class="toolbar2">
+    <button class="btn primary" onclick="copyText()">העתק טקסט</button>
+    <button class="btn" style="background:#e53935;color:#fff;border-color:#e53935;" onclick="checkAndExport()">📄 שמור PDF</button>
+    <button class="btn" onclick="clearAll()">נקה</button>
+    <button class="btn" onclick="reseed()">🎲 ערבב כתב</button>
+    <span style="font-size:11px;color:var(--muted);margin-right:auto;">$\sum W_j$ → ∑Wⱼ אוטומטי</span>
+  </div>
+
+  <!-- Draw toolbar – shown when draw mode is on -->
+  <div class="draw-toolbar" id="draw-toolbar" style="display:none;">
+    <span style="font-size:11px;color:var(--muted);">✏️ מצב ציור:</span>
+    <span class="draw-color on"  style="background:#1a1a1a;" onclick="setDrawColor('#1a1a1a',this)"></span>
+    <span class="draw-color" style="background:#e53935;" onclick="setDrawColor('#e53935',this)"></span>
+    <span class="draw-color" style="background:#1a56c4;" onclick="setDrawColor('#1a56c4',this)"></span>
+    <span class="draw-color" style="background:#166534;" onclick="setDrawColor('#166534',this)"></span>
+    <span class="draw-color" style="background:#ff8f00;" onclick="setDrawColor('#ff8f00',this)"></span>
+    <div class="fmt-sep"></div>
+    <span style="font-size:11px;color:var(--muted);">עובי:</span>
+    <input type="range" min="1" max="12" value="3" step="0.5" id="draw-size"
+           style="width:70px;accent-color:var(--accent);"
+           oninput="document.getElementById('draw-size-val').textContent=this.value">
+    <span class="draw-size-val" id="draw-size-val">3</span>
+    <div class="fmt-sep"></div>
+    <!-- Eraser -->
+    <button class="fb" id="btn-eraser" onclick="toggleEraser()" data-tip="מחק">⬜</button>
+    <button class="fb" onclick="clearCanvas()" data-tip="נקה ציור" style="font-size:11px;padding:0 6px;">🗑</button>
+  </div>
+
+  <!-- Text eraser toolbar -->
+  <div class="eraser-toolbar" id="eraser-toolbar">
+    <span style="font-size:11px;color:#dc2626;font-weight:600;">🧽 מחק טקסט:</span>
+    <span style="font-size:11px;color:var(--muted);">גודל:</span>
+    <input type="range" min="1" max="3" value="2" step="1" id="eraser-size"
+           style="width:80px;accent-color:#dc2626;"
+           oninput="updateEraserSize()">
+    <span style="font-size:11px;color:var(--muted);" id="eraser-size-label">מילה</span>
+    <div class="fmt-sep"></div>
+    <button class="fb" onclick="toggleTextEraser()" style="font-size:11px;color:#dc2626;">✕ סגור</button>
+  </div>
+
+  <div class="output-area" id="output-area">
+    <div class="output-wrap" id="output-wrap">
+      <div id="output" contenteditable="true"
+           onkeydown="handleKey(event)"
+           onmouseup="syncToolbar()"
+           onkeyup="syncToolbar()"></div>
+      <canvas id="draw-canvas" class="draw-canvas"></canvas>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PDF Modal -->
+<div class="pdf-overlay" id="pdf-overlay" onclick="closePdfModal(event)">
+  <div class="pdf-modal" onclick="event.stopPropagation()">
+    <h2>📄 שמירה כ-PDF</h2>
+
+    <div class="pdf-opt-row">
+      <label>גודל עמוד</label>
+      <select id="pdf-size">
+        <option value="a4">A4 (210×297mm)</option>
+        <option value="a3">A3 (297×420mm)</option>
+        <option value="letter">Letter (215×279mm)</option>
+      </select>
+    </div>
+
+    <div class="pdf-opt-row">
+      <label>רקע</label>
+      <select id="pdf-bg">
+        <option value="plain">חלק</option>
+        <option value="lined">שורות</option>
+        <option value="grid">משבצות</option>
+      </select>
+    </div>
+
+    <div class="pdf-opt-row">
+      <label>שוליים (mm): <span id="pdf-margin-val">20</span></label>
+      <input type="range" id="pdf-margin" min="5" max="40" value="20" step="5"
+             oninput="document.getElementById('pdf-margin-val').textContent=this.value">
+    </div>
+
+    <div class="pdf-opt-row">
+      <label>תצוגה מקדימה</label>
+      <div class="pdf-preview-wrap" id="pdf-preview"></div>
+    </div>
+
+    <div class="progress-bar" id="pdf-progress">
+      <div class="progress-bar-inner" id="pdf-progress-inner"></div>
+    </div>
+
+    <div class="pdf-btn-row">
+      <button class="btn primary" style="flex:1;" onclick="exportPDF()" id="pdf-export-btn">
+        ⬇ הורד PDF
+      </button>
+      <button class="btn" onclick="closePdfModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ LaTeX ══
+const SUB_D='₀₁₂₃₄₅₆₇₈₉',SUB_L={a:'ₐ',e:'ₑ',i:'ᵢ',j:'ⱼ',m:'ₘ',n:'ₙ',o:'ₒ',p:'ₚ',r:'ᵣ',s:'ₛ',t:'ₜ',u:'ᵤ',v:'ᵥ',x:'ₓ'},SUP_D='⁰¹²³⁴⁵⁶⁷⁸⁹',SUP_L={'+':'⁺','-':'⁻','n':'ⁿ','i':'ⁱ'};
+const toSub=s=>[...s].map(c=>/\d/.test(c)?SUB_D[+c]:(SUB_L[c]||c)).join('');
+const toSup=s=>[...s].map(c=>/\d/.test(c)?SUP_D[+c]:(SUP_L[c]||c)).join('');
+const CMD={'\\sum':'∑','\\prod':'∏','\\int':'∫','\\infty':'∞','\\partial':'∂','\\nabla':'∇','\\alpha':'α','\\beta':'β','\\gamma':'γ','\\delta':'δ','\\epsilon':'ε','\\varepsilon':'ε','\\theta':'θ','\\lambda':'λ','\\mu':'μ','\\nu':'ν','\\xi':'ξ','\\pi':'π','\\rho':'ρ','\\sigma':'σ','\\tau':'τ','\\phi':'φ','\\chi':'χ','\\psi':'ψ','\\omega':'ω','\\Gamma':'Γ','\\Delta':'Δ','\\Theta':'Θ','\\Lambda':'Λ','\\Pi':'Π','\\Sigma':'Σ','\\Phi':'Φ','\\Psi':'Ψ','\\Omega':'Ω','\\leftarrow':'←','\\rightarrow':'→','\\Leftarrow':'⇐','\\Rightarrow':'⇒','\\leftrightarrow':'↔','\\Leftrightarrow':'⇔','\\uparrow':'↑','\\downarrow':'↓','\\to':'→','\\gets':'←','\\mapsto':'↦','\\cdot':'·','\\times':'×','\\div':'÷','\\pm':'±','\\leq':'≤','\\geq':'≥','\\neq':'≠','\\approx':'≈','\\equiv':'≡','\\subset':'⊂','\\subseteq':'⊆','\\cup':'∪','\\cap':'∩','\\emptyset':'∅','\\in':'∈','\\notin':'∉','\\forall':'∀','\\exists':'∃','\\neg':'¬','\\land':'∧','\\lor':'∨','\\therefore':'∴','\\because':'∵','\\sqrt':'√','\\ldots':'…','\\max':'max','\\min':'min','\\lim':'lim','\\log':'log','\\sin':'sin','\\cos':'cos','\\tan':'tan'};
+function parseMath(e){let s=e.trim();s=s.replace(/\\text\{([^}]*)\}/g,'$1');s=s.replace(/\\mathrm\{([^}]*)\}/g,'$1');s=s.replace(/\\mathbb\{([^}]*)\}/g,(_,g)=>({N:'ℕ',Z:'ℤ',Q:'ℚ',R:'ℝ',C:'ℂ'}[g]||g));s=s.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,'($1)/($2)');s=s.replace(/\^\{([^}]*)\}/g,(_,g)=>toSup(g));s=s.replace(/_\{([^}]*)\}/g,(_,g)=>toSub(g));s=s.replace(/\^([a-zA-Z0-9])/g,(_,g)=>toSup(g));s=s.replace(/_([a-zA-Z0-9])/g,(_,g)=>toSub(g));s=s.replace(/\\[a-zA-Z]+/g,m=>CMD[m]!==undefined?CMD[m]:m.slice(1));s=s.replace(/\{|\}/g,'');return s.replace(/\s+/g,' ').trim();}
+function latexify(t){return t.replace(/\$([^$\n]+)\$/g,(_,i)=>parseMath(i));}
+
+// ══ Read page content ══
+function readContent(){
+  const ed=document.getElementById('output');
+  const paras=[];
+  function getFmt(node){
+    let bold=false,italic=false,under=false,strike=false,hl=false;
+    let effect='',fontSize='',extraStyle='';
+    let n=node;
+    while(n&&n!==ed){
+      const tag=n.nodeName,s=n.style||{};
+      if(tag==='B'||tag==='STRONG')bold=true;
+      if(tag==='I'||tag==='EM')italic=true;
+      if(tag==='U')under=true;
+      if(tag==='S'||tag==='STRIKE'||tag==='DEL')strike=true;
+      if(s.backgroundColor&&s.backgroundColor!=='rgba(0, 0, 0, 0)'&&s.backgroundColor!=='transparent')hl=true;
+      if(s.fontWeight&&(s.fontWeight==='bold'||parseInt(s.fontWeight)>=600))bold=true;
+      if(s.fontStyle==='italic')italic=true;
+      if((s.textDecoration||'').includes('underline'))under=true;
+      if((s.textDecoration||'').includes('line-through'))strike=true;
+      // Custom effects from applySelectionEffect
+      if(n.dataset&&n.dataset.effect) effect=n.dataset.effect;
+      if(s.fontSize) fontSize=s.fontSize;
+      if(s.webkitTextStroke||s.textStroke) extraStyle+='-webkit-text-stroke:'+( s.webkitTextStroke||s.textStroke)+';';
+      n=n.parentNode;
+    }
+    return{bold,italic,under,strike,hl,effect,fontSize,extraStyle};}
+  function walk(node,runs){
+    if(node.nodeType===3){if(node.textContent)runs.push({text:latexify(node.textContent),...getFmt(node.parentNode)});}
+    else if(node.nodeType===1){
+      if(node.nodeName==='BR'){runs.push({text:'\n',bold:false,italic:false,under:false,strike:false,hl:false});return;}
+      for(const c of node.childNodes)walk(c,runs);
+    }
+  }
+  const kids=Array.from(ed.childNodes);
+  const hasBlocks=kids.some(c=>c.nodeType===1&&['P','DIV'].includes(c.nodeName));
+  if(!hasBlocks){
+    const runs=[];kids.forEach(c=>walk(c,runs));
+    let cur=[];runs.forEach(r=>{if(r.text==='\n'){paras.push(cur);cur=[];}else cur.push(r);});paras.push(cur);
+  } else {
+    kids.forEach(c=>{const runs=[];walk(c,runs);let cur=[];runs.forEach(r=>{if(r.text==='\n'){paras.push(cur);cur=[];}else cur.push(r);});if(cur.length)paras.push(cur);});
+  }
+  return paras;
+}
+
+// ══ Human renderer ══
+let humanLevel=4,seed=42,currentAlign='right',currentColor='#1a1a1a';
+let imperfectLevel=0, blurLevel=0, turbSeed=42, lineDrift=0;
+
+function applyFilter(){
+  const out=document.getElementById('output');
+  if(imperfectLevel===0 && blurLevel===0){
+    out.style.filter='none';
+    return;
+  }
+  // Update SVG filter params
+  const turb=document.getElementById('hw-turb');
+  const disp=document.getElementById('hw-disp');
+  const blur=document.getElementById('hw-blur');
+  if(turb){
+    turb.setAttribute('seed', turbSeed);
+    // Scale baseFrequency with imperfect level
+    const bf = (0.015 + imperfectLevel*0.004).toFixed(4);
+    turb.setAttribute('baseFrequency', bf+' '+(parseFloat(bf)*1.3).toFixed(4));
+  }
+  if(disp) disp.setAttribute('scale', (imperfectLevel*1.8).toFixed(1));
+  if(blur) blur.setAttribute('stdDeviation', blurLevel.toFixed(2));
+  out.style.filter='url(#hw-imperfect)';
+}
+function rand(n){const x=Math.sin(n*9301+49297)*233280;return x-Math.floor(x);}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function renderOutput(){
+  const out=document.getElementById('output');
+  const paras=readContent();
+  const all=paras.map(p=>p.map(r=>r.text).join('')).join('').trim();
+  if(!all){out.innerHTML='';out.classList.add('empty');return;}
+  out.classList.remove('empty');
+  const h=humanLevel;
+  let html='',idx=0;
+
+  paras.forEach((para,pi)=>{
+    const isEmpty=!para.length||!para.map(r=>r.text).join('').trim();
+    if(isEmpty){html+='<div style="line-height:inherit;">&nbsp;</div>';return;}
+
+    // Per-line drift: each line gets its own skew + vertical offset
+    const ls=seed+pi*500;
+    // skewX: leans the whole line (+ = leans right, - = leans left)
+    const lineSkew = (rand(ls+10)-.5) * lineDrift * 1.5;
+    // translateY drift: each line drifts slightly up/down
+    const lineTY   = (rand(ls+20)-.5) * lineDrift * 2.5;
+    // slight overall rotation of the whole line
+    const lineRot  = (rand(ls+30)-.5) * lineDrift * 0.5;
+
+    const lineStyle = lineDrift>0
+      ? `transform:skewX(${lineSkew.toFixed(2)}deg) translateY(${lineTY.toFixed(2)}px) rotate(${lineRot.toFixed(2)}deg);display:block;transform-origin:right center;`
+      : 'display:block;';
+
+    html+=`<span style="${lineStyle}">`;
+
+    para.forEach(run=>{
+      const tokens=run.text.split(/(\s+)/);
+      tokens.forEach(tok=>{
+        if(/^\s+$/.test(tok)||tok===''){html+=tok;return;}
+        const s=seed+idx++;
+        const rot=(rand(s)-.5)*h*0.5;
+        const ty=(rand(s+1)-.5)*h*0.7;
+        const sx=1+(rand(s+2)-.5)*h*0.012;
+        let cls='w';
+        if(run.bold)cls+=' fmt-bold';
+        if(run.italic)cls+=' fmt-italic';
+        if(run.under)cls+=' fmt-under';
+        if(run.strike)cls+=' fmt-strike';
+        if(run.hl)cls+=' fmt-hl';
+        // Build extra inline styles from selection effects
+        let extra='';
+        if(run.fontSize) extra+='font-size:'+run.fontSize+';';
+        if(run.extraStyle) extra+=run.extraStyle;
+        if(run.effect==='skew')   extra+='transform:rotate('+rot.toFixed(2)+'deg) translateY('+ty.toFixed(2)+'px) scaleX('+sx.toFixed(3)+') skewX(-6deg);';
+        else if(run.effect==='wave')  extra+='transform:rotate('+rot.toFixed(2)+'deg) translateY('+(ty-2).toFixed(2)+'px) scaleX('+sx.toFixed(3)+');';
+        else if(run.effect==='big')   extra+='font-size:1.2em;transform:rotate('+rot.toFixed(2)+'deg) translateY('+ty.toFixed(2)+'px) scaleX('+sx.toFixed(3)+');';
+        else if(run.effect==='small') extra+='font-size:0.8em;transform:rotate('+rot.toFixed(2)+'deg) translateY('+ty.toFixed(2)+'px) scaleX('+sx.toFixed(3)+');';
+        else if(run.effect==='bold-ink') extra+='-webkit-text-stroke:0.6px currentColor;transform:rotate('+rot.toFixed(2)+'deg) translateY('+ty.toFixed(2)+'px) scaleX('+sx.toFixed(3)+');';
+        else extra+='transform:rotate('+rot.toFixed(2)+'deg) translateY('+ty.toFixed(2)+'px) scaleX('+sx.toFixed(3)+');';
+        html+=`<span class="${cls}" style="${extra}">${esc(tok)}</span>`;
+      });
+    });
+
+    html+='</span>';
+  });
+
+  out.innerHTML=html;
+  out.style.color=currentColor;
+  out.style.textAlign=currentAlign;
+}
+
+function reseed(){
+  seed=Math.floor(Math.random()*9999);
+  turbSeed=Math.floor(Math.random()*999);
+  applyFilter();
+}
+
+// ══ Formatting (directly on #output) ══
+function fmt(cmd){document.getElementById('output').focus();document.execCommand(cmd,false,null);syncToolbar();}
+function fmtHL(){document.getElementById('output').focus();const v=document.queryCommandValue('backColor');if(v==='rgb(255, 241, 118)')document.execCommand('backColor',false,'transparent');else document.execCommand('backColor',false,'#fff176');syncToolbar();}
+function syncToolbar(){['bold','italic','underline','strikeThrough'].forEach(c=>{const b=document.getElementById('btn-'+c);if(b)b.classList.toggle('on',document.queryCommandState(c));});}
+function setAlign(a){currentAlign=a;document.getElementById('output').style.textAlign=a;}
+function setColor(c,el){currentColor=c;document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));el.classList.add('on');document.execCommand('foreColor',false,c);}
+function adjSize(d){const sl=document.getElementById('ctrl-size');sl.value=Math.max(14,Math.min(72,parseInt(sl.value)+d));document.getElementById('val-size').textContent=sl.value+'px';document.getElementById('output').style.fontSize=sl.value+'px';updateLined();}
+function handleKey(e){if(e.ctrlKey||e.metaKey){if(e.key==='b'){e.preventDefault();fmt('bold');}else if(e.key==='i'){e.preventDefault();fmt('italic');}else if(e.key==='u'){e.preventDefault();fmt('underline');}else if(e.key==='m'||e.key==='M'){e.preventDefault();toggleMarker();}}}
+function clearAll(){document.getElementById('output').innerHTML='';document.getElementById('output').focus();}
+function copyText(){const out=document.getElementById('output');const t=out.innerText;navigator.clipboard.writeText(t).then(()=>{const b=event.target;b.textContent='הועתק!';setTimeout(()=>b.textContent='העתק טקסט',1500);});}
+
+// ══ Marker Tool ══
+let markerActive = false;
+function toggleMarker(){
+  const btn = document.getElementById('btn-marker');
+  markerActive = !markerActive;
+  btn.classList.toggle('on', markerActive);
+  if(markerActive){
+    document.getElementById('output').focus();
+    // Apply marker to current selection if any
+    applyMarkerToSelection();
+  }
+}
+function applyMarkerToSelection(){
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed || !markerActive) return;
+  document.execCommand('backColor', false, 'rgba(255,235,59,0.45)');
+}
+// Auto-apply marker on mouseup when marker is active
+document.addEventListener('mouseup', ()=>{
+  if(markerActive) applyMarkerToSelection();
+});
+
+// ══ Controls ══
+function wire(id,vid,suf,dec,fn){const el=document.getElementById(id),v=document.getElementById(vid);el.oninput=()=>{v.textContent=parseFloat(el.value).toFixed(dec)+suf;fn(el.value);};}
+wire('ctrl-size','val-size','px',0,v=>{document.getElementById('output').style.fontSize=v+'px';updateLined();});
+wire('ctrl-lh','val-lh','',1,v=>{document.getElementById('output').style.lineHeight=v;updateLined();});
+wire('ctrl-ls','val-ls','px',1,v=>{document.getElementById('output').style.letterSpacing=v+'px';});
+wire('ctrl-op','val-op','%',0,v=>{document.getElementById('output').style.opacity=v/100;});
+wire('ctrl-human','val-human','',1,v=>{humanLevel=parseFloat(v);});
+wire('ctrl-imperfect','val-imperfect','',1,v=>{imperfectLevel=parseFloat(v);turbSeed=Math.floor(Math.random()*999);applyFilter();});
+wire('ctrl-blur','val-blur','',2,v=>{blurLevel=parseFloat(v);applyFilter();});
+wire('ctrl-drift','val-drift','',1,v=>{lineDrift=parseFloat(v);});
+wire('ctrl-pencil','val-pencil','',2,v=>{
+  const out=document.getElementById('output');
+  const val=parseFloat(v);
+  // val 0 = normal, val 1 = maximum pencil feel
+  out.style.opacity=1-(val*0.18);
+  out.style.filter=val>0?`contrast(${1+val*0.12}) brightness(${1-val*0.06})`:'none';
+  // letter spacing opens up slightly for pencil feel
+  const baseLS=parseFloat(document.getElementById('ctrl-ls').value)||0;
+  out.style.letterSpacing=(baseLS + val*1.2).toFixed(2)+'px';
+});
+function updateLined(){
+  const sz=parseFloat(document.getElementById('ctrl-size').value),lh=parseFloat(document.getElementById('ctrl-lh').value);
+  // Set on all .output-wrap pages
+  document.querySelectorAll('.output-wrap').forEach(w=>w.style.setProperty('--lh-px',Math.round(sz*lh)+'px'));
+}
+
+// ══ Symbols ══
+const SYMS={'יוונית':[['α'],['β'],['γ'],['δ'],['ε'],['θ'],['λ'],['μ'],['ν'],['π'],['ρ'],['σ'],['τ'],['φ'],['ψ'],['ω'],['Γ'],['Δ'],['Λ'],['Π'],['Σ'],['Ω']],'חשבון':[['±'],['×'],['÷'],['≠'],['≈'],['≤'],['≥'],['√'],['∞'],['∂'],['∫'],['∑'],['ℝ'],['ℤ'],['ℕ'],['ℂ']],'חצים':[['→'],['←'],['↑'],['↓'],['↔'],['⇒'],['⇐'],['⇔'],['↦'],['∴'],['∵']],'לוגיקה':[['∈'],['∉'],['⊂'],['⊆'],['∪'],['∩'],['∅'],['∀'],['∃'],['¬'],['∧'],['∨'],['⊕']],'A–Z':'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('').map(c=>[c])};
+const tabsEl=document.getElementById('sym-tabs'),panelsEl=document.getElementById('sym-panels');
+let first=true;
+Object.entries(SYMS).forEach(([name,items])=>{
+  const tab=document.createElement('button');tab.className='tab'+(first?' active':'');tab.textContent=name;
+  tab.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.sym-grid').forEach(p=>p.classList.add('hidden'));tab.classList.add('active');document.getElementById('sp-'+name).classList.remove('hidden');};
+  tabsEl.appendChild(tab);
+  const grid=document.createElement('div');grid.className='sym-grid'+(first?'':' hidden');grid.id='sp-'+name;
+  items.forEach(([sym])=>{const btn=document.createElement('button');btn.className='sym-btn';btn.textContent=sym;btn.onclick=()=>{document.getElementById('output').focus();document.execCommand('insertText',false,sym);};grid.appendChild(btn);});
+  panelsEl.appendChild(grid);first=false;
+});
+
+// ══ Background ══
+function setBg(type,btn){const w=document.getElementById('output-wrap');w.classList.remove('lined','grid-bg');if(type==='lined')w.classList.add('lined');if(type==='grid')w.classList.add('grid-bg');document.querySelectorAll('.bg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');updateLined();}
+
+// ══ PDF Export ══
+function openPdfModal(){
+  const overlay=document.getElementById('pdf-overlay');
+  overlay.classList.add('open');
+  updatePdfPreview();
+}
+
+function closePdfModal(e){
+  if(!e||e.target===document.getElementById('pdf-overlay'))
+    document.getElementById('pdf-overlay').classList.remove('open');
+}
+
+function updatePdfPreview(){
+  const prev=document.getElementById('pdf-preview');
+  const out=document.getElementById('output');
+  const bg=document.getElementById('pdf-bg').value;
+  prev.className='pdf-preview-wrap';
+  if(bg==='lined')prev.classList.add('lined');
+  if(bg==='grid')prev.classList.add('grid-bg');
+  prev.style.fontFamily=getComputedStyle(out).fontFamily;
+  prev.style.fontSize='18px';
+  prev.innerHTML=out.innerHTML||'<span style="color:#bbb;font-family:sans-serif;font-size:13px;">הטקסט יופיע כאן...</span>';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const bgSel=document.getElementById('pdf-bg');
+  if(bgSel)bgSel.addEventListener('change',updatePdfPreview);
+});
+
+async function exportPDF(){
+  const btn=document.getElementById('pdf-export-btn');
+  const prog=document.getElementById('pdf-progress');
+  const progInner=document.getElementById('pdf-progress-inner');
+  const out=document.getElementById('output');
+  const outWrap=document.getElementById('output-wrap');
+
+  if(!out.innerHTML||out.classList.contains('empty')){
+    alert('אין טקסט לייצוא');return;
+  }
+
+  btn.textContent='⏳ מכין...';
+  btn.disabled=true;
+  prog.style.display='block';
+  progInner.style.width='15%';
+
+  const {jsPDF}=window.jspdf;
+  const sizeMap={a4:[210,297],a3:[297,420],letter:[215.9,279.4]};
+  const pdfSize=document.getElementById('pdf-size').value;
+  const [pw,ph]=sizeMap[pdfSize];
+  const margin=parseInt(document.getElementById('pdf-margin').value);
+  const bgType=document.getElementById('pdf-bg').value;
+
+  // The output-wrap is already styled as A4 (210mm wide, 20mm padding).
+  // Strategy: capture the output-wrap directly — it's WYSIWYG.
+  // For multi-page: expand it fully, capture one big canvas, then slice into pages.
+
+  // Save originals
+  const origMinH = outWrap.style.minHeight;
+  const origH = outWrap.style.height;
+  const areaEl = document.getElementById('output-area');
+  const origAreaH = areaEl.style.maxHeight;
+  const origAreaOF = areaEl.style.overflow;
+
+  // Expand to full content height for capture
+  outWrap.style.minHeight = 'auto';
+  outWrap.style.height = 'auto';
+  areaEl.style.maxHeight = 'none';
+  areaEl.style.overflow = 'visible';
+
+  // Force the wrap to exact A4 width in px for consistent capture
+  const a4WPx = outWrap.offsetWidth; // already 210mm via CSS
+
+  await new Promise(r=>setTimeout(r,80));
+  progInner.style.width='30%';
+
+  try {
+    // Capture the entire output-wrap (may be taller than one page)
+    const canvas = await html2canvas(outWrap, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#fffef9',
+      logging: false,
+      width: outWrap.scrollWidth,
+      height: outWrap.scrollHeight,
+    });
+
+    progInner.style.width='60%';
+
+    // Calculate page dimensions in canvas pixels
+    const canvasPageW = canvas.width;
+    // A4 aspect ratio: height = width * (ph/pw)
+    const canvasPageH = Math.round(canvas.width * (ph / pw));
+    const totalPages = Math.max(1, Math.ceil(canvas.height / canvasPageH));
+
+    const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:pdfSize});
+
+    for(let page = 0; page < totalPages; page++){
+      if(page > 0) pdf.addPage();
+      progInner.style.width = (60 + 35 * (page / totalPages)).toFixed(0) + '%';
+
+      // Create a single-page canvas
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = canvasPageW;
+      pageCanvas.height = canvasPageH;
+      const pCtx = pageCanvas.getContext('2d');
+
+      // Fill background
+      pCtx.fillStyle = '#fffef9';
+      pCtx.fillRect(0, 0, canvasPageW, canvasPageH);
+
+      // Draw background pattern (lined/grid) if needed
+      const scale = 2; // matches html2canvas scale
+      const mPx = Math.round(margin * 3.7795 * scale);
+
+      if(bgType === 'lined'){
+        const fontSize = parseFloat(getComputedStyle(out).fontSize || '28');
+        const lhVal = parseFloat(getComputedStyle(out).lineHeight);
+        const lhRatio = lhVal > 4 ? lhVal / fontSize : (parseFloat(document.getElementById('ctrl-lh').value) || 2);
+        const lineH = Math.round(fontSize * lhRatio * scale);
+        pCtx.strokeStyle = '#c4bcac';
+        pCtx.lineWidth = 1;
+        for(let y = mPx + lineH; y < canvasPageH - mPx; y += lineH){
+          pCtx.beginPath(); pCtx.moveTo(mPx, Math.round(y)); pCtx.lineTo(canvasPageW - mPx, Math.round(y)); pCtx.stroke();
+        }
+        // Red margin line (RTL – right side)
+        pCtx.strokeStyle = 'rgba(200,70,70,0.35)';
+        pCtx.lineWidth = 2;
+        pCtx.beginPath(); pCtx.moveTo(canvasPageW - mPx, mPx); pCtx.lineTo(canvasPageW - mPx, canvasPageH - mPx); pCtx.stroke();
+      } else if(bgType === 'grid'){
+        const step = 28 * scale;
+        pCtx.strokeStyle = '#d8d0c0';
+        pCtx.lineWidth = 1;
+        for(let x = mPx; x <= canvasPageW - mPx; x += step){ pCtx.beginPath(); pCtx.moveTo(x, mPx); pCtx.lineTo(x, canvasPageH - mPx); pCtx.stroke(); }
+        for(let y = mPx; y <= canvasPageH - mPx; y += step){ pCtx.beginPath(); pCtx.moveTo(mPx, y); pCtx.lineTo(canvasPageW - mPx, y); pCtx.stroke(); }
+      }
+
+      // Draw the slice of the captured content onto this page
+      const srcY = page * canvasPageH;
+      const srcH = Math.min(canvasPageH, canvas.height - srcY);
+      if(srcH > 0){
+        pCtx.drawImage(canvas, 0, srcY, canvasPageW, srcH, 0, 0, canvasPageW, srcH);
+      }
+
+      const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pw, ph);
+    }
+
+    progInner.style.width = '100%';
+    pdf.save('כתב-יד.pdf');
+  } catch(err){
+    alert('שגיאה בייצוא: ' + err.message);
+  } finally {
+    // Restore original styles
+    outWrap.style.minHeight = origMinH;
+    outWrap.style.height = origH;
+    areaEl.style.maxHeight = origAreaH;
+    areaEl.style.overflow = origAreaOF;
+    btn.textContent = '⬇ הורד PDF';
+    btn.disabled = false;
+    setTimeout(() => { prog.style.display = 'none'; progInner.style.width = '0'; }, 1000);
+  }
+}
+
+
+// ══ Per-selection effects ══
+function applySelectionEffect(type){
+  const ed = document.getElementById('output');
+  ed.focus();
+  const sel = window.getSelection();
+  if(!sel||sel.rangeCount===0||sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  let style = '';
+  switch(type){
+    case 'skew':      style='display:inline-block;transform:skewX(-6deg);'; break;
+    case 'wave':      style='display:inline-block;position:relative;top:-2px;'; break;
+    case 'big':       style='font-size:1.2em;'; break;
+    case 'small':     style='font-size:0.8em;vertical-align:middle;'; break;
+    case 'bold-ink':  style='-webkit-text-stroke:0.6px currentColor;'; break;
+  }
+  const span = document.createElement('span');
+  span.style.cssText = style;
+  span.dataset.effect = type;
+  try { range.surroundContents(span); }
+  catch(e){ const frag=range.extractContents(); span.appendChild(frag); range.insertNode(span); }
+  scheduleUpdate();
+}
+
+// ══ Text Eraser ══
+let textEraserMode = false;
+let eraserSize = 2; // 1=char, 2=word, 3=line
+let textEraserDragging = false;
+
+function toggleTextEraser(){
+  textEraserMode = !textEraserMode;
+  const btn = document.getElementById('btn-text-eraser');
+  const toolbar = document.getElementById('eraser-toolbar');
+  const out = document.getElementById('output');
+  btn.classList.toggle('on', textEraserMode);
+  toolbar.classList.toggle('active', textEraserMode);
+
+  if(textEraserMode){
+    if(drawMode) toggleDrawMode();
+    updateEraserCursor();
+    out.contentEditable = 'false';
+    out.addEventListener('mousedown', eraserMouseDown);
+    out.addEventListener('mousemove', eraserMouseMove);
+    out.addEventListener('mouseup', eraserMouseUp);
+    out.addEventListener('mouseleave', eraserMouseUp);
+  } else {
+    out.contentEditable = 'true';
+    out.classList.remove('eraser-cursor-char','eraser-cursor-word','eraser-cursor-line');
+    out.removeEventListener('mousedown', eraserMouseDown);
+    out.removeEventListener('mousemove', eraserMouseMove);
+    out.removeEventListener('mouseup', eraserMouseUp);
+    out.removeEventListener('mouseleave', eraserMouseUp);
+  }
+}
+
+function updateEraserSize(){
+  eraserSize = parseInt(document.getElementById('eraser-size').value);
+  const labels = {1:'אות', 2:'מילה', 3:'שורה'};
+  document.getElementById('eraser-size-label').textContent = labels[eraserSize];
+  updateEraserCursor();
+}
+
+function updateEraserCursor(){
+  const out = document.getElementById('output');
+  out.classList.remove('eraser-cursor-char','eraser-cursor-word','eraser-cursor-line');
+  if(!textEraserMode) return;
+  const cls = {1:'eraser-cursor-char', 2:'eraser-cursor-word', 3:'eraser-cursor-line'};
+  out.classList.add(cls[eraserSize]);
+}
+
+function eraserMouseDown(e){
+  if(!textEraserMode) return;
+  e.preventDefault();
+  textEraserDragging = true;
+  eraseAtPoint(e);
+}
+
+function eraserMouseMove(e){
+  if(!textEraserMode || !textEraserDragging) return;
+  e.preventDefault();
+  eraseAtPoint(e);
+}
+
+function eraserMouseUp(e){
+  textEraserDragging = false;
+}
+
+function eraseAtPoint(e){
+  const ed = document.getElementById('output');
+
+  // Find the text node at cursor position
+  let range;
+  if(document.caretRangeFromPoint){
+    range = document.caretRangeFromPoint(e.clientX, e.clientY);
+  } else if(document.caretPositionFromPoint){
+    const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+    if(pos){ range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); range.collapse(true); }
+  }
+  if(!range) return;
+
+  const node = range.startContainer;
+  if(node.nodeType !== 3) return; // only text nodes
+  const offset = range.startOffset;
+  const text = node.textContent;
+  if(!text || text.trim() === '') return;
+
+  if(eraserSize === 1){
+    // Erase single character
+    if(offset < text.length){
+      node.textContent = text.slice(0, offset) + text.slice(offset + 1);
+    } else if(text.length > 0){
+      node.textContent = text.slice(0, -1);
+    }
+  } else if(eraserSize === 2){
+    // Erase word at cursor
+    // Find word boundaries around offset
+    let start = offset, end = offset;
+    while(start > 0 && !/\s/.test(text[start-1])) start--;
+    while(end < text.length && !/\s/.test(text[end])) end++;
+    // Also eat trailing space
+    if(end < text.length && /\s/.test(text[end])) end++;
+    if(start !== end){
+      node.textContent = text.slice(0, start) + text.slice(end);
+    }
+  } else if(eraserSize === 3){
+    // Erase entire line (parent block element)
+    let block = node.parentNode;
+    while(block && block !== ed && !['DIV','P','BR'].includes(block.nodeName)){
+      block = block.parentNode;
+    }
+    if(block && block !== ed){
+      block.remove();
+    } else {
+      // No block wrapper — erase the entire text node content
+      node.textContent = '';
+    }
+  }
+
+  // Clean up empty nodes
+  ed.querySelectorAll('*').forEach(el => {
+    if(el.textContent.trim() === '' && el !== ed && el.childNodes.length === 0) el.remove();
+  });
+
+  scheduleUpdate();
+}
+
+// ══ Drawing Canvas ══
+let drawMode=false, isDrawing=false, lastX=0, lastY=0;
+let drawColor='#1a1a1a', eraserMode=false;
+
+function toggleDrawMode(){
+  drawMode=!drawMode;
+  const canvas=document.getElementById('draw-canvas');
+  const toolbar=document.getElementById('draw-toolbar');
+  const btn=document.getElementById('btn-draw-mode');
+  canvas.classList.toggle('active',drawMode);
+  toolbar.style.display=drawMode?'flex':'none';
+  btn.classList.toggle('on',drawMode);
+  if(drawMode){
+    resizeCanvas();
+    btn.style.background='var(--accent-bg)';
+    btn.style.borderColor='var(--accent)';
+  } else {
+    btn.style.background='';
+    btn.style.borderColor='';
+  }
+}
+
+function resizeCanvas(){
+  const canvas=document.getElementById('draw-canvas');
+  const wrap=document.getElementById('output-wrap');
+  // preserve existing drawing
+  const tmp=document.createElement('canvas');
+  tmp.width=canvas.width;tmp.height=canvas.height;
+  tmp.getContext('2d').drawImage(canvas,0,0);
+  canvas.width=wrap.offsetWidth;
+  canvas.height=wrap.offsetHeight;
+  canvas.getContext('2d').drawImage(tmp,0,0);
+}
+
+function getPos(e,canvas){
+  const r=canvas.getBoundingClientRect();
+  if(e.touches){
+    return{x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top};
+  }
+  return{x:e.clientX-r.left, y:e.clientY-r.top};
+}
+
+function startDraw(e){
+  if(!drawMode)return;
+  e.preventDefault();
+  isDrawing=true;
+  const canvas=document.getElementById('draw-canvas');
+  const pos=getPos(e,canvas);
+  lastX=pos.x;lastY=pos.y;
+}
+
+function draw(e){
+  if(!drawMode||!isDrawing)return;
+  e.preventDefault();
+  const canvas=document.getElementById('draw-canvas');
+  const ctx=canvas.getContext('2d');
+  const pos=getPos(e,canvas);
+  ctx.beginPath();
+  ctx.moveTo(lastX,lastY);
+  ctx.lineTo(pos.x,pos.y);
+  ctx.strokeStyle=eraserMode?'rgba(255,255,255,1)':drawColor;
+  ctx.lineWidth=eraserMode?parseFloat(document.getElementById('draw-size').value)*4:parseFloat(document.getElementById('draw-size').value);
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  if(eraserMode){
+    ctx.globalCompositeOperation='destination-out';
+  } else {
+    ctx.globalCompositeOperation='source-over';
+    // slight opacity for more natural ink feel
+    ctx.globalAlpha=0.88;
+  }
+  ctx.stroke();
+  ctx.globalAlpha=1;
+  ctx.globalCompositeOperation='source-over';
+  lastX=pos.x;lastY=pos.y;
+}
+
+function endDraw(e){isDrawing=false;}
+
+function setDrawColor(c,el){
+  drawColor=c;
+  eraserMode=false;
+  document.querySelectorAll('.draw-color').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('btn-eraser').classList.remove('on');
+}
+
+function toggleEraser(){
+  eraserMode=!eraserMode;
+  document.getElementById('btn-eraser').classList.toggle('on',eraserMode);
+}
+
+function clearCanvas(){
+  if(!confirm('למחוק את כל הציור?'))return;
+  const canvas=document.getElementById('draw-canvas');
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+// Attach canvas events after DOM ready
+document.addEventListener('DOMContentLoaded',()=>{
+  const canvas=document.getElementById('draw-canvas');
+  if(!canvas)return;
+  canvas.addEventListener('mousedown',startDraw);
+  canvas.addEventListener('mousemove',draw);
+  canvas.addEventListener('mouseup',endDraw);
+  canvas.addEventListener('mouseleave',endDraw);
+  canvas.addEventListener('touchstart',startDraw,{passive:false});
+  canvas.addEventListener('touchmove',draw,{passive:false});
+  canvas.addEventListener('touchend',endDraw);
+  window.addEventListener('resize',()=>{if(drawMode)resizeCanvas();});
+});
+
+// ══ Font Library ══
+const FONTS = [
+  // Hebrew handwriting (web-safe or Google Fonts)
+  {name:'Playpen Sans',   css:'Playpen Sans Hebrew', google:'Playpen+Sans+Hebrew:wght@400;700', preview:'שלום Hello', cat:'hebrew', weight:700},
+  {name:'Secular One',    css:'Secular One',          google:'Secular+One',                    preview:'שלום Hello', cat:'hebrew', weight:400},
+  {name:'Rubik',          css:'Rubik',                google:'Rubik:wght@400;700',              preview:'שלום Hello', cat:'hebrew', weight:400},
+  {name:'Heebo',          css:'Heebo',                google:'Heebo:wght@400;700',              preview:'שלום Hello', cat:'hebrew', weight:400},
+  {name:'Assistant',      css:'Assistant',            google:'Assistant:wght@400;700',          preview:'שלום Hello', cat:'hebrew', weight:400},
+  {name:'Varela Round',   css:'Varela Round',         google:'Varela+Round',                    preview:'שלום Hello', cat:'hebrew', weight:400},
+  // Handwriting (Latin-focused, good fallback for non-Hebrew)
+  {name:'Caveat',         css:'Caveat',               google:'Caveat:wght@400;700',             preview:'Hello אבג', cat:'handwriting', weight:700},
+  {name:'Kalam',          css:'Kalam',                google:'Kalam:wght@400;700',              preview:'Hello אבג', cat:'handwriting', weight:700},
+  {name:'Patrick Hand',   css:'Patrick Hand SC',      google:'Patrick+Hand+SC',                preview:'Hello אבג', cat:'handwriting', weight:400},
+  {name:'Indie Flower',   css:'Indie Flower',         google:'Indie+Flower',                    preview:'Hello אבג', cat:'handwriting', weight:400},
+  {name:'Shadows Into Light', css:'Shadows Into Light', google:'Shadows+Into+Light',           preview:'Hello אבג', cat:'handwriting', weight:400},
+  {name:'Dancing Script', css:'Dancing Script',       google:'Dancing+Script:wght@400;700',     preview:'Hello אבג', cat:'handwriting', weight:700},
+  {name:'Architects Daughter', css:'Architects Daughter', google:'Architects+Daughter',        preview:'Hello אבג', cat:'handwriting', weight:400},
+  {name:'Permanent Marker', css:'Permanent Marker',   google:'Permanent+Marker',               preview:'Hello אבג', cat:'handwriting', weight:400},
+  {name:'Rock Salt',      css:'Rock Salt',            google:'Rock+Salt',                       preview:'Hello abc', cat:'handwriting', weight:400},
+  {name:'Just Another Hand', css:'Just Another Hand', google:'Just+Another+Hand',              preview:'Hello abc', cat:'handwriting', weight:400},
+  {name:'Reenie Beanie',  css:'Reenie Beanie',        google:'Reenie+Beanie',                  preview:'Hello abc', cat:'handwriting', weight:400},
+  {name:'Covered By Grace', css:'Covered By Your Grace', google:'Covered+By+Your+Grace',      preview:'Hello abc', cat:'handwriting', weight:400},
+  // Display
+  {name:'Pacifico',       css:'Pacifico',             google:'Pacifico',                        preview:'Hello abc', cat:'display', weight:400},
+  {name:'Fredoka One',    css:'Fredoka One',          google:'Fredoka+One',                     preview:'Hello אבג', cat:'display', weight:400},
+  {name:'Righteous',      css:'Righteous',            google:'Righteous',                       preview:'Hello abc', cat:'display', weight:400},
+  {name:'Amatic SC',      css:'Amatic SC',            google:'Amatic+SC:wght@400;700',          preview:'Hello abc', cat:'display', weight:700},
+  {name:'Comfortaa',      css:'Comfortaa',            google:'Comfortaa:wght@400;700',          preview:'Hello אבג', cat:'display', weight:400},
+];
+
+let currentFont = FONTS[0];
+let loadedFonts = new Set();
+
+function loadGoogleFont(font){
+  if(loadedFonts.has(font.css))return;
+  loadedFonts.add(font.css);
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href=`https://fonts.googleapis.com/css2?family=${font.google}&display=swap`;
+  document.head.appendChild(link);
+}
+
+function applyFont(font){
+  currentFont=font;
+  loadGoogleFont(font);
+  // Update CSS variable
+  document.documentElement.style.setProperty('--font', `'${font.css}', 'Playpen Sans Hebrew', cursive`);
+  // Update output
+  const out=document.getElementById('output');
+  out.style.fontFamily=`'${font.css}', 'Playpen Sans Hebrew', cursive`;
+  out.style.fontWeight=font.weight;
+  // Update font preview in toolbar
+  const prev=document.querySelector('.font-preview');
+  if(prev){prev.style.fontFamily=`'${font.css}', cursive`;prev.textContent='אבג abc';}
+  // Mark active card
+  document.querySelectorAll('.font-card').forEach(c=>c.classList.toggle('active', c.dataset.css===font.css));
+  renderOutput();
+}
+
+function filterFonts(cat, btn){
+  document.querySelectorAll('.font-cat').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildFontGrid(cat);
+}
+
+function buildFontGrid(cat='all'){
+  const grid=document.getElementById('font-grid');
+  grid.innerHTML='';
+  const filtered=cat==='all'?FONTS:FONTS.filter(f=>f.cat===cat);
+  filtered.forEach(font=>{
+    const card=document.createElement('div');
+    card.className='font-card'+(font.css===currentFont.css?' active':'');
+    card.dataset.css=font.css;
+    // Load font for preview
+    loadGoogleFont(font);
+    card.innerHTML=`
+      <span class="font-card-name">${font.name}</span>
+      <span class="font-card-preview" style="font-family:'${font.css}',cursive;font-weight:${font.weight};">${font.preview}</span>
+    `;
+    card.onclick=()=>applyFont(font);
+    grid.appendChild(card);
+  });
+}
+
+
+
+// ════════════════════════════════════════════
+// CONFIGURATION – Replace with your own keys
+// ════════════════════════════════════════════
+const SUPABASE_URL    = 'https://tcxplzwmgmqayufccnzn.supabase.co';
+const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHBsendtZ21xYXl1ZmNjbnpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Nzk3MzYsImV4cCI6MjA5MTE1NTczNn0.8CVdyt9FAaN2Wtue_1llhvwThWRqPYJ2FbEO_nZ1osg';
+const STRIPE_PK       = 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY';
+const STRIPE_PRICE_ID = 'price_YOUR_PRICE_ID'; // 19.90 ILS/month
+const ADMIN_EMAIL     = 'itamar4747@gmail.com';
+
+// ══ Supabase Init ══
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let _user = null;
+let _profile = null;
+
+// ══ Auth UI ══
+function showAuthMsg(text, type){
+  const el = document.getElementById('auth-msg');
+  el.textContent = text;
+  el.className = 'auth-msg ' + type;
+}
+
+async function handleGoogleLogin(){
+  const btn = document.getElementById('google-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="auth-spinner"></span> מתחבר...';
+
+  const {error} = await _sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + window.location.pathname
+    }
+  });
+
+  if(error){
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> התחבר עם Google';
+    showAuthMsg('שגיאה בהתחברות: ' + error.message, 'error');
+  }
+  // Page will redirect to Google — no further action needed
+}
+
+async function handleLogout(){
+  await _sb.auth.signOut();
+  _user = null; _profile = null;
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('user-badge').style.display='none';
+  document.getElementById('logout-btn').style.display='none';
+}
+
+// ══ Admin & Subscription ══
+function dyIsAdmin(){
+  if(_profile && _profile.role === 'admin') return true;
+  if(_user && _user.email && _user.email.toLowerCase() === ADMIN_EMAIL) return true;
+  return false;
+}
+
+async function loadProfile(user){
+  const {data} = await _sb.from('profiles').select('*').eq('id', user.id).single();
+  if(data){ _profile = data; }
+  else {
+    // Profile may not exist yet (trigger delay) – create with admin check
+    const role = user.email.toLowerCase() === ADMIN_EMAIL ? 'admin' : 'user';
+    _profile = {id:user.id, email:user.email, role, subscription_status:'inactive'};
+  }
+}
+
+function hasActiveSubscription(){
+  if(dyIsAdmin()) return true;
+  if(!_profile) return false;
+  if(_profile.subscription_status === 'active') return true;
+  // Check URL for successful Stripe return
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('payment') === 'success') return true;
+  return false;
+}
+
+// ══ DanaYad Export Gate (3 free exports via localStorage) ══
+var DY_FREE = 3;
+var DY_KEY  = 'dy_exports_used';
+
+function getExportsUsed(){
+  return parseInt(localStorage.getItem(DY_KEY) || '0');
+}
+
+function checkAndExport(){
+  // Admin — always free
+  if(dyIsAdmin()){ openPdfModal(); return; }
+  // Paid subscriber — always free
+  if(hasActiveSubscription()){ openPdfModal(); return; }
+  // Free tier — allow 3 exports
+  var used = getExportsUsed();
+  if(used < DY_FREE){
+    localStorage.setItem(DY_KEY, used + 1);
+    openPdfModal();
+    return;
+  }
+  // Exhausted free exports — show paywall
+  document.getElementById('pw-overlay').classList.add('open');
+}
+
+// ══ Stripe Checkout ══
+async function startStripeCheckout(){
+  if(!_user){ showAuthMsg('יש להתחבר תחילה','error'); return; }
+  try {
+    // Option A: Use Supabase Edge Function (recommended for production)
+    // const {data} = await _sb.functions.invoke('create-checkout-session', {
+    //   body: { userId: _user.id, email: _user.email, priceId: STRIPE_PRICE_ID }
+    // });
+    // window.location.href = data.url;
+
+    // Option B: Direct Stripe Payment Link (simpler setup)
+    // Replace with your Stripe Payment Link URL
+    const paymentUrl = 'https://buy.stripe.com/YOUR_PAYMENT_LINK'
+      + '?client_reference_id=' + encodeURIComponent(_user.id)
+      + '&prefilled_email=' + encodeURIComponent(_user.email);
+    window.open(paymentUrl, '_blank');
+  } catch(err){
+    alert('שגיאה בפתיחת דף תשלום: ' + err.message);
+  }
+}
+
+// ══ App Init (after auth) ══
+async function initApp(user){
+  _user = user;
+  try { await loadProfile(user); } catch(e){ /* profile load failed, continue anyway */ }
+
+  // Hide auth overlay
+  document.getElementById('auth-overlay').classList.add('hidden');
+
+  // Show user info in header
+  const badge = document.getElementById('user-badge');
+  badge.style.display = '';
+  badge.textContent = dyIsAdmin() ? '👑 ' + user.email : user.email;
+  if(dyIsAdmin()) badge.style.background = '#fef3c7';
+  document.getElementById('logout-btn').style.display = '';
+
+  // Never show paywall on login — let user work freely.
+  // Paywall only appears when free exports are exhausted (in checkAndExport).
+  document.getElementById('pw-overlay').classList.remove('open');
+}
+
+// ══ Session Check on Load (non-blocking, 3s timeout) ══
+async function checkSession(){
+  try {
+    // Race between session check and 3-second timeout
+    const result = await Promise.race([
+      _sb.auth.getSession(),
+      new Promise(resolve => setTimeout(() => resolve({data:{session:null},timedOut:true}), 3000))
+    ]);
+
+    if(result.timedOut){
+      // Supabase took too long — app is already visible, just show auth button in header
+      console.warn('Supabase session check timed out — app loaded without auth');
+      return;
+    }
+
+    const session = result.data?.session;
+    if(session && session.user){
+      await initApp(session.user);
+    } else {
+      // No session — show auth overlay
+      document.getElementById('auth-overlay').classList.remove('hidden');
+    }
+  } catch(err){
+    console.warn('Auth check failed:', err);
+    // App is already visible, user can still use it
+  }
+}
+
+// Listen for auth changes (e.g., Google OAuth redirect back)
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  if(event === 'SIGNED_IN' && session?.user){
+    await initApp(session.user);
+  }
+  if(event === 'SIGNED_OUT'){
+    document.getElementById('auth-overlay').classList.remove('hidden');
+  }
+});
+
+// ══ Font detection + session (app loads immediately) ══
+window.onload=()=>{
+  // Start auth check in background — doesn't block app
+  checkSession();
+
+  // Font detection
+  const badge=document.getElementById('font-badge');
+  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+  ctx.font='20px monospace';const w1=ctx.measureText('א').width;
+  ctx.font="20px 'Dana Yad AlefAlefAlef'";const w2=ctx.measureText('א').width;
+  ctx.font='20px monospace';const w3=ctx.measureText('a').width;
+  ctx.font="20px 'Playpen Sans Hebrew'";const w4=ctx.measureText('a').width;
+  const danaOk=w1!==w2, caveatOk=w3!==w4;
+  if(danaOk&&caveatOk){badge.textContent='✓ דנה יד + Playpen';}
+  else if(danaOk){badge.textContent='✓ דנה יד | Playpen נטען';}
+  else{badge.textContent='⚠ דנה יד לא מותקן';badge.classList.add('missing');}
+
+  // Build font grid on load
+  buildFontGrid();
+
+  // Add page number to first page
+  const wrap = document.getElementById('output-wrap');
+  if(!wrap.querySelector('.page-number')){
+    const pn = document.createElement('div');
+    pn.className = 'page-number';
+    pn.textContent = '1';
+    wrap.appendChild(pn);
+  }
+
+  // Focus the output for immediate typing
+  document.getElementById('output').focus();
+};
+</script>
+</body>
+</html>

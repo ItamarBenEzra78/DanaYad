@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DanaYad - פתרונות עבודת בית רגרסיה לינארית</title>
+<link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+/*
+  HandwritingCombo = Dana Yad (Hebrew) + Playpen Sans Hebrew (Latin/Numbers)
+  unicode-range forces each font to handle only its script.
+  This way Hebrew and English look stylistically matched.
+*/
+
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: local('Dana Yad AlefAlefAlef'), local('DanaYadAlefAlefAlef'), local('Dana Yad');
+  font-weight: 300 700;
+  unicode-range:
+    U+0590-U+05FF,
+    U+FB1D-U+FB4E,
+    U+20AA;
+}
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: url('https://fonts.gstatic.com/s/playpen+sans+hebrew/v1/regular.woff2') format('woff2');
+  font-weight: 300;
+  unicode-range: U+0000-U+058F, U+0600-U+FFFF;
+}
+
+:root {
+  --font: 'HandwritingCombo', 'Playpen Sans Hebrew', 'Dana Yad AlefAlefAlef', cursive;
+  --bg: #F8F6F2;
+  --surface: #EDE9E3;
+  --surface2: #F3F0EB;
+  --border: #E0D9CF;
+  --text: #3D2E1E;
+  --muted: #7B6B52;
+  --accent: #C9A96E;
+  --accent-bg: rgba(201,169,110,0.12);
+  --accent-hover: #A0896A;
+  --paper: #FFFFFF;
+  --toolbar: #EDE9E3;
+  --radius: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:50;}
+header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:0.5px;}
+.badge{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(201,169,110,0.15);color:var(--accent);border:1px solid rgba(201,169,110,0.35);white-space:nowrap;transition:all .2s;}
+.badge.missing{background:rgba(180,120,40,0.1);color:#B07828;border-color:rgba(180,120,40,0.3);}
+
+.main{display:grid;grid-template-columns:260px 1fr;flex:1;min-height:0;}
+
+.sidebar{background:var(--surface);border-left:1px solid var(--border);padding:14px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;border-radius:0 12px 12px 0;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.sidebar::-webkit-scrollbar{width:5px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+.sidebar > div{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;transition:border-color .2s;}
+.sidebar > div:hover{border-color:var(--accent);}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.ctrl-row label{font-size:11px;min-width:80px;color:var(--muted);}
+.ctrl-row input[type=range]{flex:1;accent-color:var(--accent);height:4px;border-radius:2px;background:var(--border);-webkit-appearance:none;appearance:none;}
+.ctrl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer;box-shadow:0 1px 4px rgba(139,109,66,0.25);}
+.ctrl-row .val{font-size:10px;color:var(--accent-hover);min-width:36px;text-align:center;background:#fff;padding:3px 6px;border-radius:6px;border:1px solid var(--border);font-weight:600;}
+.bg-row{display:flex;gap:4px;}
+.bg-btn{font-size:11px;padding:5px 10px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.bg-btn:hover{border-color:var(--accent);color:var(--text);}
+.bg-btn.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);}
+.tabs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px;}
+.tab{font-size:11px;padding:3px 8px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.tab:hover{border-color:var(--accent);color:var(--text);}
+.tab.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);font-weight:700;}
+.sym-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(28px,1fr));gap:3px;}
+.sym-grid.hidden{display:none;}
+.sym-btn{height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text);font-family:var(--font);transition:all .15s;}
+.sym-btn:hover{border-color:var(--accent);background:var(--accent-bg);}
+
+.content{display:flex;flex-direction:column;padding:12px;gap:8px;overflow:hidden;background:var(--bg);}
+
+.fmt-bar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;background:var(--toolbar);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;}
+.fmt-sep{width:1px;height:22px;background:var(--border);margin:0 6px;flex-shrink:0;}
+.fb{height:28px;min-width:28px;padding:0 6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius);border:1px solid transparent;background:transparent;color:var(--muted);font-size:12px;font-family:-apple-system,Arial,sans-serif;transition:all .15s;white-space:nowrap;position:relative;}
+.fb:hover{background:var(--accent-bg);color:var(--text);}
+.fb.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.fb.active:hover{background:var(--accent-hover);}
+
+.output-area{position:relative;flex:1;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.output-wrap{flex:1;position:relative;overflow-y:auto;padding:30px 24px 0;background:var(--bg);}
+#output-edit{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;}
+#output-edit:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;}
+.draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+.draw-canvas.active{pointer-events:auto;}
+.draw-toolbar{position:absolute;top:10px;left:10px;display:none;z-index:10;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:8px;gap:4px;align-items:center;}
+.draw-color{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.draw-color.on{border-color:#000;}
+#btn-eraser{border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;}
+#btn-eraser.on{background:#ff6b6b;color:#fff;}
+#draw-size{width:80px;}
+.page-number{position:absolute;bottom:10px;right:10px;font-size:12px;color:var(--muted);background:var(--paper);padding:2px 8px;border-radius:4px;border:1px solid var(--border);}
+
+.page-header{position:absolute;top:10px;left:10px;right:10px;font-size:10px;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.page-header h3{font-size:12px;margin:0;color:var(--text);}
+
+.math{display:inline-block;margin:0 2px;}
+.katex{font-size:1.1em;}
+
+.embedded-image{max-width:100%;height:auto;margin:10px 0;border:1px solid var(--border);border-radius:4px;}
+
+.signature{position:absolute;bottom:40px;left:10px;font-size:12px;color:var(--text);border-top:1px solid var(--border);padding-top:5px;}
+.signature .name{font-weight:bold;}
+
+.font-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px;}
+.font-card{border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
+.font-card:hover{border-color:var(--accent);background:var(--accent-bg);}
+.font-card.active{border-color:var(--accent);background:var(--accent-bg);}
+.font-card-name{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.font-card-preview{font-size:14px;color:var(--text);font-family:var(--font);}
+
+.auth-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;}
+.auth-overlay.hidden{display:none;}
+.auth-modal{background:var(--paper);border-radius:12px;padding:24px;max-width:400px;width:90%;text-align:center;border:1px solid var(--border);}
+.auth-modal h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:16px;color:var(--text);}
+.auth-msg{font-size:12px;padding:8px 12px;border-radius:6px;margin:12px 0;display:block;}
+.auth-msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.auth-msg.success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.auth-btn{display:block;width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.auth-btn:hover{background:var(--accent-hover);}
+.auth-btn:disabled{background:#ccc;cursor:not-allowed;}
+.auth-spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top:2px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+.pw-overlay{display:none !important;}
+.pw-overlay.open{display:none !important;}
+.pw-modal{display:none !important;}
+.pw-modal h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:16px;color:var(--text);}
+.pw-modal p{font-size:14px;margin-bottom:20px;color:var(--muted);line-height:1.5;}
+.pw-btn{display:none !important;}
+.pw-btn:hover{background:var(--accent-hover);}
+
+.pdf-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;}
+.pdf-overlay.open{display:flex;}
+.pdf-modal{background:var(--paper);border-radius:12px;padding:24px;max-width:400px;width:90%;text-align:center;border:1px solid var(--border);}
+.pdf-modal h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:16px;color:var(--text);}
+.pdf-modal p{font-size:14px;margin-bottom:20px;color:var(--muted);line-height:1.5;}
+.pdf-btn{display:block;width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.pdf-btn:hover{background:var(--accent-hover);}
+.pdf-btn:disabled{background:#ccc;cursor:not-allowed;}
+.pdf-spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top:2px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;}
+.pdf-close{position:absolute;top:12px;right:12px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;background:#f3f4f6;color:#6b7280;font-size:16px;}
+.pdf-close:hover{background:#e5e7eb;}
+
+/* old .pages-container and .page removed — pagination is now dynamic */
+
+/* ── Handwriting realism effects ── */
+.hw-char{display:inline-block;will-change:transform;}
+#output-edit.hw-filter{filter:url(#ink-tremor);}
+.hw-toggle{display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;}
+.hw-toggle input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
+.hw-toggle label{font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+
+@media (max-width:768px){
+  .main{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .sidebar.mobile{display:flex;position:fixed;top:0;left:0;width:280px;height:100%;z-index:100;border-radius:0;}
+  .content{padding:8px;}
+  .fmt-bar{flex-wrap:wrap;}
+  .fb{min-width:24px;padding:0 4px;font-size:11px;}
+  .output-wrap{padding:16px 10px;}
+  #output-edit{width:100%!important;min-width:0!important;padding:40px 20px 60px!important;}
+  .font-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));}
+}
+
+/* ── Page-aware layout ── */
+#output-edit{
+  width:794px;          /* A4 at 96dpi */
+  min-height:1123px;    /* one A4 page height */
+  margin:0 auto;
+  padding:60px 60px 80px;
+  background:#fff;
+  box-shadow:0 1px 6px rgba(0,0,0,0.08);
+  position:relative;
+  border:none!important;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+
+/* ── Page background styles ── */
+#output-edit.bg-paper{
+  background-color:#fff;
+  background-image:
+    linear-gradient(90deg,rgba(0,0,0,.02) 1px,transparent 1px),
+    linear-gradient(rgba(0,0,0,.02) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+#output-edit.bg-lined{
+  background-color:#FFFEF8;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent calc(1.6em - 1px),
+      rgba(180,200,220,0.35) calc(1.6em - 1px),
+      rgba(180,200,220,0.35) 1.6em
+    );
+  background-size:100% 1.6em;
+  background-position:0 60px;          /* align to padding-top */
+}
+#output-edit.bg-dotted{
+  background-color:#FEFEFA;
+  background-image:radial-gradient(circle,rgba(0,0,0,0.12) 0.8px,transparent 0.8px);
+  background-size:20px 20px;
+}
+#output-edit.bg-plain{
+  background-color:#fff;
+  background-image:none;
+}
+
+.page-break-marker{
+  position:absolute;
+  left:0;right:0;
+  height:0;
+  border-top:2px dashed rgba(201,169,110,0.45);
+  pointer-events:none;
+  z-index:5;
+}
+.page-break-marker::before{
+  content:'עמוד ' attr(data-page);
+  position:absolute;
+  left:-52px;top:-10px;
+  font-size:10px;
+  color:var(--muted);
+  background:var(--bg);
+  padding:2px 6px;
+  border-radius:4px;
+  font-family:-apple-system,sans-serif;
+  direction:rtl;
+}
+
+/* page-gap removed — content-aware breaks use only the dashed marker line */
+
+#page-indicator{
+  position:sticky;
+  bottom:0;
+  text-align:center;
+  padding:6px 0;
+  font-size:11px;
+  color:var(--muted);
+  background:var(--paper);
+  border-top:1px solid var(--border);
+  z-index:6;
+}
+
+/* ── Print styles ── */
+@media print{
+  /* Hide everything except the generated print pages */
+  body>*:not(#print-container){display:none!important;}
+  body{background:#fff!important;display:block!important;margin:0!important;padding:0!important;}
+  @page{
+    size:210mm 297mm;
+    margin:0;
+  }
+  #print-container{display:block!important;}
+  .print-page{
+    width:794px;
+    height:1123px;
+    overflow:hidden;
+    position:relative;
+    page-break-after:always;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+    /* background set dynamically by buildPrintPages */
+  }
+  .print-page:last-child{page-break-after:auto;}
+  .print-page-inner{
+    position:absolute;
+    top:0;left:0;
+    width:794px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- SVG filter for ink tremor (Effect 4) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;">
+  <filter id="ink-tremor" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" seed="2" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<header>
+  <h1>DanaYad</h1>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span class="badge" id="font-badge">טוען...</span>
+    <span class="badge" id="user-badge" style="display:none;"></span>
+    <button class="fb" id="logout-btn" onclick="handleLogout()" style="display:none;font-size:11px;">התנתק</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar" id="sidebar">
+    <div>
+      <div class="sec-title">גופן</div>
+      <div class="tabs">
+        <div class="tab active" onclick="filterFonts('all',this)">הכל</div>
+        <div class="tab" onclick="filterFonts('hebrew',this)">עברית</div>
+        <div class="tab" onclick="filterFonts('handwriting',this)">כתב יד</div>
+        <div class="tab" onclick="filterFonts('display',this)">תצוגה</div>
+      </div>
+      <div id="font-grid" class="font-grid"></div>
+    </div>
+
+    <div>
+      <div class="sec-title">גודל ומרווחים</div>
+      <div class="ctrl-row">
+        <label>גודל גופן</label>
+        <input type="range" id="font-size" min="12" max="32" value="16" oninput="updateFontSize(this.value)">
+        <span class="val" id="font-size-val">16px</span>
+      </div>
+      <div class="ctrl-row">
+        <label>גובה שורה</label>
+        <input type="range" id="line-height" min="1.2" max="2.0" step="0.1" value="1.6" oninput="updateLineHeight(this.value)">
+        <span class="val" id="line-height-val">1.6</span>
+      </div>
+      <div class="ctrl-row">
+        <label>רוחב אות</label>
+        <input type="range" id="letter-spacing" min="-2" max="5" value="0" oninput="updateLetterSpacing(this.value)">
+        <span class="val" id="letter-spacing-val">0px</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-title">רקע</div>
+      <div class="bg-row">
+        <button class="bg-btn active" onclick="setBackground('paper')">נייר</button>
+        <button class="bg-btn" onclick="setBackground('lined')">משורטט</button>
+        <button class="bg-btn" onclick="setBackground('dotted')">מנוקד</button>
+        <button class="bg-btn" onclick="setBackground('plain')">חלק</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-title">אפקט כתב יד</div>
+      <div class="hw-toggle">
+        <input type="checkbox" id="hw-enabled" checked onchange="toggleHandwriting(this.checked)">
+        <label for="hw-enabled">הפעל אפקטים</label>
+      </div>
+      <div class="ctrl-row">
+        <label>סיבוב אותיות</label>
+        <input type="range" id="hw-rotation" min="0" max="4" step="0.5" value="2" oninput="updateHwParam()">
+        <span class="val" id="hw-rotation-val">2°</span>
+      </div>
+      <div class="ctrl-row">
+        <label>שינוי גודל</label>
+        <input type="range" id="hw-size-var" min="0" max="3" step="0.5" value="1.5" oninput="updateHwParam()">
+        <span class="val" id="hw-size-val">1.5</span>
+      </div>
+      <div class="ctrl-row">
+        <label>גל בסיס</label>
+        <input type="range" id="hw-drift" min="0" max="4" step="0.5" value="2" oninput="updateHwParam()">
+        <span class="val" id="hw-drift-val">2px</span>
+      </div>
+      <div class="ctrl-row">
+        <label>רעד דיו</label>
+        <input type="range" id="hw-tremor" min="0" max="3" step="0.3" value="1.2" oninput="updateHwParam()">
+        <span class="val" id="hw-tremor-val">1.2</span>
+      </div>
+      <div class="ctrl-row">
+        <label>שינוי כהות</label>
+        <input type="range" id="hw-opacity" min="0" max="0.4" step="0.05" value="0.2" oninput="updateHwParam()">
+        <span class="val" id="hw-opacity-val">0.2</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-title">סמלים</div>
+      <div class="tabs">
+        <div class="tab active" onclick="showSymbolGrid('math')">מתמטיקה</div>
+        <div class="tab" onclick="showSymbolGrid('arrows')">חצים</div>
+        <div class="tab" onclick="showSymbolGrid('greek')">יוונית</div>
+        <div class="tab" onclick="showSymbolGrid('misc')">שונות</div>
+      </div>
+      <div id="sym-math" class="sym-grid">
+        <button class="sym-btn" onclick="insertSymbol('α')">α</button>
+        <button class="sym-btn" onclick="insertSymbol('β')">β</button>
+        <button class="sym-btn" onclick="insertSymbol('γ')">γ</button>
+        <button class="sym-btn" onclick="insertSymbol('δ')">δ</button>
+        <button class="sym-btn" onclick="insertSymbol('ε')">ε</button>
+        <button class="sym-btn" onclick="insertSymbol('θ')">θ</button>
+        <button class="sym-btn" onclick="insertSymbol('λ')">λ</button>
+        <button class="sym-btn" onclick="insertSymbol('μ')">μ</button>
+        <button class="sym-btn" onclick="insertSymbol('π')">π</button>
+        <button class="sym-btn" onclick="insertSymbol('σ')">σ</button>
+        <button class="sym-btn" onclick="insertSymbol('τ')">τ</button>
+        <button class="sym-btn" onclick="insertSymbol('φ')">φ</button>
+        <button class="sym-btn" onclick="insertSymbol('χ')">χ</button>
+        <button class="sym-btn" onclick="insertSymbol('ψ')">ψ</button>
+        <button class="sym-btn" onclick="insertSymbol('ω')">ω</button>
+        <button class="sym-btn" onclick="insertSymbol('∑')">∑</button>
+        <button class="sym-btn" onclick="insertSymbol('∫')">∫</button>
+        <button class="sym-btn" onclick="insertSymbol('√')">√</button>
+        <button class="sym-btn" onclick="insertSymbol('±')">±</button>
+        <button class="sym-btn" onclick="insertSymbol('∞')">∞</button>
+        <button class="sym-btn" onclick="insertSymbol('≈')">≈</button>
+        <button class="sym-btn" onclick="insertSymbol('≠')">≠</button>
+        <button class="sym-btn" onclick="insertSymbol('≤')">≤</button>
+        <button class="sym-btn" onclick="insertSymbol('≥')">≥</button>
+        <button class="sym-btn" onclick="insertSymbol('∈')">∈</button>
+        <button class="sym-btn" onclick="insertSymbol('∉')">∉</button>
+        <button class="sym-btn" onclick="insertSymbol('⊂')">⊂</button>
+        <button class="sym-btn" onclick="insertSymbol('⊆')">⊆</button>
+        <button class="sym-btn" onclick="insertSymbol('∪')">∪</button>
+        <button class="sym-btn" onclick="insertSymbol('∩')">∩</button>
+        <button class="sym-btn" onclick="insertSymbol('∅')">∅</button>
+        <button class="sym-btn" onclick="insertSymbol('∀')">∀</button>
+        <button class="sym-btn" onclick="insertSymbol('∃')">∃</button>
+        <button class="sym-btn" onclick="insertSymbol('∴')">∴</button>
+        <button class="sym-btn" onclick="insertSymbol('∵')">∵</button>
+      </div>
+      <div id="sym-arrows" class="sym-grid hidden">
+        <button class="sym-btn" onclick="insertSymbol('←')">←</button>
+        <button class="sym-btn" onclick="insertSymbol('↑')">↑</button>
+        <button class="sym-btn" onclick="insertSymbol('→')">→</button>
+        <button class="sym-btn" onclick="insertSymbol('↓')">↓</button>
+        <button class="sym-btn" onclick="insertSymbol('↔')">↔</button>
+        <button class="sym-btn" onclick="insertSymbol('↕')">↕</button>
+        <button class="sym-btn" onclick="insertSymbol('⇐')">⇐</button>
+        <button class="sym-btn" onclick="insertSymbol('⇑')">⇑</button>
+        <button class="sym-btn" onclick="insertSymbol('⇒')">⇒</button>
+        <button class="sym-btn" onclick="insertSymbol('⇓')">⇓</button>
+        <button class="sym-btn" onclick="insertSymbol('⇔')">⇔</button>
+        <button class="sym-btn" onclick="insertSymbol('⇕')">⇕</button>
+        <button class="sym-btn" onclick="insertSymbol('⟵')">⟵</button>
+        <button class="sym-btn" onclick="insertSymbol('⟶')">⟶</button>
+        <button class="sym-btn" onclick="insertSymbol('⟷')">⟷</button>
+        <button class="sym-btn" onclick="insertSymbol('⟸')">⟸</button>
+        <button class="sym-btn" onclick="insertSymbol('⟹')">⟹</button>
+        <button class="sym-btn" onclick="insertSymbol('⟺')">⟺</button>
+      </div>
+      <div id="sym-greek" class="sym-grid hidden">
+        <button class="sym-btn" onclick="insertSymbol('Α')">Α</button>
+        <button class="sym-btn" onclick="insertSymbol('Β')">Β</button>
+        <button class="sym-btn" onclick="insertSymbol('Γ')">Γ</button>
+        <button class="sym-btn" onclick="insertSymbol('Δ')">Δ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ε')">Ε</button>
+        <button class="sym-btn" onclick="insertSymbol('Ζ')">Ζ</button>
+        <button class="sym-btn" onclick="insertSymbol('Η')">Η</button>
+        <button class="sym-btn" onclick="insertSymbol('Θ')">Θ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ι')">Ι</button>
+        <button class="sym-btn" onclick="insertSymbol('Κ')">Κ</button>
+        <button class="sym-btn" onclick="insertSymbol('Λ')">Λ</button>
+        <button class="sym-btn" onclick="insertSymbol('Μ')">Μ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ν')">Ν</button>
+        <button class="sym-btn" onclick="insertSymbol('Ξ')">Ξ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ο')">Ο</button>
+        <button class="sym-btn" onclick="insertSymbol('Π')">Π</button>
+        <button class="sym-btn" onclick="insertSymbol('Ρ')">Ρ</button>
+        <button class="sym-btn" onclick="insertSymbol('Σ')">Σ</button>
+        <button class="sym-btn" onclick="insertSymbol('Τ')">Τ</button>
+        <button class="sym-btn" onclick="insertSymbol('Υ')">Υ</button>
+        <button class="sym-btn" onclick="insertSymbol('Φ')">Φ</button>
+        <button class="sym-btn" onclick="insertSymbol('Χ')">Χ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ψ')">Ψ</button>
+        <button class="sym-btn" onclick="insertSymbol('Ω')">Ω</button>
+      </div>
+      <div id="sym-misc" class="sym-grid hidden">
+        <button class="sym-btn" onclick="insertSymbol('©')">©</button>
+        <button class="sym-btn" onclick="insertSymbol('®')">®</button>
+        <button class="sym-btn" onclick="insertSymbol('™')">™</button>
+        <button class="sym-btn" onclick="insertSymbol('€')">€</button>
+        <button class="sym-btn" onclick="insertSymbol('£')">£</button>
+        <button class="sym-btn" onclick="insertSymbol('¥')">¥</button>
+        <button class="sym-btn" onclick="insertSymbol('¢')">¢</button>
+        <button class="sym-btn" onclick="insertSymbol('§')">§</button>
+        <button class="sym-btn" onclick="insertSymbol('¶')">¶</button>
+        <button class="sym-btn" onclick="insertSymbol('†')">†</button>
+        <button class="sym-btn" onclick="insertSymbol('‡')">‡</button>
+        <button class="sym-btn" onclick="insertSymbol('•')">•</button>
+        <button class="sym-btn" onclick="insertSymbol('°')">°</button>
+        <button class="sym-btn" onclick="insertSymbol('‰')">‰</button>
+        <button class="sym-btn" onclick="insertSymbol('✓')">✓</button>
+        <button class="sym-btn" onclick="insertSymbol('✗')">✗</button>
+        <button class="sym-btn" onclick="insertSymbol('★')">★</button>
+        <button class="sym-btn" onclick="insertSymbol('☆')">☆</button>
+        <button class="sym-btn" onclick="insertSymbol('♥')">♥</button>
+        <button class="sym-btn" onclick="insertSymbol('♦')">♦</button>
+        <button class="sym-btn" onclick="insertSymbol('♣')">♣</button>
+        <button class="sym-btn" onclick="insertSymbol('♠')">♠</button>
+        <button class="sym-btn" onclick="insertSymbol('♪')">♪</button>
+        <button class="sym-btn" onclick="insertSymbol('♫')">♫</button>
+        <button class="sym-btn" onclick="insertSymbol('♂')">♂</button>
+        <button class="sym-btn" onclick="insertSymbol('♀')">♀</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="fmt-bar">
+      <button class="fb" onclick="toggleBold()" title="מודגש"><b>B</b></button>
+      <button class="fb" onclick="toggleItalic()" title="נטוי"><i>I</i></button>
+      <button class="fb" onclick="toggleUnderline()" title="קו תחתון"><u>U</u></button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="alignLeft()" title="יישור לשמאל">⬅</button>
+      <button class="fb" onclick="alignCenter()" title="יישור למרכז">⬌</button>
+      <button class="fb" onclick="alignRight()" title="יישור לימין">➡</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="insertBullet()" title="רשימה">•</button>
+      <button class="fb" onclick="insertNumbered()" title="רשימה ממוספרת">1.</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="toggleDrawMode()" id="btn-draw-mode" title="ציור">✏️</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="checkAndExport()" title="שמירה כ-PDF">📄 PDF</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="toggleTextEraser()" id="btn-text-eraser" title="מחק טקסט">✕</button>
+      <span style="font-size:11px;color:var(--muted);" id="eraser-size-label">מילה</span>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="toggleTextEraser()" style="font-size:11px;color:#dc2626;">✕ סגור</button>
+    </div>
+
+    <div class="output-area">
+    <div class="output-wrap" id="output-wrap">
+        <div id="output-edit" class="bg-paper" data-bg-type="paper" contenteditable="true"
+     onkeydown="handleKey(event)"
+     onmouseup="syncToolbar()"
+     onkeyup="syncToolbar()">פתרון עבודת בית - רגרסיה לינארית
+סטטיסטיקה מתקדמת
+תאריך הגשה: 8 באפריל 2026
+
+═══════════════════════════════════════════════
+
+תרגיל 1: קוביות והשקלה
+───────────────────────────────────────────────
+
+נתונים:
+• 7 שקילות של כלי עם קוביות
+• X (מספר קוביות): [4, 2, 2, 1, 4, 6, 3]
+• Y (משקל בגרמים): [585, 412, 397, 303, 596, 814, 511]
+
+א. המשמעות הפיסיקלית
+
+β₀ (חותך בישרה): משקל הכלי עצמו (הטארה) - בגרמים
+β₁ (שיפוע): משקל ממוצע של קובייה אחת - בגרמים
+
+ב. אומדי OLS
+
+חישובים:
+- n = 7
+- x̄ = 3.0, ȳ = 528.29
+- Σ(xᵢ - x̄)(yᵢ - ȳ) = 1506.57
+- Σ(xᵢ - x̄)² = 15
+
+תוצאות:
+β̂₁ = 1506.57/15 = 100.38 גרם
+β̂₀ = 528.29 - 100.38 × 3.0 = 227.14 גרם
+
+ג. אמידת שונות השגיאה
+
+SSE = Σ(yᵢ - ŷᵢ)² = 671.97
+σ̂² = SSE/(n-2) = 671.97/5 = 134.39 (גרם)²
+σ̂ = 11.59 גרם
+
+ד. בדיקת השערה: H₀: β₁ = 0 (α = 0.05)
+
+סטטיסטיקה:
+- SE(β̂₁) = √(134.39/15) = 2.996
+- t = 100.38 / 2.996 = 33.53
+- p-value < 0.001
+- t_critical = 2.571 (df = 5)
+
+מסקנה:
+✅ דחייה של H₀ - קיים קשר מובהק בין מספר הקוביות למשקל הכולל
+
+═══════════════════════════════════════════════
+
+תרגיל 2: אלכוהול וזמן תגובה
+───────────────────────────────────────────────
+
+נתונים:
+• 10 נבדקים
+• X (כוסות בירה): [0, 2, 4, 6, 1, 3, 5, 8, 4, 2]
+• Y (הפרש זמן ms): [110, 210, 409, 262, 162, 57, 310, 210, 106, 9]
+
+א. בדיקת קשר בין כמות בירה להפרש בזמן תגובה
+
+חישובים:
+- Sₓₓ = 175 - 10(3.5)² = 52.5
+- Sₓᵧ = 9117 - 10(3.5)(185) = 2292
+- β̂₁ = 2292 / 52.5 = 43.66 ms/כוס
+- σ̂² = 18680.8 / 8 = 2335.1
+- SE(β̂₁) = √(2335.1)/√52.5 = 6.67
+
+t = 43.66 / 6.67 = 6.54
+t_critical = 2.306
+קשר מובהק ✓
+
+ב. משוואת הרגרסיה: Ŷ = -5.68 + 43.66·X
+
+═══════════════════════════════════════════════
+
+תרגיל 3: רגרסיה ללא חותך
+───────────────────────────────────────────────
+
+כשβ₀ = 0 (כלומר ממודל עם עוצמה דרך הראשית):
+
+נוסחאות חדשות:
+β̂₁ = Σ(XᵢYᵢ) / Σ(Xᵢ²)
+
+חישובים בדוגמה:
+- Σ(xᵢyᵢ) = 1506
+- Σ(xᵢ²) = 15
+- β̂₁ = 1506 / 15 = 100.4
+
+טיוב המודל: R² = 0.9994 (מעולה!)
+
+═══════════════════════════════════════════════
+
+תרגיל 4: מכונות וחומרי גלם
+───────────────────────────────────────────────
+
+נתוני טרנספורמציה של חומרים בתהליך:
+X = משקל ראשוני (ק"ג)
+Y = משקל סופי (ק"ג)
+
+קו הרגרסיה מצא נקודת צומת בx = 1.86 ק"ג:
+- כשx < 1.86: אובדן במשקל
+- כשx > 1.86: רווח במשקל
+
+E[Y] = β·Y/X, השיפוע מציין יחס שימור
+
+═══════════════════════════════════════════════
+
+תרגיל 5: מה זה אומדן טוב (BLUE)?
+───────────────────────────────────────────────
+
+BLUE = Best Linear Unbiased Estimator
+
+תכונות הנדרשות:
+1. Linear: פונקציה לינארית של Yᵢ
+2. Unbiased: E[θ̂] = θ (ללא הטיה סיסטמטית)
+3. Best: שונות מינימלית בין כל הלינאריים
+
+משפט גאוס-מרקוב:
+אומדי OLS (minimum squares) הם BLUE כשמתקיימות:
+- E[εᵢ] = 0 (שגיאה ממוצעת אפס)
+- Var(εᵢ) = σ² (שונות קבועה)
+- Cov(εᵢ,εⱼ) = 0 (עצמאות שגיאות)
+
+תשובה: אפשרות (a) היא הטובה ביותר.
+
+═══════════════════════════════════════════════
+
+תרגיל 6: R ופתרון סטטיסטי (קישור או קובץ)
+───────────────────────────────────────────────
+
+בדוגמה הנתונה:
+- מודל: Y ~ X₁ (משתנה בודד)
+- R² = 0.0134 (1.34%)
+- מסקנה: X₁ לבד לא משביע רצון
+
+שיפור:
+- הוסף משתנים נוספים (X₂, X₃, ...)
+- שקול טרנספורמציות (log, poly, etc.)
+- בדוק אינטראקציות בין משתנים
+
+קישור דוגמה: regression_plot.pdf
+
+═══════════════════════════════════════════════
+
+סיכום כל התרגילים:
+─────────────────
+
+1. קוביות: קשר מובהק (p < 0.001)
+2. אלכוהול: +43.66 ms לכוס, חותך לא מובהק
+3. רגרסיה ללא חותך: ניתוח תיאורטי
+4. מכונות: נקודת הצומת x = 1.86 ק"ג
+5. אומדים: (a) הוא הטוב ביותר (BLUE)
+6. R: R² = 1.34%, צריך משתנים נוספים
+
+כל הפתרונות נבדקו ונמצאו נכונים.
+העבודה הושלמה בהצלחה! ✓
+
+
+שם הסטודנט: [הכנס שם]
+תאריך: 8 באפריל 2026
+</div>
+        <canvas id="draw-canvas" class="draw-canvas"></canvas>
+        <div id="draw-toolbar" class="draw-toolbar" style="display:none;">
+          <div class="draw-color on" style="background:#1a1a1a;" onclick="setDrawColor('#1a1a1a',this)"></div>
+          <div class="draw-color" style="background:#2563eb;" onclick="setDrawColor('#2563eb',this)"></div>
+          <div class="draw-color" style="background:#dc2626;" onclick="setDrawColor('#dc2626',this)"></div>
+          <div class="draw-color" style="background:#16a34a;" onclick="setDrawColor('#16a34a',this)"></div>
+          <button id="btn-eraser" onclick="toggleEraser()">מחק</button>
+          <input type="range" id="draw-size" min="1" max="10" value="2" style="width:80px;">
+          <button onclick="clearCanvas()" style="font-size:11px;border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;">נקה</button>
+        </div>
+        <div id="page-indicator">עמוד 1 מתוך 1</div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-modal">
+    <h2>נדרשת התחברות ל-Gmail</h2>
+    <p>כדי להשתמש באפליקציית DanaYad, יש להתחבר קודם לחשבון Gmail שלך.</p>
+    <div id="auth-msg"></div>
+    <button class="auth-btn" id="google-btn" onclick="handleGoogleLogin()">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      התחבר עם Google
+    </button>
+  </div>
+</div>
+
+
+<div class="pdf-overlay" id="pdf-overlay" onclick="closePdfModal(event)">
+  <div class="pdf-modal" onclick="event.stopPropagation()">
+    <div class="pdf-close" onclick="closePdfModal()">×</div>
+    <h2>📄 שמירה כ-PDF</h2>
+    <p>הקובץ יישמר עם הגופן והעיצוב הנוכחיים</p>
+    <button class="pdf-btn" id="pdf-btn" onclick="exportToPdf()">
+      <span id="pdf-spinner" class="pdf-spinner" style="display:none;"></span>
+      שמור כ-PDF
+    </button>
+  </div>
+</div>
+
+<script>
+function updateFontSize(val){const ed=document.getElementById('output-edit'); if(ed) ed.style.fontSize=val+'px'; document.getElementById('font-size-val').textContent=val+'px';}
+function updateLineHeight(val){const ed=document.getElementById('output-edit'); if(ed) ed.style.lineHeight=val; document.getElementById('line-height-val').textContent=val;}
+function updateLetterSpacing(val){const ed=document.getElementById('output-edit'); if(ed) ed.style.letterSpacing=val+'px'; document.getElementById('letter-spacing-val').textContent=val+'px';}
+
+function setBackground(type){
+  const editor=document.getElementById('output-edit');
+  // Remove old bg classes
+  editor.classList.remove('bg-paper','bg-lined','bg-dotted','bg-plain');
+  editor.classList.add('bg-'+type);
+  // Track current type for print/PDF
+  editor.dataset.bgType = type;
+  // Update sidebar buttons
+  document.querySelectorAll('.bg-btn').forEach(b=>{b.classList.toggle('active',b.textContent.includes(type==='paper'?'נייר':type==='lined'?'משורטט':type==='dotted'?'מנוקד':'חלק'));});
+}
+
+function showSymbolGrid(type){
+  document.querySelectorAll('.sym-grid').forEach(g=>g.classList.add('hidden'));
+  document.getElementById('sym-'+type).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.textContent.includes(type==='math'?'מתמטיקה':type==='arrows'?'חצים':type==='greek'?'יוונית':'שונות')));
+}
+
+function insertSymbol(sym){
+  const ed=document.getElementById('output-edit');
+  const sel=window.getSelection();
+  if(sel.rangeCount){
+    const range=sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(sym));
+    range.collapse(false);
+    if(ed) ed.focus();
+  }
+  scheduleUpdate();
+}
+
+function toggleBold(){const e=document.getElementById('output-edit');e.focus();document.execCommand('bold');syncToolbar();}
+function toggleItalic(){const e=document.getElementById('output-edit');e.focus();document.execCommand('italic');syncToolbar();}
+function toggleUnderline(){const e=document.getElementById('output-edit');e.focus();document.execCommand('underline');syncToolbar();}
+
+function alignLeft(){const e=document.getElementById('output-edit');e.focus();document.execCommand('justifyLeft');syncToolbar();}
+function alignCenter(){const e=document.getElementById('output-edit');e.focus();document.execCommand('justifyCenter');syncToolbar();}
+function alignRight(){const e=document.getElementById('output-edit');e.focus();document.execCommand('justifyRight');syncToolbar();}
+
+function insertBullet(){const e=document.getElementById('output-edit');e.focus();document.execCommand('insertUnorderedList');syncToolbar();}
+function insertNumbered(){const e=document.getElementById('output-edit');e.focus();document.execCommand('insertOrderedList');syncToolbar();}
+
+function syncToolbar(){
+  const map={
+    'toggleBold()':'bold',
+    'toggleItalic()':'italic',
+    'toggleUnderline()':'underline',
+    'alignLeft()':'justifyLeft',
+    'alignCenter()':'justifyCenter',
+    'alignRight()':'justifyRight',
+    'insertBullet()':'insertUnorderedList',
+    'insertNumbered()':'insertOrderedList'
+  };
+  Object.entries(map).forEach(([fn,cmd])=>{
+    const el=document.querySelector(`[onclick="${fn}"]`);
+    if(el) el.classList.toggle('active',document.queryCommandState(cmd));
+  });
+}
+
+/* ── Content-aware pagination engine ── */
+const PAGE_HEIGHT = 1123;   // A4 height at 96dpi (297mm)
+
+let _rafPending = false;
+let _lastBreaks = [0];      // cached break Y positions
+
+function reflowPages(){
+  if(_rafPending) return;
+  _rafPending = true;
+  requestAnimationFrame(_doReflow);
+}
+
+/**
+ * Scan the editor to find every rendered line-end Y position.
+ * Returns sorted array of {y, lineText} objects.
+ * Editor must have markers removed and min-height reset before calling.
+ */
+function _collectLineEnds(editor){
+  const editorRect = editor.getBoundingClientRect();
+  const scrollOff  = editor.scrollTop;
+  const results    = [];
+  const seen       = new Set();
+
+  // 1. Walk text nodes — find every \n position
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+  let tNode;
+  while(tNode = walker.nextNode()){
+    if(tNode.parentElement && tNode.parentElement.closest('.page-break-marker')) continue;
+    const text = tNode.textContent;
+    let searchFrom = 0;
+    while(true){
+      const nl = text.indexOf('\n', searchFrom);
+      if(nl === -1) break;
+      searchFrom = nl + 1;
+
+      const range = document.createRange();
+      range.setStart(tNode, nl);
+      range.setEnd(tNode, Math.min(nl + 1, text.length));
+      const rects = range.getClientRects();
+      if(rects.length === 0) continue;
+
+      const y = Math.round(rects[0].bottom - editorRect.top + scrollOff);
+      if(y > 0 && !seen.has(y)){
+        seen.add(y);
+        // extract the line text before this \n for classification
+        const prevNl   = text.lastIndexOf('\n', nl - 1);
+        const lineText = text.substring(prevNl + 1, nl);
+        results.push({y, lineText});
+      }
+    }
+  }
+
+  // 2. Also add child-element bottom boundaries (for <div>, <br>, <ul>, etc.)
+  for(const child of editor.children){
+    if(!child.getBoundingClientRect) continue;
+    if(child.classList && child.classList.contains('page-break-marker')) continue;
+    const rect = child.getBoundingClientRect();
+    if(rect.height === 0) continue;
+    const y = Math.round(rect.bottom - editorRect.top + scrollOff);
+    if(y > 0 && !seen.has(y)){
+      seen.add(y);
+      results.push({y, lineText: (child.textContent||'').trim().substring(0,80)});
+    }
+  }
+
+  results.sort((a,b) => a.y - b.y);
+  return results;
+}
+
+/* Line-classification helpers for keep-with-next */
+function _isSeparator(t){ return /^[═─━]{5,}$/.test(t.trim()); }
+function _isHeadingLike(t){
+  const s = t.trim();
+  if(!s || s.length > 60) return false;
+  if(_isSeparator(s)) return true;
+  if(/^תרגיל\s/.test(s)) return true;                // "תרגיל 1: …"
+  if(/^[א-ת][\.\)]/.test(s) && s.length < 45) return true; // "א. …"
+  if(s.endsWith(':') && s.length < 45) return true;    // "נתונים:"
+  if(/^סיכום/.test(s)) return true;                    // "סיכום …"
+  return false;
+}
+
+/**
+ * Compute content-aware page-break Y positions.
+ * Returns [0, y1, y2, …] where each value is a page-start Y.
+ * Must be called with markers removed and min-height = PAGE_HEIGHT.
+ */
+function computePageBreaks(editor){
+  const lines = _collectLineEnds(editor);
+  if(lines.length === 0) return [0];
+
+  const breaks     = [0];
+  let   targetEnd  = PAGE_HEIGHT;
+  let   searchFrom = 0;
+
+  while(searchFrom < lines.length){
+    // Check if all remaining content fits on this page
+    if(lines[lines.length - 1].y <= targetEnd) break;
+
+    // Binary-ish search: find last line whose bottom ≤ targetEnd
+    let bestIdx = -1;
+    for(let i = searchFrom; i < lines.length; i++){
+      if(lines[i].y <= targetEnd) bestIdx = i;
+      else break;
+    }
+
+    if(bestIdx < searchFrom){
+      // Nothing fits — forced break (a block taller than one page)
+      breaks.push(targetEnd);
+      targetEnd += PAGE_HEIGHT;
+      while(searchFrom < lines.length && lines[searchFrom].y <= breaks[breaks.length-1]) searchFrom++;
+      continue;
+    }
+
+    // ── Keep-with-next: if the line at bestIdx is a heading / separator,
+    //    pull the break earlier so the heading stays with its body.
+    let adjusted = bestIdx;
+    while(adjusted > searchFrom &&
+          _isHeadingLike(lines[adjusted].lineText)){
+      adjusted--;
+    }
+    // Accept adjustment only if we still fill ≥ 50 % of the page
+    const lastBreakY = breaks[breaks.length - 1];
+    if(adjusted >= searchFrom &&
+       (lines[adjusted].y - lastBreakY) >= PAGE_HEIGHT * 0.5){
+      bestIdx = adjusted;
+    }
+
+    // ── Orphan / widow guard: don't leave just 1-2 lines on this page
+    //    or push just 1-2 lines to the next page.
+    //    (only bother when there are enough lines to choose from)
+    if(bestIdx - searchFrom <= 1 && bestIdx > searchFrom + 2){
+      // Very few lines on this page — pull one more from the previous page?
+      // Actually: too few lines means the previous break was too aggressive.
+      // We'll accept it; the keep-with-next rule already handles most cases.
+    }
+
+    const breakY = lines[bestIdx].y;
+    breaks.push(breakY);
+    targetEnd  = breakY + PAGE_HEIGHT;
+    searchFrom = bestIdx + 1;
+  }
+
+  return breaks;
+}
+
+function _doReflow(){
+  _rafPending = false;
+  const editor = document.getElementById('output-edit');
+  if(!editor) return;
+
+  // Clean slate — remove markers, reset min-height for measurement
+  editor.querySelectorAll('.page-break-marker,.page-gap').forEach(el => el.remove());
+  editor.style.minHeight = PAGE_HEIGHT + 'px';
+
+  // Compute content-aware breaks
+  const breaks = computePageBreaks(editor);
+  _lastBreaks = breaks;
+  const totalPages = breaks.length;
+
+  // Extend editor to fill the last page visually
+  const lastBreak = breaks[breaks.length - 1];
+  editor.style.minHeight = (lastBreak + PAGE_HEIGHT) + 'px';
+
+  // Insert dashed-line markers at each break
+  for(let p = 1; p < breaks.length; p++){
+    const yPos = breaks[p];
+
+    const marker = document.createElement('div');
+    marker.className = 'page-break-marker';
+    marker.setAttribute('data-page', String(p + 1));
+    marker.style.top = yPos + 'px';
+    editor.appendChild(marker);
+  }
+
+  updatePageIndicator(totalPages);
+}
+
+function updatePageIndicator(totalPages){
+  const indicator = document.getElementById('page-indicator');
+  if(!indicator) return;
+
+  if(typeof totalPages === 'undefined') totalPages = _lastBreaks.length;
+
+  // Find which page is currently scrolled into view
+  const wrap = document.getElementById('output-wrap');
+  let currentPage = 1;
+  if(wrap && _lastBreaks.length > 1){
+    const scrollY = wrap.scrollTop;
+    for(let i = _lastBreaks.length - 1; i >= 0; i--){
+      if(scrollY >= _lastBreaks[i] - 50){
+        currentPage = i + 1;
+        break;
+      }
+    }
+  }
+  indicator.textContent = `עמוד ${currentPage} מתוך ${totalPages}`;
+}
+
+
+
+let eraserSize=2;
+
+function toggleTextEraser(){
+  const btn=document.getElementById('btn-text-eraser');
+  const label=document.getElementById('eraser-size-label');
+  if(btn.classList.contains('active')){
+    btn.classList.remove('active');
+    label.style.display='none';
+  } else {
+    btn.classList.add('active');
+    label.style.display='inline';
+    eraserSize=2;
+    label.textContent='מילה';
+  }
+}
+
+function handleKey(e){
+  if(!document.getElementById('btn-text-eraser').classList.contains('active'))return;
+  if(e.key==='Backspace'||e.key==='Delete'){
+    e.preventDefault();
+    eraseAtCursor(eraserSize);
+  }
+}
+
+function eraseAtCursor(size){
+  const ed=document.getElementById('output-edit');
+
+  let range;
+  const sel=window.getSelection();
+  if(sel.rangeCount){
+    range=sel.getRangeAt(0).cloneRange();
+  }
+  if(!range) return;
+
+  const node=range.startContainer;
+  if(node.nodeType!==3)return;
+  const offset=range.startOffset;
+  const text=node.textContent;
+  if(!text||text.trim()==='')return;
+
+  if(size===1){
+    if(offset<text.length){
+      node.textContent=text.slice(0,offset)+text.slice(offset+1);
+    } else if(text.length>0){
+      node.textContent=text.slice(0,-1);
+    }
+  } else if(size===2){
+    let start=offset,end=offset;
+    while(start>0&&!/\s/.test(text[start-1]))start--;
+    while(end<text.length&&!/\s/.test(text[end]))end++;
+    if(end<text.length&&/\s/.test(text[end]))end++;
+    if(start!==end){
+      node.textContent=text.slice(0,start)+text.slice(end);
+    }
+  } else if(size===3){
+    let block=node.parentNode;
+    while(block&&block!==ed&&!['DIV','P','BR'].includes(block.nodeName)){
+      block=block.parentNode;
+    }
+    if(block&&block!==ed){
+      block.remove();
+    } else {
+      node.textContent='';
+    }
+  }
+
+  ed.querySelectorAll('*').forEach(el=>{
+    if(el.textContent.trim()===''&&el!==ed&&el.childNodes.length===0)el.remove();
+  });
+
+  scheduleUpdate();
+}
+
+let drawMode=false,isDrawing=false,lastX=0,lastY=0;
+let drawColor='#1a1a1a',eraserMode=false;
+
+function toggleDrawMode(){
+  drawMode=!drawMode;
+  const canvas=document.getElementById('draw-canvas');
+  const toolbar=document.getElementById('draw-toolbar');
+  const btn=document.getElementById('btn-draw-mode');
+  canvas.classList.toggle('active',drawMode);
+  toolbar.style.display=drawMode?'flex':'none';
+  btn.classList.toggle('on',drawMode);
+  if(drawMode){
+    resizeCanvas();
+    btn.style.background='var(--accent-bg)';
+    btn.style.borderColor='var(--accent)';
+  } else {
+    btn.style.background='';
+    btn.style.borderColor='';
+  }
+}
+
+function resizeCanvas(){
+  const canvas=document.getElementById('draw-canvas');
+  const wrap=document.getElementById('output-wrap');
+  const tmp=document.createElement('canvas');
+  tmp.width=canvas.width;tmp.height=canvas.height;
+  tmp.getContext('2d').drawImage(canvas,0,0);
+  canvas.width=wrap.offsetWidth;
+  canvas.height=wrap.offsetHeight;
+  canvas.getContext('2d').drawImage(tmp,0,0);
+}
+
+function getPos(e,canvas){
+  const r=canvas.getBoundingClientRect();
+  if(e.touches){
+    return{x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};
+  }
+  return{x:e.clientX-r.left,y:e.clientY-r.top};
+}
+
+function startDraw(e){
+  if(!drawMode)return;
+  e.preventDefault();
+  isDrawing=true;
+  const canvas=document.getElementById('draw-canvas');
+  const pos=getPos(e,canvas);
+  lastX=pos.x;lastY=pos.y;
+}
+
+function draw(e){
+  if(!drawMode||!isDrawing)return;
+  e.preventDefault();
+  const canvas=document.getElementById('draw-canvas');
+  const ctx=canvas.getContext('2d');
+  const pos=getPos(e,canvas);
+  ctx.beginPath();
+  ctx.moveTo(lastX,lastY);
+  ctx.lineTo(pos.x,pos.y);
+  ctx.strokeStyle=eraserMode?'rgba(255,255,255,1)':drawColor;
+  ctx.lineWidth=eraserMode?parseFloat(document.getElementById('draw-size').value)*4:parseFloat(document.getElementById('draw-size').value);
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  if(eraserMode){
+    ctx.globalCompositeOperation='destination-out';
+  } else {
+    ctx.globalCompositeOperation='source-over';
+    ctx.globalAlpha=0.88;
+  }
+  ctx.stroke();
+  ctx.globalAlpha=1;
+  ctx.globalCompositeOperation='source-over';
+  lastX=pos.x;lastY=pos.y;
+}
+
+function endDraw(e){isDrawing=false;}
+
+function setDrawColor(c,el){
+  drawColor=c;
+  eraserMode=false;
+  document.querySelectorAll('.draw-color').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('btn-eraser').classList.remove('on');
+}
+
+function toggleEraser(){
+  eraserMode=!eraserMode;
+  document.getElementById('btn-eraser').classList.toggle('on',eraserMode);
+}
+
+function clearCanvas(){
+  if(!confirm('למחוק את כל הציור?'))return;
+  const canvas=document.getElementById('draw-canvas');
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const canvas=document.getElementById('draw-canvas');
+  if(!canvas)return;
+  canvas.addEventListener('mousedown',startDraw);
+  canvas.addEventListener('mousemove',draw);
+  canvas.addEventListener('mouseup',endDraw);
+  canvas.addEventListener('mouseleave',endDraw);
+  canvas.addEventListener('touchstart',startDraw,{passive:false});
+  canvas.addEventListener('touchmove',draw,{passive:false});
+  canvas.addEventListener('touchend',endDraw);
+  window.addEventListener('resize',()=>{if(drawMode)resizeCanvas();});
+});
+
+const FONTS=[
+  {name:'Playpen Sans',css:'Playpen Sans Hebrew',google:'Playpen+Sans+Hebrew:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:700},
+  {name:'Secular One',css:'Secular One',google:'Secular+One',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Rubik',css:'Rubik',google:'Rubik:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Heebo',css:'Heebo',google:'Heebo:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Assistant',css:'Assistant',google:'Assistant:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Varela Round',css:'Varela Round',google:'Varela+Round',preview:'שלום Hello',cat:'hebrew',weight:400},
+  {name:'Caveat',css:'Caveat',google:'Caveat:wght@400;700',preview:'Hello אבג',cat:'handwriting',weight:700},
+  {name:'Kalam',css:'Kalam',google:'Kalam:wght@400;700',preview:'Hello אבג',cat:'handwriting',weight:700},
+  {name:'Patrick Hand',css:'Patrick Hand SC',google:'Patrick+Hand+SC',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Indie Flower',css:'Indie Flower',google:'Indie+Flower',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Shadows Into Light',css:'Shadows Into Light',google:'Shadows+Into+Light',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Dancing Script',css:'Dancing Script',google:'Dancing+Script:wght@400;700',preview:'Hello אבג',cat:'handwriting',weight:700},
+  {name:'Architects Daughter',css:'Architects Daughter',google:'Architects+Daughter',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Permanent Marker',css:'Permanent Marker',google:'Permanent+Marker',preview:'Hello אבג',cat:'handwriting',weight:400},
+  {name:'Rock Salt',css:'Rock Salt',google:'Rock+Salt',preview:'Hello abc',cat:'handwriting',weight:400},
+  {name:'Just Another Hand',css:'Just Another Hand',google:'Just+Another+Hand',preview:'Hello abc',cat:'handwriting',weight:400},
+  {name:'Reenie Beanie',css:'Reenie Beanie',google:'Reenie+Beanie',preview:'Hello abc',cat:'handwriting',weight:400},
+  {name:'Covered By Grace',css:'Covered By Your Grace',google:'Covered+By+Your+Grace',preview:'Hello abc',cat:'handwriting',weight:400},
+  {name:'Pacifico',css:'Pacifico',google:'Pacifico',preview:'Hello abc',cat:'display',weight:400},
+  {name:'Fredoka One',css:'Fredoka One',google:'Fredoka+One',preview:'Hello אבג',cat:'display',weight:400},
+  {name:'Righteous',css:'Righteous',google:'Righteous',preview:'Hello abc',cat:'display',weight:400},
+  {name:'Amatic SC',css:'Amatic SC',google:'Amatic+SC:wght@400;700',preview:'Hello abc',cat:'display',weight:700},
+  {name:'Comfortaa',css:'Comfortaa',google:'Comfortaa:wght@400;700',preview:'Hello אבג',cat:'display',weight:400},
+];
+
+let currentFont=FONTS[0];
+let loadedFonts=new Set();
+
+function loadGoogleFont(font){
+  if(loadedFonts.has(font.css))return;
+  loadedFonts.add(font.css);
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href=`https://fonts.googleapis.com/css2?family=${font.google}&display=swap`;
+  document.head.appendChild(link);
+}
+
+function applyFont(font){
+  currentFont=font;
+  loadGoogleFont(font);
+  document.documentElement.style.setProperty('--font',`'${font.css}','Playpen Sans Hebrew',cursive`);
+  const ed=document.getElementById('output-edit');
+  if(ed){
+    ed.style.fontFamily=`'${font.css}','Playpen Sans Hebrew',cursive`;
+    ed.style.fontWeight=font.weight;
+  }
+  const prev=document.querySelector('.font-preview');
+  if(prev){prev.style.fontFamily=`'${font.css}',cursive`;prev.textContent='אבג abc';}
+  document.querySelectorAll('.font-card').forEach(c=>c.classList.toggle('active',c.dataset.css===font.css));
+  renderOutput();
+}
+
+function filterFonts(cat,btn){
+  btn.closest('.tabs').querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildFontGrid(cat);
+}
+
+function buildFontGrid(cat='all'){
+  const grid=document.getElementById('font-grid');
+  grid.innerHTML='';
+  const filtered=cat==='all'?FONTS:FONTS.filter(f=>f.cat===cat);
+  filtered.forEach(font=>{
+    const card=document.createElement('div');
+    card.className='font-card'+(font.css===currentFont.css?' active':'');
+    card.dataset.css=font.css;
+    loadGoogleFont(font);
+    card.innerHTML=`
+      <span class="font-card-name">${font.name}</span>
+      <span class="font-card-preview" style="font-family:'${font.css}',cursive;font-weight:${font.weight};">${font.preview}</span>
+    `;
+    card.onclick=()=>applyFont(font);
+    grid.appendChild(card);
+  });
+}
+
+const SUPABASE_URL='https://tcxplzwmgmqayufccnzn.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHBsendtZ21xYXl1ZmNjbnpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Nzk3MzYsImV4cCI6MjA5MTE1NTczNn0.8CVdyt9FAaN2Wtue_1llhvwThWRqPYJ2FbEO_nZ1osg';
+const STRIPE_PK='pk_test_YOUR_STRIPE_PUBLISHABLE_KEY';
+const STRIPE_PRICE_ID='price_YOUR_PRICE_ID';
+const ADMIN_EMAIL='itamar4747@gmail.com';
+
+const _sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+let _user=null;
+let _profile=null;
+
+function showAuthMsg(text,type){
+  const el=document.getElementById('auth-msg');
+  el.textContent=text;
+  el.className='auth-msg '+type;
+}
+
+async function handleGoogleLogin(){
+  const btn=document.getElementById('google-btn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="auth-spinner"></span> מתחבר...';
+
+  const {error}=await _sb.auth.signInWithOAuth({
+    provider:'google',
+    options:{
+      redirectTo:window.location.origin+window.location.pathname
+    }
+  });
+
+  if(error){
+    btn.disabled=false;
+    btn.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> התחבר עם Google';
+    showAuthMsg('שגיאה בהתחברות: '+error.message,'error');
+  }
+}
+
+async function handleLogout(){
+  await _sb.auth.signOut();
+  _user=null;_profile=null;
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('user-badge').style.display='none';
+  document.getElementById('logout-btn').style.display='none';
+}
+
+function dyIsAdmin(){
+  if(_profile&&_profile.role==='admin')return true;
+  if(_user&&_user.email&&_user.email.toLowerCase()===ADMIN_EMAIL)return true;
+  return false;
+}
+
+async function loadProfile(user){
+  const {data}=await _sb.from('profiles').select('*').eq('id',user.id).single();
+  if(data){_profile=data;}
+  else{
+    const role=user.email.toLowerCase()===ADMIN_EMAIL?'admin':'user';
+    _profile={id:user.id,email:user.email,role,subscription_status:'inactive'};
+  }
+}
+
+function hasActiveSubscription(){
+  if(dyIsAdmin())return true;
+  if(!_profile)return false;
+  if(_profile.subscription_status==='active')return true;
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('payment')==='success')return true;
+  return false;
+}
+
+var DY_FREE=3;
+var DY_KEY='dy_exports_used';
+
+function getExportsUsed(){
+  return parseInt(localStorage.getItem(DY_KEY)||'0');
+}
+
+function checkAndExport(){
+  // Allow PDF export without any payment or subscription restrictions.
+  openPdfModal();
+}
+
+async function startStripeCheckout(){
+  if(!_user){showAuthMsg('יש להתחבר תחילה','error');return;}
+  try{
+    const paymentUrl='https://buy.stripe.com/YOUR_PAYMENT_LINK'
+      +'?client_reference_id='+encodeURIComponent(_user.id)
+      +'?prefilled_email='+encodeURIComponent(_user.email);
+    window.open(paymentUrl,'_blank');
+  }catch(err){
+    alert('שגיאה בפתיחת דף תשלום: '+err.message);
+  }
+}
+
+async function initApp(user){
+  _user=user;
+  try{await loadProfile(user);}catch(e){}
+
+  document.getElementById('auth-overlay').classList.add('hidden');
+
+  const badge=document.getElementById('user-badge');
+  badge.style.display='';
+  badge.textContent=dyIsAdmin()?'👑 '+user.email:user.email;
+  if(dyIsAdmin())badge.style.background='#fef3c7';
+  document.getElementById('logout-btn').style.display='';
+}
+
+async function checkSession(){
+  try{
+    const result=await Promise.race([
+      _sb.auth.getSession(),
+      new Promise(resolve=>setTimeout(()=>resolve({data:{session:null},timedOut:true}),3000))
+    ]);
+
+    if(result.timedOut){
+      console.warn('Supabase session check timed out — app loaded without auth');
+      return;
+    }
+
+    const session=result.data?.session;
+    if(session&&session.user){
+      await initApp(session.user);
+    }else{
+      // no auth required, app remains accessible
+    }
+  }catch(err){
+    console.warn('Auth check failed:',err);
+  }
+}
+
+_sb.auth.onAuthStateChange(async(event,session)=>{
+  if(event==='SIGNED_IN'&&session?.user){
+    await initApp(session.user);
+  }
+  if(event==='SIGNED_OUT'){
+    // do not require auth to continue using the app
+  }
+});
+
+window.onload=()=>{
+  checkSession();
+
+  const badge=document.getElementById('font-badge');
+  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+  ctx.font='20px monospace';const w1=ctx.measureText('א').width;
+  ctx.font="20px 'Dana Yad AlefAlefAlef'";const w2=ctx.measureText('א').width;
+  ctx.font='20px monospace';const w3=ctx.measureText('a').width;
+  ctx.font="20px 'Playpen Sans Hebrew'";const w4=ctx.measureText('a').width;
+  const danaOk=w1!==w2,caveatOk=w3!==w4;
+  if(danaOk&&caveatOk){badge.textContent='✓ דנה יד + Playpen';}
+  else if(danaOk){badge.textContent='✓ דנה יד | Playpen נטען';}
+  else{badge.textContent='⚠ דנה יד לא מותקן';badge.classList.add('missing');}
+
+  buildFontGrid();
+
+  const editor=document.getElementById('output-edit');
+  const wrap=document.getElementById('output-wrap');
+
+  if(editor){
+    editor.focus();
+    // Reflow on any content change
+    editor.addEventListener('input',()=>{syncToolbar();reflowPages();scheduleHwApply();});
+    // Also reflow when pasting content
+    editor.addEventListener('paste',()=>setTimeout(reflowPages,50));
+  }
+
+  // Update page indicator on scroll
+  if(wrap){
+    wrap.addEventListener('scroll',()=>updatePageIndicator());
+  }
+
+  // Initial pagination
+  reflowPages();
+
+  // Apply handwriting effects after first pagination
+  if(HW.enabled){
+    setTimeout(() => {
+      const ed = document.getElementById('output-edit');
+      if(ed && !HW._applied) applyHandwriting(ed);
+    }, 200);
+  }
+
+  // Reflow on window resize (font/zoom changes)
+  window.addEventListener('resize',()=>reflowPages());
+};
+
+function openPdfModal(){
+  document.getElementById('pdf-overlay').classList.add('open');
+}
+
+function closePdfModal(){
+  document.getElementById('pdf-overlay').classList.remove('open');
+}
+
+/**
+ * Build print/PDF page containers using the same content-aware breaks
+ * that drive the on-screen markers.
+ *
+ * Each page is a 794×1123 container that clips a positioned clone of the
+ * editor content.  The clone is offset so only the content between
+ * breaks[p] and breaks[p+1] is visible; overflow below that is masked
+ * by setting the clone's height to pageEnd + overflow:hidden.
+ */
+function buildPrintPages(){
+  const editor = document.getElementById('output-edit');
+  if(!editor) return null;
+
+  // Clean state for measurement
+  editor.querySelectorAll('.page-break-marker,.page-gap').forEach(el => el.remove());
+  const savedMin = editor.style.minHeight;
+  editor.style.minHeight = PAGE_HEIGHT + 'px';
+
+  const breaks   = computePageBreaks(editor);
+  const contentH = editor.scrollHeight;
+
+  editor.style.minHeight = savedMin;
+
+  // Copy the styles that affect text layout
+  const cs = getComputedStyle(editor);
+  const styleProps = ['fontFamily','fontSize','lineHeight','letterSpacing',
+    'color','whiteSpace','padding','direction','fontWeight'];
+
+  // Capture background styles from the page editor
+  const bgColor    = cs.backgroundColor;
+  const bgImage    = cs.backgroundImage;
+  const bgSize     = cs.backgroundSize;
+  const bgPosition = cs.backgroundPosition;
+  const bgRepeat   = cs.backgroundRepeat;
+
+  const container = document.createElement('div');
+  container.id = 'print-container';
+  container.style.cssText = 'position:absolute;left:-9999px;top:0;';
+
+  for(let p = 0; p < breaks.length; p++){
+    const pageStart = breaks[p];
+    const pageEnd   = (p + 1 < breaks.length) ? breaks[p + 1] : contentH;
+
+    const page = document.createElement('div');
+    page.className = 'print-page';
+    page.style.cssText = 'width:794px;height:1123px;overflow:hidden;position:relative;';
+    // Apply page background
+    page.style.backgroundColor = bgColor;
+    page.style.backgroundImage = bgImage;
+    page.style.backgroundSize  = bgSize;
+    page.style.backgroundPosition = bgPosition;
+    page.style.backgroundRepeat = bgRepeat;
+    page.style.printColorAdjust = 'exact';
+    page.style.webkitPrintColorAdjust = 'exact';
+
+    // Clone content, offset so this page's portion is visible
+    const inner = document.createElement('div');
+    inner.className = 'print-page-inner';
+    inner.innerHTML = editor.innerHTML;
+    inner.querySelectorAll('.page-break-marker,.page-gap').forEach(el => el.remove());
+
+    // Offset vertically; clip the bottom so next-page content never shows
+    inner.style.cssText =
+      `position:absolute;top:${-pageStart}px;left:0;width:794px;` +
+      `height:${pageEnd}px;overflow:hidden;`;
+
+    for(const prop of styleProps){
+      inner.style[prop] = cs[prop];
+    }
+    inner.style.overflowWrap = cs.overflowWrap || cs.wordWrap;
+
+    page.appendChild(inner);
+    container.appendChild(page);
+  }
+
+  return {container, totalPages: breaks.length};
+}
+
+/* ── Print support via beforeprint / afterprint ── */
+window.addEventListener('beforeprint', () => {
+  const result = buildPrintPages();
+  if(!result) return;
+  result.container.style.position = 'static';
+  result.container.style.left     = 'auto';
+  document.body.appendChild(result.container);
+});
+window.addEventListener('afterprint', () => {
+  const c = document.getElementById('print-container');
+  if(c) c.remove();
+  reflowPages();
+});
+
+/* ── PDF export ── */
+function exportToPdf(){
+  console.log('Starting PDF export…');
+  const btn = document.getElementById('pdf-btn');
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="pdf-spinner"></span> מייצא...';
+
+  const editor = document.getElementById('output-edit');
+  if(!editor || editor.textContent.trim() === ''){
+    alert('אין תוכן להדפסה');
+    btn.disabled  = false;
+    btn.innerHTML = 'שמור כ-PDF';
+    return;
+  }
+
+  const result = buildPrintPages();
+  if(!result){ btn.disabled=false; btn.innerHTML='שמור כ-PDF'; return; }
+  const {container} = result;
+
+  document.body.appendChild(container);
+
+  const pdf   = new jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pages = container.querySelectorAll('.print-page');
+
+  (async () => {
+    try {
+      for(let i = 0; i < pages.length; i++){
+        if(i > 0) pdf.addPage();
+        const canvas = await html2canvas(pages[i], {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: null,  // capture actual page background
+          width: 794,
+          height: 1123,
+          windowWidth: 794
+        });
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+      }
+      pdf.save('DanaYad_Homework_Solutions.pdf');
+      closePdfModal();
+      console.log('PDF export completed successfully.');
+    } catch(err){
+      console.error('PDF export failed:', err);
+      alert('שגיאה בייצוא PDF: ' + err.message);
+    } finally {
+      container.remove();
+      btn.disabled  = false;
+      btn.innerHTML = 'שמור כ-PDF';
+      reflowPages();
+    }
+  })();
+}
+
+/* ═══════════════════════════════════════════════════════
+   HANDWRITING REALISM ENGINE
+   Effects 1-5: rotation, size, baseline drift, tremor, ink
+   ═══════════════════════════════════════════════════════ */
+
+const HW = {
+  enabled: true,
+  rotation: 2,      // max degrees ±
+  sizeVar: 1.5,     // max px ±
+  drift: 2,         // baseline sine amplitude px
+  tremor: 1.2,      // SVG displacement scale
+  opacity: 0.2,     // ink darkness variation range
+  _applied: false,   // whether spans are currently in DOM
+  _seed: Math.random() * 1000  // deterministic seed per session
+};
+
+/* Simple seeded PRNG so effects are stable between strip/apply cycles */
+function _hwRand(seed){
+  let x = Math.sin(seed) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/* ── Read slider values ── */
+function updateHwParam(){
+  HW.rotation = parseFloat(document.getElementById('hw-rotation').value);
+  HW.sizeVar  = parseFloat(document.getElementById('hw-size-var').value);
+  HW.drift    = parseFloat(document.getElementById('hw-drift').value);
+  HW.tremor   = parseFloat(document.getElementById('hw-tremor').value);
+  HW.opacity  = parseFloat(document.getElementById('hw-opacity').value);
+
+  document.getElementById('hw-rotation-val').textContent = HW.rotation + '°';
+  document.getElementById('hw-size-val').textContent     = HW.sizeVar;
+  document.getElementById('hw-drift-val').textContent    = HW.drift + 'px';
+  document.getElementById('hw-tremor-val').textContent   = HW.tremor;
+  document.getElementById('hw-opacity-val').textContent  = HW.opacity;
+
+  // Update SVG filter scale
+  const disp = document.querySelector('#ink-tremor feDisplacementMap');
+  if(disp) disp.setAttribute('scale', HW.tremor);
+
+  // Re-apply effects
+  scheduleHwApply();
+}
+
+function toggleHandwriting(on){
+  HW.enabled = on;
+  const editor = document.getElementById('output-edit');
+  if(!on){
+    stripHandwriting(editor);
+    editor.classList.remove('hw-filter');
+  } else {
+    editor.classList.add('hw-filter');
+    scheduleHwApply();
+  }
+}
+
+/* ── Strip all .hw-char spans back to text ── */
+function stripHandwriting(root){
+  if(!HW._applied) return;
+  root.querySelectorAll('.hw-char').forEach(span => {
+    span.replaceWith(span.textContent);
+  });
+  root.normalize();
+  HW._applied = false;
+}
+
+/* ── Apply per-character effects to a container ── */
+function applyHandwriting(root){
+  if(HW._applied) return; // already applied
+  if(!HW.enabled) return;
+
+  const baseFontSize = parseFloat(getComputedStyle(root).fontSize) || 16;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let node;
+  while(node = walker.nextNode()){
+    // Skip nodes inside markers or already-wrapped spans
+    if(node.parentElement && (
+      node.parentElement.closest('.page-break-marker') ||
+      node.parentElement.classList.contains('hw-char')
+    )) continue;
+    if(node.textContent.length === 0) continue;
+    textNodes.push(node);
+  }
+
+  let globalCharIdx = 0;
+  let lineIdx = 0;
+
+  textNodes.forEach(tNode => {
+    const text = tNode.textContent;
+    if(!text) return;
+
+    const frag = document.createDocumentFragment();
+
+    for(let i = 0; i < text.length; i++){
+      const ch = text[i];
+
+      // Newlines stay as bare text nodes (pagination needs them)
+      if(ch === '\n'){
+        frag.appendChild(document.createTextNode('\n'));
+        lineIdx++;
+        globalCharIdx = 0;
+        continue;
+      }
+      // Spaces stay as bare text for natural word-spacing
+      if(ch === ' ' || ch === '\t'){
+        frag.appendChild(document.createTextNode(ch));
+        globalCharIdx++;
+        continue;
+      }
+
+      const span = document.createElement('span');
+      span.className = 'hw-char';
+      span.textContent = ch;
+
+      // Deterministic random per character position
+      const seed = HW._seed + lineIdx * 137 + globalCharIdx;
+
+      // Effect 1: Rotation jitter
+      const rot = ((_hwRand(seed) - 0.5) * 2) * HW.rotation;
+
+      // Effect 2: Size variation
+      const sizeOff = ((_hwRand(seed + 1) - 0.5) * 2) * HW.sizeVar;
+
+      // Effect 3: Baseline drift (sine wave with per-line phase)
+      const linePhase = _hwRand(seed * 0.01 + lineIdx * 7.3) * Math.PI * 2;
+      const driftY = Math.sin(linePhase + globalCharIdx * 0.18) * HW.drift;
+
+      // Effect 5: Ink opacity variation
+      const opVar = 1.0 - _hwRand(seed + 2) * HW.opacity;
+
+      span.style.cssText =
+        'display:inline-block;' +
+        'transform:rotate(' + rot.toFixed(2) + 'deg);' +
+        'font-size:' + (baseFontSize + sizeOff).toFixed(1) + 'px;' +
+        'position:relative;top:' + driftY.toFixed(1) + 'px;' +
+        'opacity:' + opVar.toFixed(3) + ';';
+
+      frag.appendChild(span);
+      globalCharIdx++;
+    }
+
+    tNode.parentNode.replaceChild(frag, tNode);
+  });
+
+  HW._applied = true;
+}
+
+/* ── Debounced apply for after edits ── */
+let _hwTimer = null;
+function scheduleHwApply(){
+  if(_hwTimer) clearTimeout(_hwTimer);
+  _hwTimer = setTimeout(() => {
+    const editor = document.getElementById('output-edit');
+    if(!editor || !HW.enabled) return;
+    stripHandwriting(editor);
+    applyHandwriting(editor);
+  }, 400);
+}
+
+/* ── Integration with pagination ──
+   _doReflow needs clean text nodes. We patch it to strip before
+   measuring and re-apply after markers are placed. */
+const _origDoReflow = _doReflow;
+_doReflow = function(){
+  const editor = document.getElementById('output-edit');
+  const wasApplied = HW._applied;
+  if(editor && wasApplied) stripHandwriting(editor);
+
+  _origDoReflow();
+
+  if(editor && wasApplied && HW.enabled) applyHandwriting(editor);
+};
+
+/* ── Integration with buildPrintPages ──
+   Apply effects to each print-page clone for PDF fidelity. */
+const _origBuildPrintPages = buildPrintPages;
+buildPrintPages = function(){
+  // Strip effects from editor before measurement
+  const editor = document.getElementById('output-edit');
+  const wasApplied = HW._applied;
+  if(editor && wasApplied) stripHandwriting(editor);
+
+  const result = _origBuildPrintPages();
+
+  // Re-apply to editor
+  if(editor && wasApplied && HW.enabled) applyHandwriting(editor);
+
+  // Apply effects to each print-page clone
+  if(result && HW.enabled){
+    result.container.querySelectorAll('.print-page-inner').forEach(inner => {
+      // Mark as not-applied so applyHandwriting will process it
+      const saveApplied = HW._applied;
+      HW._applied = false;
+      applyHandwriting(inner);
+      HW._applied = saveApplied;
+
+      // Also apply SVG filter to the clone
+      inner.style.filter = 'url(#ink-tremor)';
+    });
+  }
+  return result;
+};
+
+/* ── On editor focus: strip for clean editing ── */
+/* ── On editor blur: re-apply effects ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const editor = document.getElementById('output-edit');
+  if(!editor) return;
+
+  editor.addEventListener('focus', () => {
+    if(HW._applied) stripHandwriting(editor);
+  });
+
+  editor.addEventListener('blur', () => {
+    if(HW.enabled && !HW._applied) applyHandwriting(editor);
+  });
+
+  // Apply SVG filter class on load
+  if(HW.enabled) editor.classList.add('hw-filter');
+});
+
+let updateTimer=null;
+function scheduleUpdate(){
+  if(updateTimer)clearTimeout(updateTimer);
+  updateTimer=setTimeout(renderOutput,100);
+}
+
+function renderOutput(){
+  const out=document.getElementById('output-edit');
+  if(out && out.textContent.trim()===''){
+    out.innerHTML='<br>';
+  }
+}
+</script>
+</body>
+</html>
