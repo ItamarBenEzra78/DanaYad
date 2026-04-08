@@ -1357,7 +1357,13 @@ function buildPrintPages(){
 
     const page = document.createElement('div');
     page.className = 'print-page';
-    page.style.cssText = 'width:794px;height:1123px;overflow:hidden;position:relative;background:transparent;';
+    page.style.cssText = 'width:794px;height:1123px;overflow:hidden;position:relative;';
+    // Apply background on the page container (fixed position, not scrolled)
+    page.style.backgroundColor = bg.backgroundColor;
+    page.style.backgroundImage = bg.backgroundImage;
+    if(bg.backgroundSize) page.style.backgroundSize = bg.backgroundSize;
+    if(bg.backgroundPosition) page.style.backgroundPosition = bg.backgroundPosition;
+    if(bg.backgroundRepeat) page.style.backgroundRepeat = bg.backgroundRepeat;
 
     // Clone content, offset so this page's portion is visible
     const inner = document.createElement('div');
@@ -1368,19 +1374,32 @@ function buildPrintPages(){
     // Offset vertically; clip the bottom so next-page content never shows
     inner.style.cssText =
       `position:absolute;top:${-pageStart}px;left:0;width:794px;` +
-      `height:${pageEnd}px;overflow:hidden;`;
+      `height:${pageEnd}px;overflow:hidden;background:transparent;`;
 
     for(const prop of styleProps){
       inner.style[prop] = cs[prop];
     }
     inner.style.overflowWrap = cs.overflowWrap || cs.wordWrap;
 
-    // Apply background to inner (matches editor padding/alignment)
-    inner.style.backgroundColor = bg.backgroundColor;
-    inner.style.backgroundImage = bg.backgroundImage;
-    if(bg.backgroundSize) inner.style.backgroundSize = bg.backgroundSize;
-    if(bg.backgroundPosition) inner.style.backgroundPosition = bg.backgroundPosition;
-    if(bg.backgroundRepeat) inner.style.backgroundRepeat = bg.backgroundRepeat;
+    // Merge draw canvas into this page if it has content
+    const srcCanvas = document.getElementById('draw-canvas');
+    if(srcCanvas && srcCanvas.width > 0 && srcCanvas.height > 0){
+      const drawLayer = document.createElement('canvas');
+      drawLayer.width  = 794 * 2;
+      drawLayer.height = 1123 * 2;
+      drawLayer.style.cssText = 'position:absolute;top:0;left:0;width:794px;height:1123px;pointer-events:none;z-index:2;';
+      const dCtx = drawLayer.getContext('2d');
+      // Draw the portion of the source canvas that corresponds to this page
+      const scaleX = srcCanvas.width / srcCanvas.offsetWidth;
+      const scaleY = srcCanvas.height / srcCanvas.offsetHeight;
+      dCtx.drawImage(srcCanvas,
+        0, pageStart * scaleY,                          // source x, y
+        srcCanvas.width, 1123 * scaleY,                 // source w, h
+        0, 0,                                            // dest x, y
+        drawLayer.width, drawLayer.height                // dest w, h
+      );
+      page.appendChild(drawLayer);
+    }
 
     page.appendChild(inner);
     container.appendChild(page);
