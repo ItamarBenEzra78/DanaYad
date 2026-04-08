@@ -1836,6 +1836,7 @@ function applyHandwriting(root){
 }
 
 /* ── Line drift ── */
+/* ── Line drift: per-line rotation in PDF ── */
 let _lineDriftVal = 0;
 
 function updateLineDrift(val){
@@ -1844,68 +1845,54 @@ function updateLineDrift(val){
 }
 
 /**
- * Apply line drift to a CLONE container (never the editor).
- * Wraps each visual line in a display:block span with rotation.
- * Works on both raw \n text nodes and <div> elements from contenteditable.
+ * Wrap every visual line inside a clone in a rotated block div.
+ * Handles two content types that contenteditable produces:
+ *   A) <div> child elements (one per Enter-created line)
+ *   B) Text nodes with \n characters (raw pre-wrap content)
+ * Only called on print clones — never on the live editor.
  */
-function _applyLineDriftToClone(root){
-  const rotStyle = 'display:block;transform:rotate('+_lineDriftVal+'deg);transform-origin:right center;';
+function _wrapLinesWithDrift(root, deg){
+  const css = 'display:block;transform:rotate('+deg+'deg);transform-origin:right center;';
 
-  // 1. Handle child block elements (divs created by Enter in contenteditable)
-  Array.from(root.children).forEach(child => {
-    if(child.classList && child.classList.contains('page-break-marker')) return;
-    if(child.tagName === 'DIV' || child.tagName === 'P'){
-      child.style.cssText += rotStyle;
+  // A) Rotate existing block children (<div>, <p>)
+  for(const child of Array.from(root.children)){
+    if(child.classList && child.classList.contains('page-break-marker')) continue;
+    const tag = child.tagName;
+    if(tag === 'DIV' || tag === 'P' || tag === 'TABLE' || tag === 'UL' || tag === 'OL'){
+      child.style.cssText += css;
     }
-  });
-
-  // 2. Handle text nodes with \n (raw pre-wrap content)
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const textNodes = [];
-  let n;
-  while(n = walker.nextNode()){
-    if(n.parentElement !== root) continue; // only direct children
-    if(n.textContent.indexOf('\n') === -1 && n.textContent.trim() === '') continue;
-    textNodes.push(n);
   }
 
-  textNodes.forEach(tNode => {
+  // B) Split direct text-node children at \n, wrap each piece
+  for(const tNode of Array.from(root.childNodes)){
+    if(tNode.nodeType !== 3) continue;                     // text nodes only
+    if(tNode.parentNode !== root) continue;                // direct children only
     const text = tNode.textContent;
-    const parts = text.split('\n');
-    if(parts.length <= 1 && text.trim()){
-      // Single line without newline — wrap it
-      const span = document.createElement('span');
-      span.style.cssText = rotStyle;
-      span.textContent = text;
-      tNode.parentNode.replaceChild(span, tNode);
-      return;
-    }
+    if(!text || (!text.trim() && text.indexOf('\n') === -1)) continue;
+
+    const lines = text.split('\n');
     const frag = document.createDocumentFragment();
-    parts.forEach((part, i) => {
+    lines.forEach((line, i) => {
       if(i > 0) frag.appendChild(document.createTextNode('\n'));
-      if(part.length === 0) return;
-      const span = document.createElement('span');
-      span.style.cssText = rotStyle;
-      span.textContent = part;
-      frag.appendChild(span);
+      if(!line) return;
+      const div = document.createElement('div');
+      div.style.cssText = css;
+      div.textContent = line;
+      frag.appendChild(div);
     });
-    tNode.parentNode.replaceChild(frag, tNode);
-  });
+    root.replaceChild(frag, tNode);
+  }
 }
 
 /* ── Integration with buildPrintPages ──
-   Apply line drift + handwriting effects to print/PDF clones only.
-   The editor (#output-edit) is NEVER transformed — keeps editing and
-   pagination measurement clean. */
+   Apply effects to print/PDF clones only. Editor is never touched. */
 const _origBuildPrintPages = buildPrintPages;
 buildPrintPages = function(){
   const result = _origBuildPrintPages();
 
   if(result){
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
-      // Line drift: wrap each line in a rotated block span
-      if(_lineDriftVal !== 0) _applyLineDriftToClone(inner);
-      // Word-level handwriting effects on the clone
+      if(_lineDriftVal !== 0) _wrapLinesWithDrift(inner, _lineDriftVal);
       if(HW.enabled){
         applyHandwriting(inner);
         inner.style.filter = 'url(#ink-tremor)';
