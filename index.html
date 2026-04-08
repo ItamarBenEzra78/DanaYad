@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DanaYad - פתרונות עבודת בית רגרסיה לינארית</title>
+<title>DanaYad - ממיר כתב יד חכם</title>
 <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -94,7 +94,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 .output-area{position:relative;flex:1;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .output-wrap{flex:1;position:relative;overflow-y:auto;padding:30px 24px 0;background:var(--bg);}
 #output-edit{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;direction:rtl;text-align:right;}
-#output-edit:empty::before,#output-edit:not(:focus):has(> br:only-child)::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;display:block;}
+#output-edit:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;display:block;}
 .draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 .draw-canvas.active{pointer-events:auto;}
 .draw-toolbar{position:absolute;top:10px;left:10px;display:none;z-index:10;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:8px;gap:4px;align-items:center;}
@@ -650,7 +650,6 @@ function insertSymbol(sym){
     range.collapse(false);
     if(ed) ed.focus();
   }
-  scheduleUpdate();
 }
 
 function toggleBold(){const e=document.getElementById('output-edit');e.focus();document.execCommand('bold');syncToolbar();}
@@ -952,7 +951,6 @@ function eraseAtCursor(size){
     if(el.textContent.trim()===''&&el!==ed&&el.childNodes.length===0)el.remove();
   });
 
-  scheduleUpdate();
 }
 
 let drawMode=false,isDrawing=false,lastX=0,lastY=0;
@@ -1060,10 +1058,7 @@ function clearAll(){
   if(!confirm('האם אתה בטוח? כל התוכן יימחק')) return;
   // Clear editor text
   const editor=document.getElementById('output-edit');
-  if(editor){
-    stripLineDrift(editor);
-    editor.innerHTML='';
-  }
+  if(editor) editor.innerHTML='';
   // Clear draw canvas
   const canvas=document.getElementById('draw-canvas');
   if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
@@ -1287,7 +1282,6 @@ function applyFont(font){
   const prev=document.querySelector('.font-preview');
   if(prev){prev.style.fontFamily=`'${font.css}',cursive`;prev.textContent='אבג abc';}
   document.querySelectorAll('.font-card').forEach(c=>c.classList.toggle('active',c.dataset.css===font.css));
-  renderOutput();
 }
 
 function filterFonts(cat,btn){
@@ -1723,7 +1717,6 @@ const HW = {
   drift: 2,         // baseline sine amplitude px
   tremor: 1.2,      // SVG displacement scale
   opacity: 0.2,     // ink darkness variation range
-  _applied: false,   // whether spans are currently in DOM
   _seed: Math.random() * 1000  // deterministic seed per session
 };
 
@@ -1751,8 +1744,6 @@ function updateHwParam(){
   const disp = document.querySelector('#ink-tremor feDisplacementMap');
   if(disp) disp.setAttribute('scale', HW.tremor);
 
-  // Re-apply effects
-  scheduleHwApply();
 }
 
 function toggleHandwriting(on){
@@ -1844,51 +1835,33 @@ function applyHandwriting(root){
   });
 }
 
-/* ── No-ops: editor is never touched by span wrapping ── */
-function scheduleHwApply(){}  // no-op — effects only on print clones
-function stripHandwriting(){}  // no-op — nothing to strip from editor
-
-/* ── Line drift: rotate whole lines slightly ── */
+/* ── Line drift ── */
 let _lineDriftVal = 0;
 
 function updateLineDrift(val){
   _lineDriftVal = parseFloat(val);
   document.getElementById('line-drift-val').textContent = val + '°';
-  _applyEditorDrift();
-}
-
-/** Apply rotation directly on #output-edit container — affects all content uniformly */
-function _applyEditorDrift(){
-  const editor = document.getElementById('output-edit');
-  if(!editor) return;
-  if(_lineDriftVal === 0){
-    editor.style.transform = '';
-    editor.style.transformOrigin = '';
-  } else {
-    editor.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
-    editor.style.transformOrigin = 'right center';
-  }
-}
-
-/* Legacy stubs — no longer needed but called from other code */
-function stripLineDrift(){}
-function applyLineDrift(root){
-  if(_lineDriftVal === 0 || !root) return;
-  root.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
-  root.style.transformOrigin = 'right center';
 }
 
 /* ── Integration with buildPrintPages ──
-   Apply effects only to print/PDF clones, never the editor. */
+   Apply line drift + handwriting effects to print/PDF clones only.
+   The editor (#output-edit) is NEVER transformed — keeps editing and
+   pagination measurement clean. */
 const _origBuildPrintPages = buildPrintPages;
 buildPrintPages = function(){
   const result = _origBuildPrintPages();
 
   if(result){
+    result.container.querySelectorAll('.print-page').forEach(page => {
+      // Line drift: rotate the WHOLE page container (not inner)
+      // This rotates content + background together, pivot from right edge
+      if(_lineDriftVal !== 0){
+        page.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
+        page.style.transformOrigin = 'right center';
+      }
+    });
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
-      // Line drift on clone — rotate the whole inner div
-      if(_lineDriftVal !== 0) applyLineDrift(inner);
-      // Word-level handwriting effects
+      // Word-level handwriting effects on the clone
       if(HW.enabled){
         applyHandwriting(inner);
         inner.style.filter = 'url(#ink-tremor)';
@@ -1898,23 +1871,12 @@ buildPrintPages = function(){
   return result;
 };
 
-/* ── Screen preview: SVG filter ── */
+/* ── Screen preview: SVG filter only (no DOM changes to editor) ── */
 document.addEventListener('DOMContentLoaded', () => {
   const editor = document.getElementById('output-edit');
   if(!editor) return;
   if(HW.enabled) editor.classList.add('hw-filter');
 });
-
-let updateTimer=null;
-function scheduleUpdate(){
-  if(updateTimer)clearTimeout(updateTimer);
-  updateTimer=setTimeout(renderOutput,100);
-}
-
-function renderOutput(){
-  // No-op: let contenteditable handle empty state naturally.
-  // CSS :empty::before shows the placeholder text.
-}
 </script>
 </body>
 </html>
