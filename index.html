@@ -335,6 +335,11 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
         <input type="range" id="letter-spacing" min="-2" max="5" value="0" oninput="updateLetterSpacing(this.value)">
         <span class="val" id="letter-spacing-val">0px</span>
       </div>
+      <div class="ctrl-row">
+        <label>סטיית שורה</label>
+        <input type="range" id="line-drift" min="0" max="5" step="0.1" value="0" oninput="updateLineDrift(this.value)">
+        <span class="val" id="line-drift-val">0°</span>
+      </div>
     </div>
 
     <div>
@@ -1634,17 +1639,85 @@ function applyHandwriting(root){
 function scheduleHwApply(){}  // no-op — effects only on print clones
 function stripHandwriting(){}  // no-op — nothing to strip from editor
 
+/* ── Line drift: rotate whole lines slightly ── */
+let _lineDriftVal = 0;
+
+function updateLineDrift(val){
+  _lineDriftVal = parseFloat(val);
+  document.getElementById('line-drift-val').textContent = val + '°';
+}
+
+/**
+ * Apply per-line rotation drift to a CLONE container.
+ * Splits text content into line-divs, each rotated by a seeded random angle.
+ * Applied only to print-page clones, never the editor.
+ */
+function applyLineDrift(root){
+  if(_lineDriftVal === 0) return;
+
+  // The content is pre-wrapped text with \n. We need to wrap each visual line.
+  // Walk text nodes, split at \n, wrap each line segment in a span.
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let node;
+  while(node = walker.nextNode()){
+    if(node.parentElement && node.parentElement.closest('.page-break-marker')) continue;
+    if(node.textContent.indexOf('\n') === -1) continue;
+    textNodes.push(node);
+  }
+
+  // For each text node with newlines, wrap line segments in rotated spans
+  let lineIdx = 0;
+  textNodes.forEach(tNode => {
+    const text = tNode.textContent;
+    const parts = text.split('\n');
+    if(parts.length <= 1) return;
+
+    const frag = document.createDocumentFragment();
+    parts.forEach((part, i) => {
+      if(i > 0) frag.appendChild(document.createTextNode('\n'));
+
+      if(part.length === 0){
+        lineIdx++;
+        return;
+      }
+
+      const lineSpan = document.createElement('span');
+      lineSpan.className = 'hw-line-drift';
+      lineSpan.textContent = part;
+
+      // Seeded random rotation for this line
+      const seed = HW._seed + lineIdx * 31.7;
+      const angle = ((_hwRand(seed) - 0.5) * 2) * _lineDriftVal;
+
+      lineSpan.style.cssText =
+        'display:inline-block;width:100%;' +
+        'transform:rotate(' + angle.toFixed(3) + 'deg);' +
+        'transform-origin:right center;';
+
+      frag.appendChild(lineSpan);
+      lineIdx++;
+    });
+
+    tNode.parentNode.replaceChild(frag, tNode);
+  });
+}
+
 /* ── Integration with buildPrintPages ──
    Apply effects only to print/PDF clones, never the editor. */
 const _origBuildPrintPages = buildPrintPages;
 buildPrintPages = function(){
   const result = _origBuildPrintPages();
 
-  // Apply word-level effects to each print-page clone
-  if(result && HW.enabled){
+  if(result){
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
-      applyHandwriting(inner);
-      inner.style.filter = 'url(#ink-tremor)';
+      // Line drift (applied before word-level effects so text nodes are still clean)
+      applyLineDrift(inner);
+      // Word-level handwriting effects
+      if(HW.enabled){
+        applyHandwriting(inner);
+        inner.style.filter = 'url(#ink-tremor)';
+      }
     });
   }
   return result;
