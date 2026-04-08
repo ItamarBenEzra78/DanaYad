@@ -93,7 +93,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
 .output-area{position:relative;flex:1;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .output-wrap{flex:1;position:relative;overflow-y:auto;padding:30px 24px 0;background:var(--bg);}
-#output-edit{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;}
+#output-edit{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;direction:rtl;text-align:right;}
 #output-edit:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;}
 .draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 .draw-canvas.active{pointer-events:auto;}
@@ -159,7 +159,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 /* old .pages-container and .page removed — pagination is now dynamic */
 
 /* ── Handwriting realism effects ── */
-.hw-char{display:inline-block;will-change:transform;}
+.hw-char{display:inline-block;will-change:transform;direction:inherit;unicode-bidi:plaintext;}
 #output-edit.hw-filter{filter:url(#ink-tremor);}
 .hw-toggle{display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;}
 .hw-toggle input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
@@ -527,7 +527,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
     <div class="output-area">
     <div class="output-wrap" id="output-wrap">
-        <div id="output-edit" class="bg-paper" data-bg-type="paper" contenteditable="true"
+        <div id="output-edit" class="bg-paper" data-bg-type="paper" dir="rtl" contenteditable="true"
      onkeydown="handleKey(event)"
      onmouseup="syncToolbar()"
      onkeyup="syncToolbar()">
@@ -1569,7 +1569,7 @@ function applyHandwriting(root){
       const opVar = 1.0 - _hwRand(seed + 2) * HW.opacity;
 
       span.style.cssText =
-        'display:inline-block;' +
+        'display:inline-block;direction:inherit;unicode-bidi:plaintext;' +
         'transform:rotate(' + rot.toFixed(2) + 'deg);' +
         'font-size:' + (baseFontSize + sizeOff).toFixed(1) + 'px;' +
         'position:relative;top:' + driftY.toFixed(1) + 'px;' +
