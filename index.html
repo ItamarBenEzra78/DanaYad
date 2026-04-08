@@ -525,6 +525,8 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
   <div class="content">
     <div class="fmt-bar">
+      <button class="fb" onclick="globalUndo()" title="בטל (Ctrl+Z)">↩</button>
+      <div class="fmt-sep"></div>
       <button class="fb" onclick="toggleBold()" title="מודגש"><b>B</b></button>
       <button class="fb" onclick="toggleItalic()" title="נטוי"><i>I</i></button>
       <button class="fb" onclick="toggleUnderline()" title="קו תחתון"><u>U</u></button>
@@ -575,6 +577,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
           <button id="btn-eraser" onclick="toggleEraser()">מחק</button>
           <button id="btn-ruler" onclick="toggleRuler()" style="border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;">📏</button>
           <input type="range" id="draw-size" min="1" max="10" value="2" style="width:80px;">
+          <button onclick="undoCanvas()" style="font-size:11px;border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;">↩</button>
           <button onclick="clearCanvas()" style="font-size:11px;border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;">נקה</button>
         </div>
         <div id="page-indicator">עמוד 1 מתוך 1</div>
@@ -1028,6 +1031,7 @@ function draw(e){
 
 function endDraw(e){
   if(rulerMode && isDrawing){ endRuler(e); return; }
+  if(isDrawing) saveCanvasState();
   isDrawing=false;
 }
 
@@ -1106,6 +1110,42 @@ function endRuler(e){
   // Final line is already drawn by the last preview
   _rulerSnapshot=null;
   isDrawing=false;
+  saveCanvasState();
+}
+
+/* ── Canvas undo history ── */
+const _canvasHistory=[];
+const _canvasHistoryMax=20;
+
+function saveCanvasState(){
+  const canvas=document.getElementById('draw-canvas');
+  if(!canvas||canvas.width===0) return;
+  const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
+  _canvasHistory.push(data);
+  if(_canvasHistory.length>_canvasHistoryMax) _canvasHistory.shift();
+}
+
+function undoCanvas(){
+  const canvas=document.getElementById('draw-canvas');
+  if(!canvas) return;
+  if(_canvasHistory.length>0){
+    _canvasHistory.pop(); // remove current state
+    const ctx=canvas.getContext('2d');
+    if(_canvasHistory.length>0){
+      ctx.putImageData(_canvasHistory[_canvasHistory.length-1],0,0);
+    } else {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  }
+}
+
+function globalUndo(){
+  if(drawMode){
+    undoCanvas();
+  } else {
+    document.getElementById('output-edit').focus();
+    document.execCommand('undo');
+  }
 }
 
 /* ── Table insert ── */
@@ -1159,6 +1199,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   canvas.addEventListener('touchmove',draw,{passive:false});
   canvas.addEventListener('touchend',endDraw);
   window.addEventListener('resize',()=>{if(drawMode)resizeCanvas();});
+
+  // Ctrl+Z global undo
+  document.addEventListener('keydown',(e)=>{
+    if((e.ctrlKey||e.metaKey) && e.key==='z' && drawMode){
+      e.preventDefault();
+      undoCanvas();
+    }
+    // Text undo is handled natively by contenteditable
+  });
 
   // Close table popup on outside click
   document.addEventListener('click',(e)=>{
