@@ -1284,6 +1284,59 @@ function closePdfModal(){
 }
 
 /**
+ * Render a page background pattern onto a canvas element.
+ * html2canvas doesn't support CSS gradients reliably, so we paint them manually.
+ */
+function _renderPageBg(type, w, h, lineH){
+  if(type === 'plain') return null;
+
+  const scale = 2; // retina
+  const c = document.createElement('canvas');
+  c.width = w * scale;
+  c.height = h * scale;
+  const ctx = c.getContext('2d');
+  ctx.scale(scale, scale);
+
+  if(type === 'paper'){
+    // Grid pattern
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.02)';
+    ctx.lineWidth = 1;
+    for(let x = 0; x <= w; x += 20){
+      ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, h); ctx.stroke();
+    }
+    for(let y = 0; y <= h; y += 20){
+      ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(w, y + 0.5); ctx.stroke();
+    }
+  } else if(type === 'lined'){
+    // Notebook ruled lines
+    ctx.fillStyle = '#FFFEF8';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(180,200,220,0.35)';
+    ctx.lineWidth = 1;
+    const startY = 60; // match padding-top
+    for(let y = startY; y <= h; y += lineH){
+      ctx.beginPath(); ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(w, Math.round(y) + 0.5); ctx.stroke();
+    }
+  } else if(type === 'dotted'){
+    // Dot grid
+    ctx.fillStyle = '#FEFEFA';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    for(let x = 10; x < w; x += 20){
+      for(let y = 10; y < h; y += 20){
+        ctx.beginPath(); ctx.arc(x, y, 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  } else {
+    return null;
+  }
+
+  return c;
+}
+
+/**
  * Build print/PDF page containers using the same content-aware breaks
  * that drive the on-screen markers.
  *
@@ -1314,39 +1367,6 @@ function buildPrintPages(){
   // Read the current background type from the editor
   const bgType = editor.dataset.bgType || 'paper';
 
-  // Background CSS definitions matching the stylesheet
-  const bgDefs = {
-    paper: {
-      backgroundColor: '#fff',
-      backgroundImage: 'linear-gradient(90deg,rgba(0,0,0,.02) 1px,transparent 1px),linear-gradient(rgba(0,0,0,.02) 1px,transparent 1px)',
-      backgroundSize: '20px 20px',
-      backgroundPosition: '',
-      backgroundRepeat: ''
-    },
-    lined: {
-      backgroundColor: '#FFFEF8',
-      backgroundImage: 'repeating-linear-gradient(180deg,transparent,transparent calc(1.6em - 1px),rgba(180,200,220,0.35) calc(1.6em - 1px),rgba(180,200,220,0.35) 1.6em)',
-      backgroundSize: '100% 1.6em',
-      backgroundPosition: '0 60px',
-      backgroundRepeat: ''
-    },
-    dotted: {
-      backgroundColor: '#FEFEFA',
-      backgroundImage: 'radial-gradient(circle,rgba(0,0,0,0.12) 0.8px,transparent 0.8px)',
-      backgroundSize: '20px 20px',
-      backgroundPosition: '',
-      backgroundRepeat: ''
-    },
-    plain: {
-      backgroundColor: '#fff',
-      backgroundImage: 'none',
-      backgroundSize: '',
-      backgroundPosition: '',
-      backgroundRepeat: ''
-    }
-  };
-  const bg = bgDefs[bgType] || bgDefs.paper;
-
   const container = document.createElement('div');
   container.id = 'print-container';
   container.style.cssText = 'position:absolute;left:-9999px;top:0;';
@@ -1357,13 +1377,14 @@ function buildPrintPages(){
 
     const page = document.createElement('div');
     page.className = 'print-page';
-    page.style.cssText = 'width:794px;height:1123px;overflow:hidden;position:relative;';
-    // Apply background on the page container (fixed position, not scrolled)
-    page.style.backgroundColor = bg.backgroundColor;
-    page.style.backgroundImage = bg.backgroundImage;
-    if(bg.backgroundSize) page.style.backgroundSize = bg.backgroundSize;
-    if(bg.backgroundPosition) page.style.backgroundPosition = bg.backgroundPosition;
-    if(bg.backgroundRepeat) page.style.backgroundRepeat = bg.backgroundRepeat;
+    page.style.cssText = 'width:794px;height:1123px;overflow:hidden;position:relative;background:#fff;';
+
+    // Render page background as a canvas (html2canvas can't paint CSS gradients)
+    const bgCanvas = _renderPageBg(bgType, 794, 1123, parseFloat(cs.lineHeight) || 25.6);
+    if(bgCanvas){
+      bgCanvas.style.cssText = 'position:absolute;top:0;left:0;width:794px;height:1123px;z-index:0;';
+      page.appendChild(bgCanvas);
+    }
 
     // Clone content, offset so this page's portion is visible
     const inner = document.createElement('div');
@@ -1374,7 +1395,7 @@ function buildPrintPages(){
     // Offset vertically; clip the bottom so next-page content never shows
     inner.style.cssText =
       `position:absolute;top:${-pageStart}px;left:0;width:794px;` +
-      `height:${pageEnd}px;overflow:hidden;background:transparent;`;
+      `height:${pageEnd}px;overflow:hidden;background:transparent;z-index:1;`;
 
     for(const prop of styleProps){
       inner.style[prop] = cs[prop];
