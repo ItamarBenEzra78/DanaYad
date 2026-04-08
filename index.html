@@ -559,6 +559,8 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
       <span style="font-size:11px;color:var(--muted);" id="eraser-size-label">מילה</span>
       <div class="fmt-sep"></div>
       <button class="fb" onclick="toggleTextEraser()" style="font-size:11px;color:#dc2626;">✕ סגור</button>
+      <div class="fmt-sep"></div>
+      <button class="fb" onclick="clearAll()" title="נקה הכל" style="color:#dc2626;">🗑</button>
     </div>
 
     <div class="output-area">
@@ -1059,6 +1061,23 @@ function clearCanvas(){
   if(!confirm('למחוק את כל הציור?'))return;
   const canvas=document.getElementById('draw-canvas');
   canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+function clearAll(){
+  if(!confirm('האם אתה בטוח? כל התוכן יימחק')) return;
+  // Clear editor text
+  const editor=document.getElementById('output-edit');
+  if(editor){
+    stripLineDrift(editor);
+    editor.innerHTML='';
+  }
+  // Clear draw canvas
+  const canvas=document.getElementById('draw-canvas');
+  if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  // Clear canvas undo history
+  _canvasHistory.length=0;
+  // Re-paginate (empty page)
+  reflowPages();
 }
 
 /* ── Ruler mode: straight lines ── */
