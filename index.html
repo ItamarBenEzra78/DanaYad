@@ -354,7 +354,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
       <div class="ctrl-row">
         <label>סטיית שורה</label>
         <input type="range" id="line-drift" min="0" max="5" step="0.1" value="0" oninput="updateLineDrift(this.value)">
-        <span class="val" id="line-drift-val">0°</span>
+        <span class="val" id="line-drift-val">0</span>
       </div>
     </div>
 
@@ -1861,7 +1861,7 @@ let _lineDriftApplied = false;
 
 function updateLineDrift(val){
   _lineDriftVal = parseFloat(val);
-  document.getElementById('line-drift-val').textContent = val + '°';
+  document.getElementById('line-drift-val').textContent = val;
   // Re-apply on screen
   const editor = document.getElementById('output-edit');
   if(editor){
@@ -1918,13 +1918,11 @@ function applyLineDrift(root){
       lineSpan.className = 'hw-line-drift';
       lineSpan.textContent = part;
 
-      const seed = HW._seed + lineIdx * 31.7;
-      const angle = ((_hwRand(seed) - 0.5) * 2) * _lineDriftVal;
+      const drift = lineIdx * (_lineDriftVal * 0.5);
 
       lineSpan.style.cssText =
         'display:inline-block;width:100%;' +
-        'transform:rotate(' + angle.toFixed(3) + 'deg);' +
-        'transform-origin:right center;';
+        'transform:translateY(' + drift.toFixed(1) + 'px);';
 
       frag.appendChild(lineSpan);
       lineIdx++;
