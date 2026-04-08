@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DanaYad - ממיר כתב יד חכם לסטודנטים</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#4F46E5;--primary-light:#818CF8;--primary-dark:#3730A3;
+  --accent:#F59E0B;--accent-dark:#D97706;
+  --bg:#FAFBFF;--surface:#FFF;--text:#1F2937;--text2:#6B7280;
+  --success:#10B981;--error:#EF4444;
+  --radius:14px;--shadow:0 4px 24px rgba(79,70,229,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+a{text-decoration:none;color:inherit;}
+
+/* Nav */
+nav{background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid #e5e7eb;position:fixed;top:0;left:0;right:0;z-index:100;padding:0 24px;}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px;}
+.nav-logo{font-size:22px;font-weight:900;color:var(--primary);}
+.nav-logo span{color:var(--accent);}
+.nav-links{display:flex;gap:28px;align-items:center;}
+.nav-links a{font-size:14px;font-weight:500;color:var(--text2);transition:color .2s;}
+.nav-links a:hover{color:var(--primary);}
+.nav-cta{background:var(--primary);color:#fff!important;padding:9px 22px;border-radius:8px;font-weight:700;font-size:14px;transition:background .2s;}
+.nav-cta:hover{background:var(--primary-dark);}
+
+/* Hero */
+.hero{padding:140px 24px 80px;text-align:center;background:linear-gradient(180deg,#EEF2FF 0%,var(--bg) 100%);}
+.hero h1{font-size:clamp(32px,5vw,56px);font-weight:900;line-height:1.2;margin-bottom:18px;color:var(--text);}
+.hero h1 em{font-style:normal;color:var(--primary);position:relative;}
+.hero h1 em::after{content:'';position:absolute;bottom:2px;right:0;left:0;height:8px;background:var(--accent);opacity:0.3;border-radius:4px;z-index:-1;}
+.hero p{font-size:19px;color:var(--text2);max-width:580px;margin:0 auto 32px;line-height:1.7;}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.btn-hero{padding:15px 36px;border-radius:12px;font-size:17px;font-weight:700;border:none;cursor:pointer;transition:all .2s;}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 16px rgba(79,70,229,0.3);}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 8px 24px rgba(79,70,229,0.35);}
+.btn-secondary{background:#fff;color:var(--primary);border:2px solid var(--primary);}
+.btn-secondary:hover{background:#EEF2FF;}
+.hero-note{margin-top:20px;font-size:13px;color:var(--text2);}
+
+/* Demo */
+.demo{max-width:800px;margin:-20px auto 60px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e5e7eb;overflow:hidden;}
+.demo-header{background:#f8f9fa;padding:12px 20px;border-bottom:1px solid #e5e7eb;display:flex;gap:6px;align-items:center;}
+.demo-dot{width:10px;height:10px;border-radius:50%;}
+.demo-body{padding:32px;font-size:26px;line-height:2.2;direction:rtl;color:#333;}
+.demo-typed{font-family:-apple-system,sans-serif;color:var(--text2);font-size:15px;margin-bottom:12px;}
+.demo-hand{font-family:'Playpen Sans Hebrew',cursive;opacity:0.9;}
+.demo-arrow{text-align:center;font-size:24px;color:var(--primary);margin:8px 0;}
+
+/* Features */
+.features{padding:80px 24px;max-width:1100px;margin:0 auto;}
+.features h2{text-align:center;font-size:32px;font-weight:800;margin-bottom:12px;}
+.features .sub{text-align:center;color:var(--text2);font-size:16px;margin-bottom:48px;}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;}
+.feat-card{background:var(--surface);border:1px solid #e5e7eb;border-radius:var(--radius);padding:28px;transition:all .2s;}
+.feat-card:hover{border-color:var(--primary-light);box-shadow:0 8px 32px rgba(79,70,229,0.08);transform:translateY(-3px);}
+.feat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px;}
+.feat-card h3{font-size:18px;font-weight:700;margin-bottom:8px;}
+.feat-card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+/* Pricing */
+.pricing{padding:80px 24px;background:linear-gradient(180deg,var(--bg) 0%,#EEF2FF 100%);}
+.pricing h2{text-align:center;font-size:32px;font-weight:800;margin-bottom:12px;}
+.pricing .sub{text-align:center;color:var(--text2);font-size:16px;margin-bottom:48px;}
+.price-card{max-width:420px;margin:0 auto;background:var(--surface);border:2px solid var(--primary);border-radius:20px;padding:40px 36px;text-align:center;box-shadow:0 8px 40px rgba(79,70,229,0.12);position:relative;overflow:hidden;}
+.price-badge{position:absolute;top:20px;left:20px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;}
+.price-amount{font-size:52px;font-weight:900;color:var(--primary);margin:16px 0 4px;}
+.price-amount span{font-size:20px;font-weight:500;color:var(--text2);}
+.price-period{font-size:14px;color:var(--text2);margin-bottom:28px;}
+.price-features{list-style:none;text-align:right;margin-bottom:32px;}
+.price-features li{padding:8px 0;font-size:15px;color:var(--text);border-bottom:1px solid #f3f4f6;}
+.price-features li::before{content:'✓';color:var(--success);font-weight:700;margin-left:10px;}
+.price-cta{width:100%;padding:16px;border-radius:12px;background:var(--primary);color:#fff;border:none;font-size:17px;font-weight:700;cursor:pointer;transition:all .2s;}
+.price-cta:hover{background:var(--primary-dark);transform:translateY(-1px);}
+
+/* FAQ */
+.faq{padding:80px 24px;max-width:720px;margin:0 auto;}
+.faq h2{text-align:center;font-size:32px;font-weight:800;margin-bottom:40px;}
+.faq-item{border-bottom:1px solid #e5e7eb;padding:18px 0;}
+.faq-q{font-size:16px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+.faq-q::after{content:'+';font-size:22px;color:var(--primary);transition:transform .2s;}
+.faq-item.open .faq-q::after{transform:rotate(45deg);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s;font-size:14px;color:var(--text2);line-height:1.8;}
+.faq-item.open .faq-a{max-height:200px;padding-top:12px;}
+
+/* Footer */
+footer{background:#1F2937;color:#9CA3AF;padding:40px 24px;text-align:center;}
+footer .logo{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;}
+footer p{font-size:13px;}
+footer a{color:var(--primary-light);}
+
+@media(max-width:640px){
+  .nav-links a:not(.nav-cta){display:none;}
+  .hero h1{font-size:28px;}
+  .hero p{font-size:16px;}
+  .feat-grid{grid-template-columns:1fr;}
+  .price-card{padding:28px 20px;}
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">Dana<span>Yad</span> ✍️</div>
+    <div class="nav-links">
+      <a href="#features">פיצ'רים</a>
+      <a href="#pricing">מחיר</a>
+      <a href="#faq">שאלות</a>
+      <a href="index.html" class="nav-cta">התחל עכשיו</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>הפוך טקסט מוקלד ל<em>כתב יד אמיתי</em></h1>
+  <p>DanaYad הוא הכלי שכל סטודנט ישראלי צריך. מטלות, סיכומים ומבחנים — בכתב יד טבעי ומקצועי תוך שניות.</p>
+  <div class="hero-btns">
+    <a href="index.html" class="btn-hero btn-primary">התחל בחינם</a>
+    <a href="#features" class="btn-hero btn-secondary">איך זה עובד?</a>
+  </div>
+  <p class="hero-note">2 ייצואי PDF בחינם. ללא כרטיס אשראי.</p>
+</section>
+
+<!-- Demo -->
+<div class="demo">
+  <div class="demo-header">
+    <span class="demo-dot" style="background:#ff5f57;"></span>
+    <span class="demo-dot" style="background:#febc2e;"></span>
+    <span class="demo-dot" style="background:#28c840;"></span>
+  </div>
+  <div class="demo-body">
+    <div class="demo-typed">הקלד טקסט רגיל:</div>
+    <div style="font-family:sans-serif;font-size:18px;color:#888;margin-bottom:6px;">שלום, קוראים לי דנה ואני סטודנטית לחשבון</div>
+    <div class="demo-arrow">↓ ✨</div>
+    <div class="demo-hand">שלום, קוראים לי דנה ואני סטודנטית לחשבון</div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="features" id="features">
+  <h2>למה DanaYad?</h2>
+  <p class="sub">הכלי המתקדם ביותר להמרת טקסט לכתב יד בעברית</p>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon" style="background:#EEF2FF;color:var(--primary);">✍️</div>
+      <h3>כתב יד אמיתי</h3>
+      <p>אלגוריתם חכם שמדמה כתב יד אנושי עם שינויים קלים בכל אות — אף אחד לא יבחין שזה לא כתוב ביד.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:#FEF3C7;color:var(--accent-dark);">🔬</div>
+      <h3>תמיכה בנוסחאות</h3>
+      <p>כתוב LaTeX ישירות — סימנים מתמטיים, אותיות יווניות וביטויים מורכבים מומרים אוטומטית.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:#ECFDF5;color:var(--success);">📄</div>
+      <h3>ייצוא PDF מקצועי</h3>
+      <p>ייצא לPDF באיכות גבוהה עם רקעים שונים — חלק, שורות או משבצות. מושלם להגשה.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:#FDF2F8;color:#DB2777;">🎨</div>
+      <h3>עיצוב מלא</h3>
+      <p>בחר מתוך עשרות פונטים, שלוט בגודל, מרווח, צבעים, הדגשות ואפילו רמת "אנושיות" של הכתב.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:#EFF6FF;color:#2563EB;">✏️</div>
+      <h3>ציור חופשי</h3>
+      <p>צייר גרפים, תרשימים וסקיצות ישירות על הדף — בדיוק כמו מחברת אמיתית.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:#F5F3FF;color:#7C3AED;">🇮🇱</div>
+      <h3>בנוי לעברית</h3>
+      <p>תמיכה מלאה ב-RTL, פונטים עבריים מותאמים, וממשק בעברית — מהשורה הראשונה.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <h2>מחיר פשוט, בלי הפתעות</h2>
+  <p class="sub">התחל בחינם, שדרג כשתצטרך</p>
+  <div class="price-card">
+    <span class="price-badge">הכי פופולרי</span>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-top:12px;">DanaYad Pro</div>
+    <div class="price-amount">₪19.90<span> /חודש</span></div>
+    <div class="price-period">ביטול בכל עת. ללא התחייבות.</div>
+    <ul class="price-features">
+      <li>ייצואי PDF ללא הגבלה</li>
+      <li>כל הפונטים והעיצובים</li>
+      <li>ציור חופשי על הדף</li>
+      <li>תמיכה בנוסחאות LaTeX</li>
+      <li>רקעים מותאמים (שורות, משבצות)</li>
+      <li>עדכונים ופיצ'רים חדשים</li>
+    </ul>
+    <a href="index.html"><button class="price-cta">התחל עם 2 ייצואים בחינם</button></a>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <h2>שאלות נפוצות</h2>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">מה זה DanaYad?</div>
+    <div class="faq-a">DanaYad הוא כלי מקוון שממיר טקסט מוקלד לכתב יד שנראה טבעי ואמיתי. הוא מיועד לסטודנטים שצריכים להגיש מטלות בכתב יד.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">האם זה באמת נראה כמו כתב יד?</div>
+    <div class="faq-a">כן! האלגוריתם שלנו מוסיף שינויים קלים ואקראיים בכל אות — סיבוב, גודל ומיקום — כך שהתוצאה נראית טבעית לחלוטין. אפשר גם לכוונן את רמת ה"אנושיות".</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">כמה זה עולה?</div>
+    <div class="faq-a">מתחילים בחינם עם 2 ייצואי PDF. מנוי Pro עולה ₪19.90 לחודש וכולל ייצואים ללא הגבלה וגישה לכל הפיצ'רים. אפשר לבטל בכל עת.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">האם אפשר לכתוב נוסחאות מתמטיות?</div>
+    <div class="faq-a">בהחלט! כתוב נוסחאות בתחביר LaTeX (בין סימני $) והן יומרו אוטומטית לסימנים מתמטיים — אותיות יווניות, אינטגרלים, שברים ועוד.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">איך מתבצע התשלום?</div>
+    <div class="faq-a">התשלום מתבצע בצורה מאובטחת דרך Stripe. אנחנו לא שומרים פרטי כרטיס אשראי. אפשר לבטל את המנוי בכל רגע.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">איזה פורמט הקובץ שמיוצא?</div>
+    <div class="faq-a">הקובץ מיוצא כ-PDF באיכות גבוהה, מוכן להדפסה או הגשה דיגיטלית. אפשר לבחור גודל עמוד (A4, A3, Letter) ורקע (חלק, שורות, משבצות).</div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="logo">DanaYad ✍️</div>
+  <p>הכלי שכל סטודנט ישראלי צריך. <a href="index.html">התחל עכשיו</a></p>
+  <p style="margin-top:16px;font-size:12px;">&copy; 2025 DanaYad. כל הזכויות שמורות.</p>
+</footer>
+
+</body>
+</html>
