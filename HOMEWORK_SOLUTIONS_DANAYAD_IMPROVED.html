@@ -830,6 +830,10 @@ function _doReflow(){
   const editor = document.getElementById('output-edit');
   if(!editor) return;
 
+  // Strip line drift before measurement (spans affect line heights)
+  const hadDrift = _lineDriftApplied;
+  if(hadDrift) stripLineDrift(editor);
+
   // Clean slate — remove markers, reset min-height for measurement
   editor.querySelectorAll('.page-break-marker,.page-gap').forEach(el => el.remove());
   editor.style.minHeight = PAGE_HEIGHT + 'px';
@@ -853,6 +857,9 @@ function _doReflow(){
     marker.style.top = yPos + 'px';
     editor.appendChild(marker);
   }
+
+  // Re-apply line drift for visual preview
+  if(_lineDriftVal > 0) applyLineDrift(editor);
 
   updatePageIndicator(totalPages);
 }
@@ -1831,32 +1838,48 @@ function stripHandwriting(){}  // no-op — nothing to strip from editor
 
 /* ── Line drift: rotate whole lines slightly ── */
 let _lineDriftVal = 0;
+let _lineDriftApplied = false;
 
 function updateLineDrift(val){
   _lineDriftVal = parseFloat(val);
   document.getElementById('line-drift-val').textContent = val + '°';
+  // Re-apply on screen
+  const editor = document.getElementById('output-edit');
+  if(editor){
+    stripLineDrift(editor);
+    if(_lineDriftVal > 0) applyLineDrift(editor);
+  }
+}
+
+/** Strip line drift spans back to text */
+function stripLineDrift(root){
+  if(!_lineDriftApplied) return;
+  root.querySelectorAll('.hw-line-drift').forEach(span => {
+    span.replaceWith(span.textContent);
+  });
+  root.normalize();
+  _lineDriftApplied = false;
 }
 
 /**
- * Apply per-line rotation drift to a CLONE container.
- * Splits text content into line-divs, each rotated by a seeded random angle.
- * Applied only to print-page clones, never the editor.
+ * Apply per-line rotation drift to a container.
+ * Wraps each \n-delimited line in a span with seeded random rotation.
  */
 function applyLineDrift(root){
   if(_lineDriftVal === 0) return;
 
-  // The content is pre-wrapped text with \n. We need to wrap each visual line.
-  // Walk text nodes, split at \n, wrap each line segment in a span.
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const textNodes = [];
   let node;
   while(node = walker.nextNode()){
-    if(node.parentElement && node.parentElement.closest('.page-break-marker')) continue;
+    if(node.parentElement && (
+      node.parentElement.closest('.page-break-marker') ||
+      node.parentElement.classList.contains('hw-line-drift')
+    )) continue;
     if(node.textContent.indexOf('\n') === -1) continue;
     textNodes.push(node);
   }
 
-  // For each text node with newlines, wrap line segments in rotated spans
   let lineIdx = 0;
   textNodes.forEach(tNode => {
     const text = tNode.textContent;
@@ -1876,7 +1899,6 @@ function applyLineDrift(root){
       lineSpan.className = 'hw-line-drift';
       lineSpan.textContent = part;
 
-      // Seeded random rotation for this line
       const seed = HW._seed + lineIdx * 31.7;
       const angle = ((_hwRand(seed) - 0.5) * 2) * _lineDriftVal;
 
@@ -1891,18 +1913,33 @@ function applyLineDrift(root){
 
     tNode.parentNode.replaceChild(frag, tNode);
   });
+
+  _lineDriftApplied = true;
 }
 
 /* ── Integration with buildPrintPages ──
    Apply effects only to print/PDF clones, never the editor. */
 const _origBuildPrintPages = buildPrintPages;
 buildPrintPages = function(){
+  // Strip drift from editor so measurement is clean
+  const editor = document.getElementById('output-edit');
+  const hadDrift = _lineDriftApplied;
+  if(editor && hadDrift) stripLineDrift(editor);
+
   const result = _origBuildPrintPages();
+
+  // Re-apply drift to editor for preview
+  if(editor && _lineDriftVal > 0) applyLineDrift(editor);
 
   if(result){
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
-      // Line drift (applied before word-level effects so text nodes are still clean)
-      applyLineDrift(inner);
+      // Line drift on clone (save/restore global flag)
+      if(_lineDriftVal > 0){
+        const saved = _lineDriftApplied;
+        _lineDriftApplied = false;
+        applyLineDrift(inner);
+        _lineDriftApplied = saved;
+      }
       // Word-level handwriting effects
       if(HW.enabled){
         applyHandwriting(inner);
@@ -1913,11 +1950,20 @@ buildPrintPages = function(){
   return result;
 };
 
-/* ── SVG filter on editor for screen preview (CSS only, no DOM changes) ── */
+/* ── Screen preview: SVG filter + line drift focus/blur ── */
 document.addEventListener('DOMContentLoaded', () => {
   const editor = document.getElementById('output-edit');
   if(!editor) return;
   if(HW.enabled) editor.classList.add('hw-filter');
+
+  // Strip line drift on focus so editing is clean
+  editor.addEventListener('focus', () => {
+    if(_lineDriftApplied) stripLineDrift(editor);
+  });
+  // Reapply on blur for visual preview
+  editor.addEventListener('blur', () => {
+    if(_lineDriftVal > 0 && !_lineDriftApplied) applyLineDrift(editor);
+  });
 });
 
 let updateTimer=null;
