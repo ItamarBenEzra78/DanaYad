@@ -1843,6 +1843,56 @@ function updateLineDrift(val){
   document.getElementById('line-drift-val').textContent = val + '°';
 }
 
+/**
+ * Apply line drift to a CLONE container (never the editor).
+ * Wraps each visual line in a display:block span with rotation.
+ * Works on both raw \n text nodes and <div> elements from contenteditable.
+ */
+function _applyLineDriftToClone(root){
+  const rotStyle = 'display:block;transform:rotate('+_lineDriftVal+'deg);transform-origin:right center;';
+
+  // 1. Handle child block elements (divs created by Enter in contenteditable)
+  Array.from(root.children).forEach(child => {
+    if(child.classList && child.classList.contains('page-break-marker')) return;
+    if(child.tagName === 'DIV' || child.tagName === 'P'){
+      child.style.cssText += rotStyle;
+    }
+  });
+
+  // 2. Handle text nodes with \n (raw pre-wrap content)
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let n;
+  while(n = walker.nextNode()){
+    if(n.parentElement !== root) continue; // only direct children
+    if(n.textContent.indexOf('\n') === -1 && n.textContent.trim() === '') continue;
+    textNodes.push(n);
+  }
+
+  textNodes.forEach(tNode => {
+    const text = tNode.textContent;
+    const parts = text.split('\n');
+    if(parts.length <= 1 && text.trim()){
+      // Single line without newline — wrap it
+      const span = document.createElement('span');
+      span.style.cssText = rotStyle;
+      span.textContent = text;
+      tNode.parentNode.replaceChild(span, tNode);
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    parts.forEach((part, i) => {
+      if(i > 0) frag.appendChild(document.createTextNode('\n'));
+      if(part.length === 0) return;
+      const span = document.createElement('span');
+      span.style.cssText = rotStyle;
+      span.textContent = part;
+      frag.appendChild(span);
+    });
+    tNode.parentNode.replaceChild(frag, tNode);
+  });
+}
+
 /* ── Integration with buildPrintPages ──
    Apply line drift + handwriting effects to print/PDF clones only.
    The editor (#output-edit) is NEVER transformed — keeps editing and
@@ -1852,15 +1902,9 @@ buildPrintPages = function(){
   const result = _origBuildPrintPages();
 
   if(result){
-    result.container.querySelectorAll('.print-page').forEach(page => {
-      // Line drift: rotate the WHOLE page container (not inner)
-      // This rotates content + background together, pivot from right edge
-      if(_lineDriftVal !== 0){
-        page.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
-        page.style.transformOrigin = 'right center';
-      }
-    });
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
+      // Line drift: wrap each line in a rotated block span
+      if(_lineDriftVal !== 0) _applyLineDriftToClone(inner);
       // Word-level handwriting effects on the clone
       if(HW.enabled){
         applyHandwriting(inner);
