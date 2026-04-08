@@ -158,6 +158,22 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
 /* old .pages-container and .page removed — pagination is now dynamic */
 
+/* ── Table styles ── */
+#output-edit table{width:100%;border-collapse:collapse;direction:rtl;margin:8px 0;}
+#output-edit th,#output-edit td{border:1px solid #555;padding:6px 8px;text-align:right;min-width:40px;vertical-align:top;}
+#output-edit th{background:rgba(0,0,0,0.04);font-weight:700;}
+
+/* ── Table insert popup ── */
+.table-popup{display:none;position:absolute;top:100%;right:0;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:12px;z-index:60;box-shadow:0 4px 12px rgba(0,0,0,0.12);direction:rtl;}
+.table-popup.open{display:block;}
+.table-popup label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;}
+.table-popup input[type=number]{width:50px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-size:13px;}
+.table-popup button{margin-top:8px;padding:6px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+.table-popup button:hover{background:var(--accent-hover);}
+
+/* ── Ruler mode indicator ── */
+.fb.ruler-active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;}
+
 /* ── Handwriting realism effects ── */
 .hw-word{display:inline-block;direction:rtl;unicode-bidi:embed;}
 #output-edit.hw-filter{filter:url(#ink-tremor);}
@@ -520,6 +536,19 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
       <button class="fb" onclick="insertBullet()" title="רשימה">•</button>
       <button class="fb" onclick="insertNumbered()" title="רשימה ממוספרת">1.</button>
       <div class="fmt-sep"></div>
+      <span style="position:relative;display:inline-block;">
+        <button class="fb" onclick="toggleTablePopup()" title="הוסף טבלה">☷</button>
+        <div class="table-popup" id="table-popup">
+          <label>שורות × עמודות</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="number" id="table-rows" value="3" min="1" max="20">
+            <span style="font-size:13px;">×</span>
+            <input type="number" id="table-cols" value="3" min="1" max="10">
+          </div>
+          <button onclick="insertTable()">הוסף טבלה</button>
+        </div>
+      </span>
+      <div class="fmt-sep"></div>
       <button class="fb" onclick="toggleDrawMode()" id="btn-draw-mode" title="ציור">✏️</button>
       <div class="fmt-sep"></div>
       <button class="fb" onclick="checkAndExport()" title="שמירה כ-PDF">📄 PDF</button>
@@ -544,6 +573,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
           <div class="draw-color" style="background:#dc2626;" onclick="setDrawColor('#dc2626',this)"></div>
           <div class="draw-color" style="background:#16a34a;" onclick="setDrawColor('#16a34a',this)"></div>
           <button id="btn-eraser" onclick="toggleEraser()">מחק</button>
+          <button id="btn-ruler" onclick="toggleRuler()" style="border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;">📏</button>
           <input type="range" id="draw-size" min="1" max="10" value="2" style="width:80px;">
           <button onclick="clearCanvas()" style="font-size:11px;border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;">נקה</button>
         </div>
@@ -963,6 +993,7 @@ function getPos(e,canvas){
 function startDraw(e){
   if(!drawMode)return;
   e.preventDefault();
+  if(rulerMode){ startRuler(e); return; }
   isDrawing=true;
   const canvas=document.getElementById('draw-canvas');
   const pos=getPos(e,canvas);
@@ -972,6 +1003,7 @@ function startDraw(e){
 function draw(e){
   if(!drawMode||!isDrawing)return;
   e.preventDefault();
+  if(rulerMode){ drawRulerPreview(e); return; }
   const canvas=document.getElementById('draw-canvas');
   const ctx=canvas.getContext('2d');
   const pos=getPos(e,canvas);
@@ -994,7 +1026,10 @@ function draw(e){
   lastX=pos.x;lastY=pos.y;
 }
 
-function endDraw(e){isDrawing=false;}
+function endDraw(e){
+  if(rulerMode && isDrawing){ endRuler(e); return; }
+  isDrawing=false;
+}
 
 function setDrawColor(c,el){
   drawColor=c;
@@ -1015,6 +1050,104 @@ function clearCanvas(){
   canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
 }
 
+/* ── Ruler mode: straight lines ── */
+let rulerMode=false, rulerStartX=0, rulerStartY=0, _rulerSnapshot=null;
+
+function toggleRuler(){
+  rulerMode=!rulerMode;
+  eraserMode=false;
+  const btn=document.getElementById('btn-ruler');
+  const btnEraser=document.getElementById('btn-eraser');
+  btn.classList.toggle('ruler-active',rulerMode);
+  if(rulerMode) btnEraser.classList.remove('on');
+}
+
+function startRuler(e){
+  const canvas=document.getElementById('draw-canvas');
+  const pos=getPos(e,canvas);
+  rulerStartX=pos.x; rulerStartY=pos.y;
+  // Save canvas state for preview
+  _rulerSnapshot=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
+  isDrawing=true;
+}
+
+function drawRulerPreview(e){
+  const canvas=document.getElementById('draw-canvas');
+  const ctx=canvas.getContext('2d');
+  const pos=getPos(e,canvas);
+
+  // Restore snapshot to erase previous preview line
+  if(_rulerSnapshot) ctx.putImageData(_rulerSnapshot,0,0);
+
+  let endX=pos.x, endY=pos.y;
+
+  // Shift key: snap to 0/45/90 degree angles
+  if(e.shiftKey){
+    const dx=endX-rulerStartX, dy=endY-rulerStartY;
+    const angle=Math.atan2(dy,dx);
+    const snapped=Math.round(angle/(Math.PI/4))*(Math.PI/4);
+    const len=Math.sqrt(dx*dx+dy*dy);
+    endX=rulerStartX+Math.cos(snapped)*len;
+    endY=rulerStartY+Math.sin(snapped)*len;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(rulerStartX,rulerStartY);
+  ctx.lineTo(endX,endY);
+  ctx.strokeStyle=drawColor;
+  ctx.lineWidth=parseFloat(document.getElementById('draw-size').value);
+  ctx.lineCap='round';
+  ctx.globalAlpha=0.88;
+  ctx.stroke();
+  ctx.globalAlpha=1;
+}
+
+function endRuler(e){
+  // Final line is already drawn by the last preview
+  _rulerSnapshot=null;
+  isDrawing=false;
+}
+
+/* ── Table insert ── */
+function toggleTablePopup(){
+  document.getElementById('table-popup').classList.toggle('open');
+}
+
+function insertTable(){
+  const rows=parseInt(document.getElementById('table-rows').value)||3;
+  const cols=parseInt(document.getElementById('table-cols').value)||3;
+  const ed=document.getElementById('output-edit');
+
+  let html='<table dir="rtl">';
+  for(let r=0;r<rows;r++){
+    html+='<tr>';
+    for(let c=0;c<cols;c++){
+      html+='<td>&nbsp;</td>';
+    }
+    html+='</tr>';
+  }
+  html+='</table><br>';
+
+  // Insert at cursor or append
+  const sel=window.getSelection();
+  if(sel.rangeCount && ed.contains(sel.anchorNode)){
+    const range=sel.getRangeAt(0);
+    range.deleteContents();
+    const temp=document.createElement('div');
+    temp.innerHTML=html;
+    const frag=document.createDocumentFragment();
+    while(temp.firstChild) frag.appendChild(temp.firstChild);
+    range.insertNode(frag);
+    range.collapse(false);
+  } else {
+    ed.insertAdjacentHTML('beforeend',html);
+  }
+
+  document.getElementById('table-popup').classList.remove('open');
+  ed.focus();
+  reflowPages();
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   const canvas=document.getElementById('draw-canvas');
   if(!canvas)return;
@@ -1026,6 +1159,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   canvas.addEventListener('touchmove',draw,{passive:false});
   canvas.addEventListener('touchend',endDraw);
   window.addEventListener('resize',()=>{if(drawMode)resizeCanvas();});
+
+  // Close table popup on outside click
+  document.addEventListener('click',(e)=>{
+    const popup=document.getElementById('table-popup');
+    if(popup && popup.classList.contains('open') && !e.target.closest('.table-popup') && !e.target.closest('[onclick*="toggleTablePopup"]')){
+      popup.classList.remove('open');
+    }
+  });
 });
 
 const FONTS=[
