@@ -159,7 +159,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 /* old .pages-container and .page removed — pagination is now dynamic */
 
 /* ── Handwriting realism effects ── */
-.hw-char{display:inline-block;will-change:transform;direction:inherit;unicode-bidi:plaintext;}
+.hw-word{display:inline-block;direction:rtl;unicode-bidi:embed;}
 #output-edit.hw-filter{filter:url(#ink-tremor);}
 .hw-toggle{display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;}
 .hw-toggle input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
@@ -1258,7 +1258,7 @@ window.onload=()=>{
   if(editor){
     editor.focus();
     // Reflow on any content change
-    editor.addEventListener('input',()=>{syncToolbar();reflowPages();scheduleHwApply();});
+    editor.addEventListener('input',()=>{syncToolbar();reflowPages();});
     // Also reflow when pasting content
     editor.addEventListener('paste',()=>setTimeout(reflowPages,50));
   }
@@ -1270,14 +1270,6 @@ window.onload=()=>{
 
   // Initial pagination
   reflowPages();
-
-  // Apply handwriting effects after first pagination
-  if(HW.enabled){
-    setTimeout(() => {
-      const ed = document.getElementById('output-edit');
-      if(ed && !HW._applied) applyHandwriting(ed);
-    }, 200);
-  }
 
   // Reflow on window resize (font/zoom changes)
   window.addEventListener('resize',()=>reflowPages());
@@ -1485,27 +1477,18 @@ function toggleHandwriting(on){
   HW.enabled = on;
   const editor = document.getElementById('output-edit');
   if(!on){
-    stripHandwriting(editor);
     editor.classList.remove('hw-filter');
   } else {
     editor.classList.add('hw-filter');
-    scheduleHwApply();
   }
 }
 
-/* ── Strip all .hw-char spans back to text ── */
-function stripHandwriting(root){
-  if(!HW._applied) return;
-  root.querySelectorAll('.hw-char').forEach(span => {
-    span.replaceWith(span.textContent);
-  });
-  root.normalize();
-  HW._applied = false;
-}
-
-/* ── Apply per-character effects to a container ── */
+/**
+ * Apply per-word handwriting effects to a CLONE container (never the editor).
+ * Wraps each word in a span with subtle rotation, size, drift, and opacity.
+ * Words stay whole to preserve RTL BiDi ordering.
+ */
 function applyHandwriting(root){
-  if(HW._applied) return; // already applied
   if(!HW.enabled) return;
 
   const baseFontSize = parseFloat(getComputedStyle(root).fontSize) || 16;
@@ -1513,16 +1496,15 @@ function applyHandwriting(root){
   const textNodes = [];
   let node;
   while(node = walker.nextNode()){
-    // Skip nodes inside markers or already-wrapped spans
     if(node.parentElement && (
       node.parentElement.closest('.page-break-marker') ||
-      node.parentElement.classList.contains('hw-char')
+      node.parentElement.classList.contains('hw-word')
     )) continue;
     if(node.textContent.length === 0) continue;
     textNodes.push(node);
   }
 
-  let globalCharIdx = 0;
+  let wordIdx = 0;
   let lineIdx = 0;
 
   textNodes.forEach(tNode => {
@@ -1530,132 +1512,80 @@ function applyHandwriting(root){
     if(!text) return;
 
     const frag = document.createDocumentFragment();
+    // Split into tokens: words vs whitespace/newlines
+    const tokens = text.match(/[^\s]+|[\s]/g);
+    if(!tokens){ return; }
 
-    for(let i = 0; i < text.length; i++){
-      const ch = text[i];
-
-      // Newlines stay as bare text nodes (pagination needs them)
-      if(ch === '\n'){
+    tokens.forEach(token => {
+      if(token === '\n'){
         frag.appendChild(document.createTextNode('\n'));
         lineIdx++;
-        globalCharIdx = 0;
-        continue;
+        return;
       }
-      // Spaces stay as bare text for natural word-spacing
-      if(ch === ' ' || ch === '\t'){
-        frag.appendChild(document.createTextNode(ch));
-        globalCharIdx++;
-        continue;
+      if(token === ' ' || token === '\t'){
+        frag.appendChild(document.createTextNode(token));
+        return;
       }
 
+      // Wrap whole word in one span
       const span = document.createElement('span');
-      span.className = 'hw-char';
-      span.textContent = ch;
+      span.className = 'hw-word';
+      span.textContent = token;
 
-      // Deterministic random per character position
-      const seed = HW._seed + lineIdx * 137 + globalCharIdx;
+      const seed = HW._seed + lineIdx * 137 + wordIdx;
 
-      // Effect 1: Rotation jitter
-      const rot = ((_hwRand(seed) - 0.5) * 2) * HW.rotation;
+      // Subtle rotation for the whole word
+      const rot = ((_hwRand(seed) - 0.5) * 2) * HW.rotation * 0.5;
 
-      // Effect 2: Size variation
-      const sizeOff = ((_hwRand(seed + 1) - 0.5) * 2) * HW.sizeVar;
+      // Size variation
+      const sizeOff = ((_hwRand(seed + 1) - 0.5) * 2) * HW.sizeVar * 0.6;
 
-      // Effect 3: Baseline drift (sine wave with per-line phase)
+      // Baseline drift
       const linePhase = _hwRand(seed * 0.01 + lineIdx * 7.3) * Math.PI * 2;
-      const driftY = Math.sin(linePhase + globalCharIdx * 0.18) * HW.drift;
+      const driftY = Math.sin(linePhase + wordIdx * 0.4) * HW.drift;
 
-      // Effect 5: Ink opacity variation
+      // Ink opacity
       const opVar = 1.0 - _hwRand(seed + 2) * HW.opacity;
 
       span.style.cssText =
-        'display:inline-block;direction:inherit;unicode-bidi:plaintext;' +
+        'display:inline-block;direction:rtl;unicode-bidi:embed;' +
         'transform:rotate(' + rot.toFixed(2) + 'deg);' +
         'font-size:' + (baseFontSize + sizeOff).toFixed(1) + 'px;' +
         'position:relative;top:' + driftY.toFixed(1) + 'px;' +
         'opacity:' + opVar.toFixed(3) + ';';
 
       frag.appendChild(span);
-      globalCharIdx++;
-    }
+      wordIdx++;
+    });
 
     tNode.parentNode.replaceChild(frag, tNode);
   });
-
-  HW._applied = true;
 }
 
-/* ── Debounced apply for after edits ── */
-let _hwTimer = null;
-function scheduleHwApply(){
-  if(_hwTimer) clearTimeout(_hwTimer);
-  _hwTimer = setTimeout(() => {
-    const editor = document.getElementById('output-edit');
-    if(!editor || !HW.enabled) return;
-    stripHandwriting(editor);
-    applyHandwriting(editor);
-  }, 400);
-}
-
-/* ── Integration with pagination ──
-   _doReflow needs clean text nodes. We patch it to strip before
-   measuring and re-apply after markers are placed. */
-const _origDoReflow = _doReflow;
-_doReflow = function(){
-  const editor = document.getElementById('output-edit');
-  const wasApplied = HW._applied;
-  if(editor && wasApplied) stripHandwriting(editor);
-
-  _origDoReflow();
-
-  if(editor && wasApplied && HW.enabled) applyHandwriting(editor);
-};
+/* ── No-ops: editor is never touched by span wrapping ── */
+function scheduleHwApply(){}  // no-op — effects only on print clones
+function stripHandwriting(){}  // no-op — nothing to strip from editor
 
 /* ── Integration with buildPrintPages ──
-   Apply effects to each print-page clone for PDF fidelity. */
+   Apply effects only to print/PDF clones, never the editor. */
 const _origBuildPrintPages = buildPrintPages;
 buildPrintPages = function(){
-  // Strip effects from editor before measurement
-  const editor = document.getElementById('output-edit');
-  const wasApplied = HW._applied;
-  if(editor && wasApplied) stripHandwriting(editor);
-
   const result = _origBuildPrintPages();
 
-  // Re-apply to editor
-  if(editor && wasApplied && HW.enabled) applyHandwriting(editor);
-
-  // Apply effects to each print-page clone
+  // Apply word-level effects to each print-page clone
   if(result && HW.enabled){
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
-      // Mark as not-applied so applyHandwriting will process it
-      const saveApplied = HW._applied;
-      HW._applied = false;
       applyHandwriting(inner);
-      HW._applied = saveApplied;
-
-      // Also apply SVG filter to the clone
       inner.style.filter = 'url(#ink-tremor)';
     });
   }
   return result;
 };
 
-/* ── On editor focus: strip for clean editing ── */
-/* ── On editor blur: re-apply effects ── */
+/* ── SVG filter on editor for screen preview (CSS only, no DOM changes) ── */
 document.addEventListener('DOMContentLoaded', () => {
   const editor = document.getElementById('output-edit');
   if(!editor) return;
-
-  editor.addEventListener('focus', () => {
-    if(HW._applied) stripHandwriting(editor);
-  });
-
-  editor.addEventListener('blur', () => {
-    if(HW.enabled && !HW._applied) applyHandwriting(editor);
-  });
-
-  // Apply SVG filter class on load
   if(HW.enabled) editor.classList.add('hw-filter');
 });
 
