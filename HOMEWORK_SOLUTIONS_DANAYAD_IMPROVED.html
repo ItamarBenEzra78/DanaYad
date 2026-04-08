@@ -93,7 +93,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
 .output-area{position:relative;flex:1;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .output-wrap{flex:1;position:relative;overflow-y:auto;padding:30px 24px 0;background:var(--bg);}
-#output-edit{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;}
+#output-edit{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;direction:rtl;text-align:right;}
 #output-edit:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;}
 .draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 .draw-canvas.active{pointer-events:auto;}
@@ -159,7 +159,7 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 /* old .pages-container and .page removed — pagination is now dynamic */
 
 /* ── Handwriting realism effects ── */
-.hw-char{display:inline-block;will-change:transform;}
+.hw-char{display:inline-block;will-change:transform;direction:inherit;unicode-bidi:plaintext;}
 #output-edit.hw-filter{filter:url(#ink-tremor);}
 .hw-toggle{display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;}
 .hw-toggle input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
@@ -527,169 +527,10 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
     <div class="output-area">
     <div class="output-wrap" id="output-wrap">
-        <div id="output-edit" class="bg-paper" data-bg-type="paper" contenteditable="true"
+        <div id="output-edit" class="bg-paper" data-bg-type="paper" dir="rtl" contenteditable="true"
      onkeydown="handleKey(event)"
      onmouseup="syncToolbar()"
-     onkeyup="syncToolbar()">פתרון עבודת בית - רגרסיה לינארית
-סטטיסטיקה מתקדמת
-תאריך הגשה: 8 באפריל 2026
-
-═══════════════════════════════════════════════
-
-תרגיל 1: קוביות והשקלה
-───────────────────────────────────────────────
-
-נתונים:
-• 7 שקילות של כלי עם קוביות
-• X (מספר קוביות): [4, 2, 2, 1, 4, 6, 3]
-• Y (משקל בגרמים): [585, 412, 397, 303, 596, 814, 511]
-
-א. המשמעות הפיסיקלית
-
-β₀ (חותך בישרה): משקל הכלי עצמו (הטארה) - בגרמים
-β₁ (שיפוע): משקל ממוצע של קובייה אחת - בגרמים
-
-ב. אומדי OLS
-
-חישובים:
-- n = 7
-- x̄ = 3.0, ȳ = 528.29
-- Σ(xᵢ - x̄)(yᵢ - ȳ) = 1506.57
-- Σ(xᵢ - x̄)² = 15
-
-תוצאות:
-β̂₁ = 1506.57/15 = 100.38 גרם
-β̂₀ = 528.29 - 100.38 × 3.0 = 227.14 גרם
-
-ג. אמידת שונות השגיאה
-
-SSE = Σ(yᵢ - ŷᵢ)² = 671.97
-σ̂² = SSE/(n-2) = 671.97/5 = 134.39 (גרם)²
-σ̂ = 11.59 גרם
-
-ד. בדיקת השערה: H₀: β₁ = 0 (α = 0.05)
-
-סטטיסטיקה:
-- SE(β̂₁) = √(134.39/15) = 2.996
-- t = 100.38 / 2.996 = 33.53
-- p-value < 0.001
-- t_critical = 2.571 (df = 5)
-
-מסקנה:
-✅ דחייה של H₀ - קיים קשר מובהק בין מספר הקוביות למשקל הכולל
-
-═══════════════════════════════════════════════
-
-תרגיל 2: אלכוהול וזמן תגובה
-───────────────────────────────────────────────
-
-נתונים:
-• 10 נבדקים
-• X (כוסות בירה): [0, 2, 4, 6, 1, 3, 5, 8, 4, 2]
-• Y (הפרש זמן ms): [110, 210, 409, 262, 162, 57, 310, 210, 106, 9]
-
-א. בדיקת קשר בין כמות בירה להפרש בזמן תגובה
-
-חישובים:
-- Sₓₓ = 175 - 10(3.5)² = 52.5
-- Sₓᵧ = 9117 - 10(3.5)(185) = 2292
-- β̂₁ = 2292 / 52.5 = 43.66 ms/כוס
-- σ̂² = 18680.8 / 8 = 2335.1
-- SE(β̂₁) = √(2335.1)/√52.5 = 6.67
-
-t = 43.66 / 6.67 = 6.54
-t_critical = 2.306
-קשר מובהק ✓
-
-ב. משוואת הרגרסיה: Ŷ = -5.68 + 43.66·X
-
-═══════════════════════════════════════════════
-
-תרגיל 3: רגרסיה ללא חותך
-───────────────────────────────────────────────
-
-כשβ₀ = 0 (כלומר ממודל עם עוצמה דרך הראשית):
-
-נוסחאות חדשות:
-β̂₁ = Σ(XᵢYᵢ) / Σ(Xᵢ²)
-
-חישובים בדוגמה:
-- Σ(xᵢyᵢ) = 1506
-- Σ(xᵢ²) = 15
-- β̂₁ = 1506 / 15 = 100.4
-
-טיוב המודל: R² = 0.9994 (מעולה!)
-
-═══════════════════════════════════════════════
-
-תרגיל 4: מכונות וחומרי גלם
-───────────────────────────────────────────────
-
-נתוני טרנספורמציה של חומרים בתהליך:
-X = משקל ראשוני (ק"ג)
-Y = משקל סופי (ק"ג)
-
-קו הרגרסיה מצא נקודת צומת בx = 1.86 ק"ג:
-- כשx < 1.86: אובדן במשקל
-- כשx > 1.86: רווח במשקל
-
-E[Y] = β·Y/X, השיפוע מציין יחס שימור
-
-═══════════════════════════════════════════════
-
-תרגיל 5: מה זה אומדן טוב (BLUE)?
-───────────────────────────────────────────────
-
-BLUE = Best Linear Unbiased Estimator
-
-תכונות הנדרשות:
-1. Linear: פונקציה לינארית של Yᵢ
-2. Unbiased: E[θ̂] = θ (ללא הטיה סיסטמטית)
-3. Best: שונות מינימלית בין כל הלינאריים
-
-משפט גאוס-מרקוב:
-אומדי OLS (minimum squares) הם BLUE כשמתקיימות:
-- E[εᵢ] = 0 (שגיאה ממוצעת אפס)
-- Var(εᵢ) = σ² (שונות קבועה)
-- Cov(εᵢ,εⱼ) = 0 (עצמאות שגיאות)
-
-תשובה: אפשרות (a) היא הטובה ביותר.
-
-═══════════════════════════════════════════════
-
-תרגיל 6: R ופתרון סטטיסטי (קישור או קובץ)
-───────────────────────────────────────────────
-
-בדוגמה הנתונה:
-- מודל: Y ~ X₁ (משתנה בודד)
-- R² = 0.0134 (1.34%)
-- מסקנה: X₁ לבד לא משביע רצון
-
-שיפור:
-- הוסף משתנים נוספים (X₂, X₃, ...)
-- שקול טרנספורמציות (log, poly, etc.)
-- בדוק אינטראקציות בין משתנים
-
-קישור דוגמה: regression_plot.pdf
-
-═══════════════════════════════════════════════
-
-סיכום כל התרגילים:
-─────────────────
-
-1. קוביות: קשר מובהק (p < 0.001)
-2. אלכוהול: +43.66 ms לכוס, חותך לא מובהק
-3. רגרסיה ללא חותך: ניתוח תיאורטי
-4. מכונות: נקודת הצומת x = 1.86 ק"ג
-5. אומדים: (a) הוא הטוב ביותר (BLUE)
-6. R: R² = 1.34%, צריך משתנים נוספים
-
-כל הפתרונות נבדקו ונמצאו נכונים.
-העבודה הושלמה בהצלחה! ✓
-
-
-שם הסטודנט: [הכנס שם]
-תאריך: 8 באפריל 2026
+     onkeyup="syncToolbar()">
 </div>
         <canvas id="draw-canvas" class="draw-canvas"></canvas>
         <div id="draw-toolbar" class="draw-toolbar" style="display:none;">
@@ -1728,7 +1569,7 @@ function applyHandwriting(root){
       const opVar = 1.0 - _hwRand(seed + 2) * HW.opacity;
 
       span.style.cssText =
-        'display:inline-block;' +
+        'display:inline-block;direction:inherit;unicode-bidi:plaintext;' +
         'transform:rotate(' + rot.toFixed(2) + 'deg);' +
         'font-size:' + (baseFontSize + sizeOff).toFixed(1) + 'px;' +
         'position:relative;top:' + driftY.toFixed(1) + 'px;' +
