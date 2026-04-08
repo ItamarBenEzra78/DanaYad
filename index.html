@@ -1846,10 +1846,50 @@ function updateLineDrift(val){
 }
 
 function applyLineDriftToScreen(deg){
-  document.querySelectorAll('#output-edit > div').forEach(div => {
-    if(div.classList.contains('page-break-marker')) return;
-    div.style.transform = deg === 0 ? '' : 'rotate('+deg+'deg)';
-    div.style.transformOrigin = deg === 0 ? '' : 'right center';
+  const ed = document.getElementById('output-edit');
+  if(!ed) return;
+
+  // Remove old drift wrappers first
+  ed.querySelectorAll('.line-drift-wrap').forEach(wrap => {
+    wrap.replaceWith(...wrap.childNodes);
+  });
+  ed.normalize();
+
+  if(deg === 0) return;
+
+  const style = 'display:block;transform:rotate('+deg+'deg);transform-origin:right center;';
+
+  // Wrap each direct child node in a rotated div
+  Array.from(ed.childNodes).forEach(node => {
+    if(node.nodeType === 1 && node.classList.contains('page-break-marker')) return;
+
+    // If it's a text node, split by \n and wrap each line
+    if(node.nodeType === 3){
+      const text = node.textContent;
+      if(!text.trim() && text.indexOf('\n') === -1) return;
+      const lines = text.split('\n');
+      const frag = document.createDocumentFragment();
+      lines.forEach((line, i) => {
+        if(i > 0) frag.appendChild(document.createTextNode('\n'));
+        if(!line) return;
+        const div = document.createElement('div');
+        div.className = 'line-drift-wrap';
+        div.style.cssText = style;
+        div.textContent = line;
+        frag.appendChild(div);
+      });
+      node.replaceWith(frag);
+      return;
+    }
+
+    // Element nodes (div, p, etc) — wrap in a drift container
+    if(node.nodeType === 1){
+      const div = document.createElement('div');
+      div.className = 'line-drift-wrap';
+      div.style.cssText = style;
+      node.replaceWith(div);
+      div.appendChild(node);
+    }
   });
 }
 
