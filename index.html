@@ -560,6 +560,9 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
       <div class="fmt-sep"></div>
       <button class="fb" onclick="toggleTextEraser()" style="font-size:11px;color:#dc2626;">✕ סגור</button>
       <div class="fmt-sep"></div>
+      <button class="fb" onclick="scrambleText()" title="ערבב כתב">🎲</button>
+      <button class="fb" onclick="unscrambleText()" title="אפס ערבוב">↺</button>
+      <div class="fmt-sep"></div>
       <button class="fb" onclick="clearAll()" title="נקה הכל" style="color:#dc2626;">🗑</button>
     </div>
 
@@ -1833,6 +1836,46 @@ function applyHandwriting(root){
 
     tNode.parentNode.replaceChild(frag, tNode);
   });
+}
+
+/* ── Scramble: per-character random jitter ── */
+let _scrambleBackup = null;
+
+function scrambleText(){
+  const ed = document.getElementById('output-edit');
+  if(!ed) return;
+  // Save original for reset
+  _scrambleBackup = ed.innerHTML;
+  const baseFontSize = parseFloat(getComputedStyle(ed).fontSize) || 16;
+  const text = ed.innerText;
+  let html = '';
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if(ch === '\n'){ html += '\n'; continue; }
+    if(ch === ' ' || ch === '\t'){ html += ch; continue; }
+    const rot = (Math.random() - 0.5) * 6;   // -3 to +3
+    const sz  = baseFontSize + (Math.random() - 0.5) * 4; // ±2px
+    const top = (Math.random() - 0.5) * 4;   // -2 to +2
+    html += '<span class="hw-scramble" style="display:inline-block;direction:rtl;unicode-bidi:embed;'+
+      'transform:rotate('+rot.toFixed(1)+'deg);'+
+      'font-size:'+sz.toFixed(1)+'px;'+
+      'position:relative;top:'+top.toFixed(1)+'px;">'+
+      ch.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>';
+  }
+  ed.innerHTML = html;
+}
+
+function unscrambleText(){
+  const ed = document.getElementById('output-edit');
+  if(!ed) return;
+  if(_scrambleBackup !== null){
+    ed.innerHTML = _scrambleBackup;
+    _scrambleBackup = null;
+  } else {
+    // Fallback: strip all scramble spans
+    ed.querySelectorAll('.hw-scramble').forEach(s => s.replaceWith(s.textContent));
+    ed.normalize();
+  }
 }
 
 /* ── Line drift: simple rotation on the whole editor ── */
