@@ -124,21 +124,7 @@ export function buildPrintPages() {
 
     // Apply handwriting effects to print clone.
     if (HW.enabled) {
-      const saved = {
-        rotation: HW.rotation, skew: HW.skew, drift: HW.drift,
-        sizeVar: HW.sizeVar, spacingVar: HW.spacingVar, opacity: HW.opacity,
-        pressureFade: HW.pressureFade, charMode: HW.charMode,
-      };
-      HW.charMode = true;
-      HW.rotation = Math.max(saved.rotation * 2.5, 2.5);
-      HW.skew = Math.max((saved.skew || 1.5) * 2.5, 3.0);
-      HW.drift = Math.max(saved.drift * 2.5, 2.5);
-      HW.sizeVar = Math.max(saved.sizeVar * 2.0, 2.0);
-      HW.spacingVar = Math.max((saved.spacingVar || 0.8) * 2.0, 1.5);
-      HW.opacity = 0.1;
-      HW.pressureFade = 0.08;
       applyHandwriting(inner);
-      Object.assign(HW, saved);
     }
 
     // Merge draw canvas
