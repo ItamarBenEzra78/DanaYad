@@ -1,5 +1,6 @@
 import { getEditor } from '../utils/dom.js';
 import { PAGE_HEIGHT } from '../config.js';
+import { applyScreenDrift } from '../handwriting/LineDrift.js';
 
 let _rafPending = false;
 let _lastBreaks = [0];
@@ -141,6 +142,7 @@ function _doReflow() {
   }
 
   updatePageIndicator(totalPages);
+  applyScreenDrift();
 }
 
 export function updatePageIndicator(totalPages) {
