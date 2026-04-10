@@ -6,6 +6,7 @@ Generates pixel-perfect PDFs via headless browser screenshot.
 import io
 import math
 import os
+import uuid
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +31,9 @@ renderer = HandwritingRenderer(FONT_PATH)
 
 PAGE_WIDTH = 794
 PAGE_HEIGHT = 1123
+SERVER_PORT = int(os.environ.get("PORT", 8000))
+
+_pending_exports = {}
 
 
 class RenderRequest(BaseModel):
@@ -54,53 +58,70 @@ def render_handwriting(req: RenderRequest):
     return Response(content=svg, media_type="image/svg+xml")
 
 
+@app.get("/api/pdf/render/{export_id}")
+async def serve_export_html(export_id: str):
+    """Serve the stored HTML so Playwright can navigate to a real URL."""
+    html = _pending_exports.get(export_id)
+    if not html:
+        return Response(content="Not found", status_code=404)
+    return Response(content=html, media_type="text/html")
+
+
 @app.post("/api/pdf")
 async def generate_pdf(req: PdfRequest):
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page(
-            viewport={"width": PAGE_WIDTH, "height": PAGE_HEIGHT},
-            device_scale_factor=2,
+    export_id = str(uuid.uuid4())
+    _pending_exports[export_id] = req.html
+
+    try:
+        render_url = f"http://127.0.0.1:{SERVER_PORT}/api/pdf/render/{export_id}"
+
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page(
+                viewport={"width": PAGE_WIDTH, "height": PAGE_HEIGHT},
+                device_scale_factor=2,
+            )
+            await page.goto(render_url, wait_until="networkidle")
+            await page.wait_for_timeout(1000)
+
+            full_height = await page.evaluate("document.body.scrollHeight")
+            total_pages = max(1, math.ceil(full_height / PAGE_HEIGHT))
+
+            shot = await page.screenshot(full_page=True, type="png")
+            await browser.close()
+
+        full_img = Image.open(io.BytesIO(shot))
+        img_w, img_h = full_img.size
+        page_h_px = int(PAGE_HEIGHT * (img_w / PAGE_WIDTH))
+
+        pages = []
+        for i in range(total_pages):
+            y_start = i * page_h_px
+            y_end = min(y_start + page_h_px, img_h)
+            crop = full_img.crop((0, y_start, img_w, y_end))
+
+            if crop.height < page_h_px:
+                padded = Image.new("RGB", (img_w, page_h_px), "white")
+                padded.paste(crop, (0, 0))
+                crop = padded
+
+            pages.append(crop.convert("RGB"))
+
+        pdf_buf = io.BytesIO()
+        pages[0].save(
+            pdf_buf, "PDF", save_all=True, append_images=pages[1:], resolution=150
         )
-        await page.set_content(req.html, wait_until="networkidle")
-        await page.wait_for_timeout(500)
+        pdf_bytes = pdf_buf.getvalue()
 
-        full_height = await page.evaluate("document.body.scrollHeight")
-        total_pages = max(1, math.ceil(full_height / PAGE_HEIGHT))
-
-        shot = await page.screenshot(
-            full_page=True,
-            type="png",
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": "attachment; filename=DanaYad_Document.pdf"
+            },
         )
-        await browser.close()
-
-    full_img = Image.open(io.BytesIO(shot))
-    img_w, img_h = full_img.size
-    page_h_px = img_h / max(total_pages, 1)
-    page_h_px = int(PAGE_HEIGHT * (img_w / PAGE_WIDTH))
-
-    pages = []
-    for i in range(total_pages):
-        y_start = i * page_h_px
-        y_end = min(y_start + page_h_px, img_h)
-        crop = full_img.crop((0, y_start, img_w, y_end))
-
-        if crop.height < page_h_px:
-            padded = Image.new("RGB", (img_w, page_h_px), "white")
-            padded.paste(crop, (0, 0))
-            crop = padded
-
-        pages.append(crop.convert("RGB"))
-
-    pdf_buf = io.BytesIO()
-    pages[0].save(pdf_buf, "PDF", save_all=True, append_images=pages[1:], resolution=150)
-    pdf_bytes = pdf_buf.getvalue()
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": "attachment; filename=DanaYad_Document.pdf"},
-    )
+    finally:
+        _pending_exports.pop(export_id, None)
 
 
 @app.get("/api/health")

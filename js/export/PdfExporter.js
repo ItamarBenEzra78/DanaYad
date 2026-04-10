@@ -11,26 +11,18 @@ export function closePdfModal() {
 
 /**
  * Build a self-contained HTML page from the current editor state.
- * Includes all CSS (inlined), SVG filter, fonts, and the output-edit element.
- * Playwright renders this in a real browser for pixel-perfect PDF.
+ * Uses absolute URLs for CSS/fonts so the headless browser can fetch them.
  */
 function _buildExportHtml() {
   const outputEdit = getOutputEdit();
 
-  let cssText = '';
-  for (const sheet of document.styleSheets) {
-    try {
-      for (const rule of sheet.cssRules) {
-        cssText += rule.cssText + '\n';
-      }
-    } catch (_e) {
-      /* cross-origin sheet — handled via link tags below */
-    }
-  }
+  const cssLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+    .map(el => `<link rel="stylesheet" href="${el.href}">`)
+    .join('\n');
 
   const fontLinks = Array.from(
     document.querySelectorAll('link[href*="fonts.googleapis"]')
-  ).map(el => el.outerHTML).join('\n');
+  ).map(el => `<link rel="stylesheet" href="${el.href}">`).join('\n');
 
   const svgEl = document.querySelector('svg[style*="position:absolute"]');
   const svgHtml = svgEl ? svgEl.outerHTML : '';
@@ -45,8 +37,8 @@ function _buildExportHtml() {
 <head>
 <meta charset="UTF-8">
 ${fontLinks}
+${cssLinks}
 <style>
-${cssText}
 body { margin: 0; padding: 0; background: #fff; }
 #output-edit { margin: 0 !important; box-shadow: none !important; }
 </style>
