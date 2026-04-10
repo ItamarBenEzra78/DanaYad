@@ -119,20 +119,25 @@ export function buildPrintPages() {
       inner.appendChild(wrapper);
     }
 
-    // Apply handwriting effects to print clone
+    // Apply handwriting effects to print clone.
+    // html2canvas cannot render SVG filters, so we heavily boost
+    // per-character transforms to simulate the ink-tremor effect.
     if (HW.enabled) {
       const saved = {
         rotation: HW.rotation, skew: HW.skew, drift: HW.drift,
-        spacingVar: HW.spacingVar, opacity: HW.opacity, pressureFade: HW.pressureFade,
+        spacingVar: HW.spacingVar, opacity: HW.opacity,
+        pressureFade: HW.pressureFade, charMode: HW.charMode,
       };
-      // Boost transforms to replace missing SVG ink-tremor filter
-      HW.rotation = saved.rotation * 1.3;
-      HW.skew = (saved.skew || 1.5) * 1.4;
-      HW.drift = saved.drift * 1.3;
-      HW.spacingVar = (saved.spacingVar || 0.8) * 1.3;
-      // Force uniform opacity in PDF — no fading
-      HW.opacity = 0;
-      HW.pressureFade = 0;
+      // Force per-character mode for maximum realism in PDF
+      HW.charMode = true;
+      // Aggressively boost to compensate for missing SVG filter
+      HW.rotation = Math.max(saved.rotation * 1.8, 1.5);
+      HW.skew = Math.max((saved.skew || 1.5) * 2.0, 2.0);
+      HW.drift = Math.max(saved.drift * 1.8, 1.5);
+      HW.spacingVar = Math.max((saved.spacingVar || 0.8) * 1.8, 1.0);
+      // Subtle opacity variation for ink feel
+      HW.opacity = 0.08;
+      HW.pressureFade = 0.06;
       applyHandwriting(inner);
       // Restore
       Object.assign(HW, saved);
