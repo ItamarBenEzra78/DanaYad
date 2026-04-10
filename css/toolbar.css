@@ -1,0 +1,18 @@
+/* ── Format toolbar ── */
+.fmt-bar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;background:var(--toolbar);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;}
+.fmt-sep{width:1px;height:22px;background:var(--border);margin:0 6px;flex-shrink:0;}
+.fb{height:28px;min-width:28px;padding:0 6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius);border:1px solid transparent;background:transparent;color:var(--muted);font-size:12px;font-family:-apple-system,Arial,sans-serif;transition:all .15s;white-space:nowrap;position:relative;}
+.fb:hover{background:var(--accent-bg);color:var(--text);}
+.fb.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.fb.active:hover{background:var(--accent-hover);}
+
+/* ── Table insert popup ── */
+.table-popup{display:none;position:absolute;top:100%;right:0;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:12px;z-index:60;box-shadow:0 4px 12px rgba(0,0,0,0.12);direction:rtl;}
+.table-popup.open{display:block;}
+.table-popup label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;}
+.table-popup input[type=number]{width:50px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-size:13px;}
+.table-popup button{margin-top:8px;padding:6px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+.table-popup button:hover{background:var(--accent-hover);}
+
+/* ── Ruler mode indicator ── */
+.fb.ruler-active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;}

@@ -1,0 +1,40 @@
+/* ── Sidebar ── */
+.sidebar{background:var(--surface);border-left:1px solid var(--border);padding:14px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;border-radius:0 12px 12px 0;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.sidebar::-webkit-scrollbar{width:5px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+.sidebar > div{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;transition:border-color .2s;}
+.sidebar > div:hover{border-color:var(--accent);}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+
+/* ── Controls ── */
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.ctrl-row label{font-size:11px;min-width:80px;color:var(--muted);}
+.ctrl-row input[type=range]{flex:1;accent-color:var(--accent);height:4px;border-radius:2px;background:var(--border);-webkit-appearance:none;appearance:none;}
+.ctrl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer;box-shadow:0 1px 4px rgba(139,109,66,0.25);}
+.ctrl-row .val{font-size:10px;color:var(--accent-hover);min-width:36px;text-align:center;background:#fff;padding:3px 6px;border-radius:6px;border:1px solid var(--border);font-weight:600;}
+
+/* ── Background row ── */
+.bg-row{display:flex;gap:4px;}
+.bg-btn{font-size:11px;padding:5px 10px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.bg-btn:hover{border-color:var(--accent);color:var(--text);}
+.bg-btn.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);}
+
+/* ── Tabs ── */
+.tabs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px;}
+.tab{font-size:11px;padding:3px 8px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;}
+.tab:hover{border-color:var(--accent);color:var(--text);}
+.tab.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);font-weight:700;}
+
+/* ── Symbol grid ── */
+.sym-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(28px,1fr));gap:3px;}
+.sym-grid.hidden{display:none;}
+.sym-btn{height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text);font-family:var(--font);transition:all .15s;}
+.sym-btn:hover{border-color:var(--accent);background:var(--accent-bg);}
+
+/* ── Font grid ── */
+.font-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px;}
+.font-card{border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
+.font-card:hover{border-color:var(--accent);background:var(--accent-bg);}
+.font-card.active{border-color:var(--accent);background:var(--accent-bg);}
+.font-card-name{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.font-card-preview{font-size:14px;color:var(--text);font-family:var(--font);}
