@@ -1,9 +1,18 @@
 /* ── Font faces ── */
 
-/* Gveret Levin — Hebrew handwriting font loaded from file */
+/* Gveret Levin — Hebrew handwriting font */
 @font-face {
   font-family: 'GveretLevin';
   src: url('../fonts/GveretLevin-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Playpen Sans Hebrew — Hebrew handwriting font (from Google Fonts, bundled) */
+@font-face {
+  font-family: 'PlaypenSansHebrew';
+  src: url('../fonts/PlaypenSansHebrew.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
