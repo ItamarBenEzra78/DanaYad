@@ -1,5 +1,6 @@
 /* ── Handwriting realism effects ── */
 .hw-word{display:inline-block;direction:rtl;unicode-bidi:embed;}
+.hw-char{display:inline-block;transition:none;}
 #output-edit.hw-filter{filter:url(#ink-tremor);}
 .hw-toggle{display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;}
 .hw-toggle input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}

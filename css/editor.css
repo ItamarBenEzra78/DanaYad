@@ -4,7 +4,7 @@
 
 /* ── Editor containers ── */
 #output-edit{direction:rtl;text-align:right;cursor:text;}
-#rotate-container{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;direction:rtl;text-align:right;min-height:100%;}
+#rotate-container{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;direction:rtl;text-align:right;min-height:100%;font-feature-settings:"calt" 1,"salt" 1;}
 #rotate-container:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;display:block;}
 
 /* ── Table styles inside editor ── */
