@@ -46,6 +46,14 @@ export async function exportToPdf() {
   }
 
   try {
+    try {
+      const h = await fetch(`${API_URL}/api/health`);
+      if (!h.ok) throw new Error();
+    } catch (_e) {
+      alert('שרת ה-PDF לא זמין.\nפתח את האפליקציה מ:\nhttp://localhost:8000');
+      return;
+    }
+
     const state = _captureEditorState();
 
     const res = await fetch(`${API_URL}/api/pdf`, {
