@@ -1,30 +1,17 @@
 /* ── Font faces ── */
 
-/* Hebrew: Gveret Levin (bundled file) */
+/* Gveret Levin — Hebrew handwriting font loaded from file */
 @font-face {
-  font-family: 'HandwritingCombo';
+  font-family: 'GveretLevin';
   src: url('../fonts/GveretLevin-Regular.ttf') format('truetype');
-  font-weight: 100 900;
+  font-weight: normal;
   font-style: normal;
   font-display: swap;
-  unicode-range:
-    U+0590-U+05FF,
-    U+FB1D-U+FB4E,
-    U+20AA,
-    U+0020-U+003F;
-}
-
-/* Latin/Numbers: Playpen Sans Hebrew from Google Fonts */
-@font-face {
-  font-family: 'HandwritingCombo';
-  src: url('https://fonts.gstatic.com/s/playpen+sans+hebrew/v1/regular.woff2') format('woff2');
-  font-weight: 300;
-  unicode-range: U+0000-U+058F, U+0600-U+FFFF;
 }
 
 /* ── CSS custom properties ── */
 :root {
-  --font: 'HandwritingCombo', cursive;
+  --font: 'GveretLevin', 'Playpen Sans Hebrew', cursive;
   --bg: #F8F6F2;
   --surface: #EDE9E3;
   --surface2: #F3F0EB;
