@@ -25,11 +25,18 @@
 </head>
 <body>
 
-<!-- SVG filter for ink tremor -->
+<!-- SVG filter for handwriting effects (multi-layer displacement) -->
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;">
   <filter id="ink-tremor" x="-5%" y="-5%" width="110%" height="110%">
-    <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" seed="2" result="noise"/>
-    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    <!-- Layer 1: baseline wobble — simulates hand drift across the line -->
+    <feTurbulence id="hw-wobble" type="turbulence" baseFrequency="0.006 0.003" numOctaves="2" seed="1" result="wobble"/>
+    <feDisplacementMap id="hw-wobble-scale" in="SourceGraphic" in2="wobble" scale="7" xChannelSelector="R" yChannelSelector="G" result="wobbled"/>
+    <!-- Layer 2: character jitter — per-character positional variation -->
+    <feTurbulence id="hw-jitter" type="turbulence" baseFrequency="0.035 0.025" numOctaves="3" seed="5" result="jitter"/>
+    <feDisplacementMap id="hw-jitter-scale" in="wobbled" in2="jitter" scale="4" xChannelSelector="G" yChannelSelector="R" result="jittered"/>
+    <!-- Layer 3: ink micro-tremor — fine pen shake -->
+    <feTurbulence id="hw-ink" type="fractalNoise" baseFrequency="0.09" numOctaves="4" seed="8" result="texture"/>
+    <feDisplacementMap id="hw-ink-scale" in="jittered" in2="texture" scale="2" xChannelSelector="R" yChannelSelector="G"/>
   </filter>
 </svg>
 
@@ -96,29 +103,19 @@
         <label for="hw-enabled">הפעל אפקטים</label>
       </div>
       <div class="ctrl-row">
-        <label>סיבוב אותיות</label>
-        <input type="range" id="hw-rotation" min="0" max="4" step="0.5" value="2" oninput="updateHwParam()">
-        <span class="val" id="hw-rotation-val">2°</span>
-      </div>
-      <div class="ctrl-row">
-        <label>שינוי גודל</label>
-        <input type="range" id="hw-size-var" min="0" max="3" step="0.5" value="1.5" oninput="updateHwParam()">
-        <span class="val" id="hw-size-val">1.5</span>
-      </div>
-      <div class="ctrl-row">
         <label>גל בסיס</label>
-        <input type="range" id="hw-drift" min="0" max="4" step="0.5" value="2" oninput="updateHwParam()">
-        <span class="val" id="hw-drift-val">2px</span>
+        <input type="range" id="hw-drift" min="0" max="12" step="1" value="7" oninput="updateHwParam()">
+        <span class="val" id="hw-drift-val">7</span>
+      </div>
+      <div class="ctrl-row">
+        <label>רעד אותיות</label>
+        <input type="range" id="hw-jitter" min="0" max="8" step="0.5" value="4" oninput="updateHwParam()">
+        <span class="val" id="hw-jitter-val">4</span>
       </div>
       <div class="ctrl-row">
         <label>רעד דיו</label>
-        <input type="range" id="hw-tremor" min="0" max="3" step="0.3" value="1.2" oninput="updateHwParam()">
-        <span class="val" id="hw-tremor-val">1.2</span>
-      </div>
-      <div class="ctrl-row">
-        <label>שינוי כהות</label>
-        <input type="range" id="hw-opacity" min="0" max="0.4" step="0.05" value="0.2" oninput="updateHwParam()">
-        <span class="val" id="hw-opacity-val">0.2</span>
+        <input type="range" id="hw-tremor" min="0" max="5" step="0.5" value="2" oninput="updateHwParam()">
+        <span class="val" id="hw-tremor-val">2</span>
       </div>
     </div>
 

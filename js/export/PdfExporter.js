@@ -1,7 +1,7 @@
 import { getEditor, getOutputEdit } from '../utils/dom.js';
 import { PAGE_HEIGHT } from '../config.js';
 import { computePageBreaks, reflowPages } from '../pagination/PaginationEngine.js';
-import { HW, applyHandwriting, stripHandwriting } from '../handwriting/HandwritingEngine.js';
+import { HW, applyHandwriting } from '../handwriting/HandwritingEngine.js';
 import { getLineDriftVal } from '../handwriting/LineDrift.js';
 
 export function openPdfModal() {
@@ -119,12 +119,22 @@ export function buildPrintPages() {
       inner.appendChild(wrapper);
     }
 
-    // Strip screen effects from clone before applying boosted print effects.
-    stripHandwriting(inner);
-
-    // Apply handwriting effects to print clone.
+    // Apply per-character handwriting effects to print clone.
+    // html2canvas cannot render SVG filters, so we use DOM transforms instead.
     if (HW.enabled) {
+      const saved = {
+        rotation: HW.rotation, skew: HW.skew, drift: HW.drift,
+        sizeVar: HW.sizeVar, spacingVar: HW.spacingVar, opacity: HW.opacity,
+        pressureFade: HW.pressureFade,
+      };
+      HW.rotation = 3;
+      HW.skew = 2.5;
+      HW.sizeVar = 2;
+      HW.spacingVar = 1.2;
+      HW.opacity = 0.15;
+      HW.pressureFade = 0.1;
       applyHandwriting(inner);
+      Object.assign(HW, saved);
     }
 
     // Merge draw canvas
