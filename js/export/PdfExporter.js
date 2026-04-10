@@ -1,7 +1,7 @@
 import { getEditor, getOutputEdit } from '../utils/dom.js';
 import { PAGE_HEIGHT } from '../config.js';
 import { computePageBreaks, reflowPages } from '../pagination/PaginationEngine.js';
-import { HW, applyHandwriting } from '../handwriting/HandwritingEngine.js';
+import { HW, applyHandwriting, stripHandwriting } from '../handwriting/HandwritingEngine.js';
 import { getLineDriftVal } from '../handwriting/LineDrift.js';
 
 export function openPdfModal() {
@@ -118,6 +118,9 @@ export function buildPrintPages() {
       while (inner.firstChild) wrapper.appendChild(inner.firstChild);
       inner.appendChild(wrapper);
     }
+
+    // Strip screen effects from clone before applying boosted print effects.
+    stripHandwriting(inner);
 
     // Apply handwriting effects to print clone.
     // html2canvas cannot render SVG filters, so we heavily boost

@@ -14,6 +14,9 @@ export const HW = {
   _seed: Math.random() * 1000
 };
 
+let _refreshTimer = null;
+const REFRESH_DELAY = 800;
+
 function _hwRand(seed) {
   let x = Math.sin(seed) * 43758.5453;
   return x - Math.floor(x);
@@ -34,6 +37,8 @@ export function updateHwParam() {
 
   const disp = document.querySelector('#ink-tremor feDisplacementMap');
   if (disp) disp.setAttribute('scale', HW.tremor);
+
+  refreshScreenEffects(true);
 }
 
 export function toggleHandwriting(on) {
@@ -44,6 +49,7 @@ export function toggleHandwriting(on) {
   } else {
     editor.classList.add('hw-filter');
   }
+  refreshScreenEffects(true);
 }
 
 export function applyHandwriting(root) {
@@ -165,4 +171,68 @@ export function applyHandwriting(root) {
 
     tNode.parentNode.replaceChild(frag, tNode);
   });
+}
+
+export function stripHandwriting(root) {
+  root.querySelectorAll('.hw-char').forEach(span => {
+    const text = document.createTextNode(span.textContent);
+    span.parentNode.replaceChild(text, span);
+  });
+  root.querySelectorAll('.hw-word').forEach(span => {
+    while (span.firstChild) span.parentNode.insertBefore(span.firstChild, span);
+    span.remove();
+  });
+  root.normalize();
+}
+
+function _getCursorOffset(root) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return -1;
+  const range = document.createRange();
+  range.selectNodeContents(root);
+  range.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset);
+  return range.toString().length;
+}
+
+function _setCursorOffset(root, offset) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let charCount = 0;
+  let node;
+  while ((node = walker.nextNode())) {
+    const len = node.textContent.length;
+    if (charCount + len >= offset) {
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.setStart(node, offset - charCount);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return;
+    }
+    charCount += len;
+  }
+}
+
+export function refreshScreenEffects(immediate) {
+  const editor = document.getElementById('rotate-container');
+  if (!editor) return;
+
+  clearTimeout(_refreshTimer);
+
+  const doRefresh = () => {
+    const offset = _getCursorOffset(editor);
+    stripHandwriting(editor);
+    if (HW.enabled) {
+      applyHandwriting(editor);
+    }
+    if (offset >= 0) {
+      _setCursorOffset(editor, offset);
+    }
+  };
+
+  if (immediate) {
+    doRefresh();
+  } else {
+    _refreshTimer = setTimeout(doRefresh, REFRESH_DELAY);
+  }
 }
