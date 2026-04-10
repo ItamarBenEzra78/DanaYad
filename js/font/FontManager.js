@@ -9,6 +9,7 @@ export function getCurrentFont() { return currentFont; }
 export function loadGoogleFont(font) {
   if (loadedFonts.has(font.css)) return;
   loadedFonts.add(font.css);
+  if (!font.google) return; // bundled font, already loaded via CSS
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`;
@@ -18,14 +19,15 @@ export function loadGoogleFont(font) {
 export function applyFont(font) {
   currentFont = font;
   loadGoogleFont(font);
-  document.documentElement.style.setProperty('--font', `'${font.css}','Playpen Sans Hebrew',cursive`);
+  const stack = `'${font.css}','GveretLevin','Playpen Sans Hebrew',cursive`;
+  document.documentElement.style.setProperty('--font', stack);
   const ed = getEditor();
   if (ed) {
-    ed.style.fontFamily = `'${font.css}','Playpen Sans Hebrew',cursive`;
+    ed.style.fontFamily = stack;
     ed.style.fontWeight = font.weight;
   }
   const prev = document.querySelector('.font-preview');
-  if (prev) { prev.style.fontFamily = `'${font.css}',cursive`; prev.textContent = 'אבג abc'; }
+  if (prev) { prev.style.fontFamily = `'${font.css}','GveretLevin',cursive`; prev.textContent = 'אבג abc'; }
   document.querySelectorAll('.font-card').forEach(c => c.classList.toggle('active', c.dataset.css === font.css));
 }
 

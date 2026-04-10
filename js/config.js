@@ -10,6 +10,8 @@ export const DY_FREE = 3;
 export const DY_KEY = 'dy_exports_used';
 
 export const FONTS = [
+  {name:'גברת לווין',css:'GveretLevin',google:null,preview:'שלום עולם אבג',cat:'handwriting',weight:400},
+  {name:'Playpen Sans עברית',css:'PlaypenSansHebrew',google:null,preview:'שלום עולם אבג',cat:'handwriting',weight:400},
   {name:'Playpen Sans',css:'Playpen Sans Hebrew',google:'Playpen+Sans+Hebrew:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:700},
   {name:'Secular One',css:'Secular One',google:'Secular+One',preview:'שלום Hello',cat:'hebrew',weight:400},
   {name:'Rubik',css:'Rubik',google:'Rubik:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
