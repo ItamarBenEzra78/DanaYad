@@ -1,0 +1,11 @@
+@media (max-width:768px){
+  .main{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .sidebar.mobile{display:flex;position:fixed;top:0;left:0;width:280px;height:100%;z-index:100;border-radius:0;}
+  .content{padding:8px;}
+  .fmt-bar{flex-wrap:wrap;}
+  .fb{min-width:24px;padding:0 4px;font-size:11px;}
+  .output-wrap{padding:16px 10px;}
+  #output-edit{width:100%!important;min-width:0!important;padding:40px 20px 60px!important;}
+  .font-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));}
+}

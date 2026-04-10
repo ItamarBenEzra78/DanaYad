@@ -1,0 +1,25 @@
+/* ── Print styles ── */
+@media print{
+  body>*:not(#print-container){display:none!important;}
+  body{background:#fff!important;display:block!important;margin:0!important;padding:0!important;}
+  @page{
+    size:210mm 297mm;
+    margin:0;
+  }
+  #print-container{display:block!important;}
+  .print-page{
+    width:794px;
+    height:1123px;
+    overflow:hidden;
+    position:relative;
+    page-break-after:always;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .print-page:last-child{page-break-after:auto;}
+  .print-page-inner{
+    position:absolute;
+    top:0;left:0;
+    width:794px;
+  }
+}
