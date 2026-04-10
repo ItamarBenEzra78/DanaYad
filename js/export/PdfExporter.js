@@ -120,27 +120,22 @@ export function buildPrintPages() {
     }
 
     // Apply handwriting effects to print clone
-    // Note: SVG filter url(#ink-tremor) is NOT used here because
-    // html2canvas cannot render SVG filters. Instead we boost the
-    // per-character transforms to compensate.
     if (HW.enabled) {
-      const savedTremor = HW.tremor;
-      const savedRotation = HW.rotation;
-      const savedSkew = HW.skew;
-      const savedDrift = HW.drift;
-      const savedSpacing = HW.spacingVar;
-      // Boost effects to replace the missing SVG ink tremor
-      HW.rotation = savedRotation * 1.3;
-      HW.skew = (HW.skew || 1.5) * 1.4;
-      HW.drift = savedDrift * 1.3;
-      HW.spacingVar = (HW.spacingVar || 0.8) * 1.3;
+      const saved = {
+        rotation: HW.rotation, skew: HW.skew, drift: HW.drift,
+        spacingVar: HW.spacingVar, opacity: HW.opacity, pressureFade: HW.pressureFade,
+      };
+      // Boost transforms to replace missing SVG ink-tremor filter
+      HW.rotation = saved.rotation * 1.3;
+      HW.skew = (saved.skew || 1.5) * 1.4;
+      HW.drift = saved.drift * 1.3;
+      HW.spacingVar = (saved.spacingVar || 0.8) * 1.3;
+      // Force uniform opacity in PDF — no fading
+      HW.opacity = 0;
+      HW.pressureFade = 0;
       applyHandwriting(inner);
-      // Restore original values
-      HW.rotation = savedRotation;
-      HW.skew = savedSkew;
-      HW.drift = savedDrift;
-      HW.spacingVar = savedSpacing;
-      HW.tremor = savedTremor;
+      // Restore
+      Object.assign(HW, saved);
     }
 
     // Merge draw canvas
