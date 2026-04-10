@@ -5,7 +5,7 @@ export const STRIPE_PRICE_ID = 'price_YOUR_PRICE_ID';
 export const ADMIN_EMAIL = 'itamar4747@gmail.com';
 
 export const PAGE_HEIGHT = 1123; // A4 height at 96dpi (297mm)
-export const API_URL = 'http://localhost:8000';
+export const API_URL = '';
 
 export const DY_FREE = 3;
 export const DY_KEY = 'dy_exports_used';

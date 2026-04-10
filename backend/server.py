@@ -11,6 +11,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from PIL import Image
 from playwright.async_api import async_playwright
@@ -31,6 +32,8 @@ renderer = HandwritingRenderer(FONT_PATH)
 
 PAGE_WIDTH = 794
 PAGE_HEIGHT = 1123
+SERVER_PORT = int(os.environ.get("PORT", 8000))
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
 
 class RenderRequest(BaseModel):
@@ -41,7 +44,6 @@ class RenderRequest(BaseModel):
 
 
 class PdfRequest(BaseModel):
-    app_url: str
     editor_html: str
     output_edit_class: str
     output_edit_style: str
@@ -70,7 +72,8 @@ async def generate_pdf(req: PdfRequest):
             device_scale_factor=2,
         )
 
-        await page.goto(req.app_url, wait_until="networkidle")
+        local_url = f"http://127.0.0.1:{SERVER_PORT}/"
+        await page.goto(local_url, wait_until="networkidle")
 
         hw = req.hw_params
         inject_js = """(args) => {
@@ -163,3 +166,7 @@ async def generate_pdf(req: PdfRequest):
 @app.get("/api/health")
 def health():
     return {"status": "ok", "font": FONT_PATH}
+
+
+# Serve the frontend — must be LAST (catch-all)
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
