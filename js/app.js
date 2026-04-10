@@ -13,7 +13,7 @@ import { insertSymbol, showSymbolGrid } from './editor/SymbolInserter.js';
 import { buildFontGrid, filterFonts, detectInstalledFonts } from './font/FontManager.js';
 
 // Handwriting
-import { updateHwParam, toggleHandwriting, HW } from './handwriting/HandwritingEngine.js';
+import { updateHwParam, toggleHandwriting, HW, refreshScreenEffects } from './handwriting/HandwritingEngine.js';
 import { scrambleText, unscrambleText } from './handwriting/ScrambleEngine.js';
 import { updateLineDrift } from './handwriting/LineDrift.js';
 
@@ -110,7 +110,7 @@ window.onload = () => {
 
   if (editor) {
     editor.focus();
-    editor.addEventListener('input', () => { syncToolbar(); reflowPages(); });
+    editor.addEventListener('input', () => { syncToolbar(); reflowPages(); refreshScreenEffects(); });
     editor.addEventListener('paste', e => {
       e.preventDefault();
       const text = (e.clipboardData || window.clipboardData).getData('text/plain');
@@ -145,7 +145,8 @@ window.onload = () => {
   // Reflow on window resize
   window.addEventListener('resize', () => reflowPages());
 
-  // Screen preview: SVG filter
+  // Screen preview: SVG filter + per-character effects
   const outputEdit = document.getElementById('output-edit');
   if (outputEdit && HW.enabled) outputEdit.classList.add('hw-filter');
+  refreshScreenEffects(true);
 };
