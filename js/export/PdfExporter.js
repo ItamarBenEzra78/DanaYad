@@ -143,6 +143,31 @@ export function buildPrintPages() {
       Object.assign(HW, saved);
     }
 
+    // Ink tremor noise layer — replaces SVG filter that html2canvas can't render.
+    // Draws subtle pixel displacement noise over the text area.
+    const noiseCanvas = document.createElement('canvas');
+    const nw = 794, nh = 1123, nScale = 2;
+    noiseCanvas.width = nw * nScale;
+    noiseCanvas.height = nh * nScale;
+    noiseCanvas.style.cssText = 'position:absolute;top:0;left:0;width:794px;height:1123px;pointer-events:none;z-index:3;mix-blend-mode:multiply;opacity:0.12;';
+    const nCtx = noiseCanvas.getContext('2d');
+    nCtx.scale(nScale, nScale);
+    // Generate ink speckle noise
+    const tremorScale = HW.tremor || 1.2;
+    for (let ny = 0; ny < nh; ny += 3) {
+      for (let nx = 0; nx < nw; nx += 3) {
+        if (Math.random() < 0.03 * tremorScale) {
+          const gray = Math.floor(30 + Math.random() * 40);
+          const size = 0.5 + Math.random() * 1.5 * tremorScale;
+          nCtx.fillStyle = `rgba(${gray},${gray},${gray},${0.3 + Math.random() * 0.4})`;
+          nCtx.beginPath();
+          nCtx.arc(nx + Math.random() * 3, ny + Math.random() * 3, size, 0, Math.PI * 2);
+          nCtx.fill();
+        }
+      }
+    }
+    page.appendChild(noiseCanvas);
+
     // Merge draw canvas
     const srcCanvas = document.getElementById('draw-canvas');
     if (srcCanvas && srcCanvas.width > 0 && srcCanvas.height > 0) {
