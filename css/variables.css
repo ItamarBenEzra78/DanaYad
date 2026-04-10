@@ -1,14 +1,17 @@
 /* ── Font faces ── */
 
-/* Hebrew: Gveret Levin (bundled file) or Dana Yad (if installed) */
+/* Hebrew: Gveret Levin (bundled file) */
 @font-face {
   font-family: 'HandwritingCombo';
   src: url('../fonts/GveretLevin-Regular.ttf') format('truetype');
-  font-weight: 300 700;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
   unicode-range:
     U+0590-U+05FF,
     U+FB1D-U+FB4E,
-    U+20AA;
+    U+20AA,
+    U+0020-U+003F;
 }
 
 /* Latin/Numbers: Playpen Sans Hebrew from Google Fonts */
