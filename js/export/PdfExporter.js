@@ -19,7 +19,6 @@ function _captureEditorState() {
   const editor = getEditor();
 
   return {
-    app_url: window.location.origin + window.location.pathname,
     editor_html: editor.innerHTML,
     output_edit_class: outputEdit.className,
     output_edit_style: outputEdit.style.cssText,
