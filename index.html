@@ -93,8 +93,9 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
 .output-area{position:relative;flex:1;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .output-wrap{flex:1;position:relative;overflow-y:auto;padding:30px 24px 0;background:var(--bg);}
-#output-edit{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;direction:rtl;text-align:right;}
-#output-edit:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;display:block;}
+#output-edit{direction:rtl;text-align:right;cursor:text;}
+#rotate-container{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;direction:rtl;text-align:right;min-height:100%;}
+#rotate-container:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;display:block;}
 .draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 .draw-canvas.active{pointer-events:auto;}
 .draw-toolbar{position:absolute;top:10px;left:10px;display:none;z-index:10;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:8px;gap:4px;align-items:center;}
@@ -159,9 +160,9 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 /* old .pages-container and .page removed — pagination is now dynamic */
 
 /* ── Table styles ── */
-#output-edit table{width:100%;border-collapse:collapse;direction:rtl;margin:8px 0;}
-#output-edit th,#output-edit td{border:1px solid #555;padding:6px 8px;text-align:right;min-width:40px;vertical-align:top;}
-#output-edit th{background:rgba(0,0,0,0.04);font-weight:700;}
+#rotate-container table{width:100%;border-collapse:collapse;direction:rtl;margin:8px 0;}
+#rotate-container th,#rotate-container td{border:1px solid #555;padding:6px 8px;text-align:right;min-width:40px;vertical-align:top;}
+#rotate-container th{background:rgba(0,0,0,0.04);font-weight:700;}
 
 /* ── Table insert popup ── */
 .table-popup{display:none;position:absolute;top:100%;right:0;background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:12px;z-index:60;box-shadow:0 4px 12px rgba(0,0,0,0.12);direction:rtl;}
@@ -568,11 +569,13 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 
     <div class="output-area">
     <div class="output-wrap" id="output-wrap">
-        <div id="output-edit" class="bg-paper" data-bg-type="paper" dir="rtl" contenteditable="true"
-     onkeydown="handleKey(event)"
-     onmouseup="syncToolbar()"
-     onkeyup="syncToolbar()">
+        <div id="output-edit" class="bg-paper" data-bg-type="paper" dir="rtl">
+          <div id="rotate-container" contenteditable="true"
+               onkeydown="handleKey(event)"
+               onmouseup="syncToolbar()"
+               onkeyup="syncToolbar()">
 </div>
+        </div>
         <canvas id="draw-canvas" class="draw-canvas"></canvas>
         <div id="draw-toolbar" class="draw-toolbar" style="display:none;">
           <div class="draw-color on" style="background:#1a1a1a;" onclick="setDrawColor('#1a1a1a',this)"></div>
@@ -622,9 +625,9 @@ header h1{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weigh
 </div>
 
 <script>
-function updateFontSize(val){const ed=document.getElementById('output-edit'); if(ed) ed.style.fontSize=val+'px'; document.getElementById('font-size-val').textContent=val+'px';}
-function updateLineHeight(val){const ed=document.getElementById('output-edit'); if(ed) ed.style.lineHeight=val; document.getElementById('line-height-val').textContent=val;}
-function updateLetterSpacing(val){const ed=document.getElementById('output-edit'); if(ed) ed.style.letterSpacing=val+'px'; document.getElementById('letter-spacing-val').textContent=val+'px';}
+function updateFontSize(val){const ed=document.getElementById('rotate-container'); if(ed) ed.style.fontSize=val+'px'; document.getElementById('font-size-val').textContent=val+'px';}
+function updateLineHeight(val){const ed=document.getElementById('rotate-container'); if(ed) ed.style.lineHeight=val; document.getElementById('line-height-val').textContent=val;}
+function updateLetterSpacing(val){const ed=document.getElementById('rotate-container'); if(ed) ed.style.letterSpacing=val+'px'; document.getElementById('letter-spacing-val').textContent=val+'px';}
 
 function setBackground(type){
   const editor=document.getElementById('output-edit');
@@ -644,7 +647,7 @@ function showSymbolGrid(type){
 }
 
 function insertSymbol(sym){
-  const ed=document.getElementById('output-edit');
+  const ed=document.getElementById('rotate-container');
   const sel=window.getSelection();
   if(sel.rangeCount){
     const range=sel.getRangeAt(0);
@@ -655,16 +658,16 @@ function insertSymbol(sym){
   }
 }
 
-function toggleBold(){const e=document.getElementById('output-edit');e.focus();document.execCommand('bold');syncToolbar();}
-function toggleItalic(){const e=document.getElementById('output-edit');e.focus();document.execCommand('italic');syncToolbar();}
-function toggleUnderline(){const e=document.getElementById('output-edit');e.focus();document.execCommand('underline');syncToolbar();}
+function toggleBold(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('bold');syncToolbar();}
+function toggleItalic(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('italic');syncToolbar();}
+function toggleUnderline(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('underline');syncToolbar();}
 
-function alignLeft(){const e=document.getElementById('output-edit');e.focus();document.execCommand('justifyLeft');syncToolbar();}
-function alignCenter(){const e=document.getElementById('output-edit');e.focus();document.execCommand('justifyCenter');syncToolbar();}
-function alignRight(){const e=document.getElementById('output-edit');e.focus();document.execCommand('justifyRight');syncToolbar();}
+function alignLeft(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('justifyLeft');syncToolbar();}
+function alignCenter(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('justifyCenter');syncToolbar();}
+function alignRight(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('justifyRight');syncToolbar();}
 
-function insertBullet(){const e=document.getElementById('output-edit');e.focus();document.execCommand('insertUnorderedList');syncToolbar();}
-function insertNumbered(){const e=document.getElementById('output-edit');e.focus();document.execCommand('insertOrderedList');syncToolbar();}
+function insertBullet(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('insertUnorderedList');syncToolbar();}
+function insertNumbered(){const e=document.getElementById('rotate-container');e.focus();document.execCommand('insertOrderedList');syncToolbar();}
 
 function syncToolbar(){
   const map={
@@ -831,7 +834,7 @@ function computePageBreaks(editor){
 
 function _doReflow(){
   _rafPending = false;
-  const editor = document.getElementById('output-edit');
+  const editor = document.getElementById('rotate-container');
   if(!editor) return;
 
   // Clean slate — remove markers, reset min-height for measurement
@@ -909,7 +912,7 @@ function handleKey(e){
 }
 
 function eraseAtCursor(size){
-  const ed=document.getElementById('output-edit');
+  const ed=document.getElementById('rotate-container');
 
   let range;
   const sel=window.getSelection();
@@ -1060,7 +1063,7 @@ function clearCanvas(){
 function clearAll(){
   if(!confirm('האם אתה בטוח? כל התוכן יימחק')) return;
   // Clear editor text
-  const editor=document.getElementById('output-edit');
+  const editor=document.getElementById('rotate-container');
   if(editor) editor.innerHTML='';
   // Clear draw canvas
   const canvas=document.getElementById('draw-canvas');
@@ -1160,7 +1163,7 @@ function globalUndo(){
   if(drawMode){
     undoCanvas();
   } else {
-    document.getElementById('output-edit').focus();
+    document.getElementById('rotate-container').focus();
     document.execCommand('undo');
   }
 }
@@ -1173,7 +1176,7 @@ function toggleTablePopup(){
 function insertTable(){
   const rows=parseInt(document.getElementById('table-rows').value)||3;
   const cols=parseInt(document.getElementById('table-cols').value)||3;
-  const ed=document.getElementById('output-edit');
+  const ed=document.getElementById('rotate-container');
 
   let html='<table dir="rtl">';
   for(let r=0;r<rows;r++){
@@ -1277,7 +1280,7 @@ function applyFont(font){
   currentFont=font;
   loadGoogleFont(font);
   document.documentElement.style.setProperty('--font',`'${font.css}','Playpen Sans Hebrew',cursive`);
-  const ed=document.getElementById('output-edit');
+  const ed=document.getElementById('rotate-container');
   if(ed){
     ed.style.fontFamily=`'${font.css}','Playpen Sans Hebrew',cursive`;
     ed.style.fontWeight=font.weight;
@@ -1463,7 +1466,7 @@ window.onload=()=>{
 
   buildFontGrid();
 
-  const editor=document.getElementById('output-edit');
+  const editor=document.getElementById('rotate-container');
   const wrap=document.getElementById('output-wrap');
 
   if(editor){
@@ -1557,7 +1560,7 @@ function _renderPageBg(type, w, h, lineH){
  * by setting the clone's height to pageEnd + overflow:hidden.
  */
 function buildPrintPages(){
-  const editor = document.getElementById('output-edit');
+  const editor = document.getElementById('rotate-container');
   if(!editor) return null;
 
   // Clean state for measurement
@@ -1661,7 +1664,7 @@ function exportToPdf(){
   btn.disabled  = true;
   btn.innerHTML = '<span class="pdf-spinner"></span> מייצא...';
 
-  const editor = document.getElementById('output-edit');
+  const editor = document.getElementById('rotate-container');
   if(!editor || editor.textContent.trim() === ''){
     alert('אין תוכן להדפסה');
     btn.disabled  = false;
@@ -1842,7 +1845,7 @@ function applyHandwriting(root){
 let _scrambleBackup = null;
 
 function scrambleText(){
-  const ed = document.getElementById('output-edit');
+  const ed = document.getElementById('rotate-container');
   if(!ed) return;
   // Save original for reset
   _scrambleBackup = ed.innerHTML;
@@ -1866,7 +1869,7 @@ function scrambleText(){
 }
 
 function unscrambleText(){
-  const ed = document.getElementById('output-edit');
+  const ed = document.getElementById('rotate-container');
   if(!ed) return;
   if(_scrambleBackup !== null){
     ed.innerHTML = _scrambleBackup;
@@ -1878,26 +1881,20 @@ function unscrambleText(){
   }
 }
 
-/* ── Line drift: per-line rotation like a clock hand ── */
+/* ── Line drift: rotate the text container, page stays static ── */
 let _lineDriftVal = 0;
-
-/* Inject a dynamic style rule for line drift */
-const _driftStyle = document.createElement('style');
-_driftStyle.id = 'line-drift-style';
-document.head.appendChild(_driftStyle);
 
 function updateLineDrift(val){
   _lineDriftVal = parseFloat(val);
   document.getElementById('line-drift-val').textContent = val + '°';
+  const rc = document.getElementById('rotate-container');
+  if(!rc) return;
   if(_lineDriftVal === 0){
-    _driftStyle.textContent = '';
+    rc.style.transform = '';
+    rc.style.transformOrigin = '';
   } else {
-    _driftStyle.textContent =
-      '#output-edit > div, #output-edit > p, #output-edit > br + br {' +
-        'transform: rotate(' + _lineDriftVal + 'deg);' +
-        'transform-origin: right center;' +
-        'display: block;' +
-      '}';
+    rc.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
+    rc.style.transformOrigin = 'right top';
   }
 }
 
@@ -1910,10 +1907,11 @@ buildPrintPages = function(){
   if(result){
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
       if(_lineDriftVal !== 0){
-        inner.querySelectorAll(':scope > div, :scope > p').forEach(line => {
-          line.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
-          line.style.transformOrigin = 'right center';
-        });
+        const wrapper = document.createElement('div');
+        wrapper.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
+        wrapper.style.transformOrigin = 'right top';
+        while(inner.firstChild) wrapper.appendChild(inner.firstChild);
+        inner.appendChild(wrapper);
       }
       if(HW.enabled){
         applyHandwriting(inner);
