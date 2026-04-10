@@ -2,43 +2,48 @@ import { getOutputEdit } from '../utils/dom.js';
 
 export const HW = {
   enabled: true,
+  drift: 7,
+  jitter: 4,
+  tremor: 2,
+  charMode: true,
   rotation: 2,
+  skew: 1.5,
   sizeVar: 1.5,
-  drift: 2,
-  tremor: 1.2,
   opacity: 0.2,
-  charMode: true,       // per-character variation (more realistic)
-  skew: 1.5,            // max skew degrees per character
-  pressureFade: 0.12,   // ink pressure fade along word (0-0.3)
-  spacingVar: 0.8,      // letter spacing variation in px
+  pressureFade: 0.12,
+  spacingVar: 0.8,
   _seed: Math.random() * 1000
 };
-
-let _refreshTimer = null;
-const REFRESH_DELAY = 800;
 
 function _hwRand(seed) {
   let x = Math.sin(seed) * 43758.5453;
   return x - Math.floor(x);
 }
 
+/**
+ * Update SVG filter attributes from slider values.
+ * Screen + browser print use the SVG filter (no DOM manipulation).
+ */
 export function updateHwParam() {
-  HW.rotation = parseFloat(document.getElementById('hw-rotation').value);
-  HW.sizeVar  = parseFloat(document.getElementById('hw-size-var').value);
-  HW.drift    = parseFloat(document.getElementById('hw-drift').value);
-  HW.tremor   = parseFloat(document.getElementById('hw-tremor').value);
-  HW.opacity  = parseFloat(document.getElementById('hw-opacity').value);
+  HW.drift  = parseFloat(document.getElementById('hw-drift').value);
+  HW.jitter = parseFloat(document.getElementById('hw-jitter').value);
+  HW.tremor = parseFloat(document.getElementById('hw-tremor').value);
 
-  document.getElementById('hw-rotation-val').textContent = HW.rotation + '°';
-  document.getElementById('hw-size-val').textContent     = HW.sizeVar;
-  document.getElementById('hw-drift-val').textContent    = HW.drift + 'px';
-  document.getElementById('hw-tremor-val').textContent   = HW.tremor;
-  document.getElementById('hw-opacity-val').textContent  = HW.opacity;
+  document.getElementById('hw-drift-val').textContent  = HW.drift;
+  document.getElementById('hw-jitter-val').textContent = HW.jitter;
+  document.getElementById('hw-tremor-val').textContent = HW.tremor;
 
-  const disp = document.querySelector('#ink-tremor feDisplacementMap');
-  if (disp) disp.setAttribute('scale', HW.tremor);
+  _syncFilter();
+}
 
-  refreshScreenEffects(true);
+function _syncFilter() {
+  const wobbleScale = document.getElementById('hw-wobble-scale');
+  const jitterScale = document.getElementById('hw-jitter-scale');
+  const inkScale    = document.getElementById('hw-ink-scale');
+
+  if (wobbleScale) wobbleScale.setAttribute('scale', HW.drift);
+  if (jitterScale) jitterScale.setAttribute('scale', HW.jitter);
+  if (inkScale)    inkScale.setAttribute('scale', HW.tremor);
 }
 
 export function toggleHandwriting(on) {
@@ -49,17 +54,18 @@ export function toggleHandwriting(on) {
   } else {
     editor.classList.add('hw-filter');
   }
-  refreshScreenEffects(true);
 }
 
+/**
+ * Apply per-character transforms to a DOM clone (for PDF export only).
+ * Screen display uses the SVG filter instead.
+ */
 export function applyHandwriting(root) {
-  if (!HW.enabled) return;
-
   const baseFontSize = parseFloat(getComputedStyle(root).fontSize) || 16;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const textNodes = [];
   let node;
-  while (node = walker.nextNode()) {
+  while ((node = walker.nextNode())) {
     if (node.parentElement && (
       node.parentElement.closest('.page-break-marker') ||
       node.parentElement.classList.contains('hw-word') ||
@@ -88,84 +94,47 @@ export function applyHandwriting(root) {
         return;
       }
       if (token === ' ' || token === '\t') {
-        const sp = document.createTextNode(token);
-        frag.appendChild(sp);
+        frag.appendChild(document.createTextNode(token));
         return;
       }
 
-      if (HW.charMode) {
-        // Per-character mode — each letter gets its own variation
-        const wordSpan = document.createElement('span');
-        wordSpan.className = 'hw-word';
-        wordSpan.style.cssText = 'display:inline-block;direction:rtl;unicode-bidi:embed;';
+      const wordSpan = document.createElement('span');
+      wordSpan.className = 'hw-word';
+      wordSpan.style.cssText = 'display:inline-block;direction:rtl;unicode-bidi:embed;';
 
-        const wordSeed = HW._seed + lineIdx * 137 + wordIdx;
-        const wordLen = token.length;
+      const wordSeed = HW._seed + lineIdx * 137 + wordIdx;
+      const wordLen = token.length;
 
-        for (let ci = 0; ci < wordLen; ci++) {
-          const ch = token[ci];
-          const charSpan = document.createElement('span');
-          charSpan.className = 'hw-char';
-          charSpan.textContent = ch;
+      for (let ci = 0; ci < wordLen; ci++) {
+        const charSpan = document.createElement('span');
+        charSpan.className = 'hw-char';
+        charSpan.textContent = token[ci];
 
-          const cSeed = wordSeed + ci * 31 + globalCharIdx * 7;
+        const cSeed = wordSeed + ci * 31 + globalCharIdx * 7;
 
-          // Rotation — per character
-          const rot = ((_hwRand(cSeed) - 0.5) * 2) * HW.rotation;
+        const rot = ((_hwRand(cSeed) - 0.5) * 2) * HW.rotation;
+        const skew = ((_hwRand(cSeed + 1) - 0.5) * 2) * HW.skew;
+        const sizeOff = ((_hwRand(cSeed + 2) - 0.5) * 2) * HW.sizeVar;
+        const phase = _hwRand(wordSeed * 0.01 + lineIdx * 7.3) * Math.PI * 2;
+        const driftY = Math.sin(phase + ci * 0.7 + wordIdx * 0.4) * HW.drift * 0.3;
+        const pressurePos = ci / Math.max(wordLen - 1, 1);
+        const pressureFade = pressurePos * HW.pressureFade;
+        const opVar = (1.0 - _hwRand(cSeed + 3) * HW.opacity) - pressureFade;
+        const spacingOff = ((_hwRand(cSeed + 4) - 0.5) * 2) * HW.spacingVar;
 
-          // Skew — makes each letter lean differently
-          const skew = ((_hwRand(cSeed + 1) - 0.5) * 2) * HW.skew;
-
-          // Size variation — per character
-          const sizeOff = ((_hwRand(cSeed + 2) - 0.5) * 2) * HW.sizeVar;
-
-          // Baseline wobble — sinusoidal drift per character
-          const phase = _hwRand(wordSeed * 0.01 + lineIdx * 7.3) * Math.PI * 2;
-          const driftY = Math.sin(phase + ci * 0.7 + wordIdx * 0.4) * HW.drift;
-
-          // Ink pressure — darker at word start, lighter toward end
-          const pressurePos = ci / Math.max(wordLen - 1, 1);
-          const pressureFade = pressurePos * HW.pressureFade;
-          const opVar = (1.0 - _hwRand(cSeed + 3) * HW.opacity) - pressureFade;
-
-          // Letter spacing variation
-          const spacingOff = ((_hwRand(cSeed + 4) - 0.5) * 2) * HW.spacingVar;
-
-          charSpan.style.cssText =
-            'display:inline-block;' +
-            'transform:rotate(' + rot.toFixed(2) + 'deg) skewY(' + skew.toFixed(2) + 'deg);' +
-            'font-size:' + (baseFontSize + sizeOff).toFixed(1) + 'px;' +
-            'position:relative;top:' + driftY.toFixed(1) + 'px;' +
-            'opacity:' + Math.max(opVar, 0.55).toFixed(3) + ';' +
-            'margin-left:' + spacingOff.toFixed(1) + 'px;';
-
-          wordSpan.appendChild(charSpan);
-          globalCharIdx++;
-        }
-
-        frag.appendChild(wordSpan);
-      } else {
-        // Legacy per-word mode
-        const span = document.createElement('span');
-        span.className = 'hw-word';
-        span.textContent = token;
-
-        const seed = HW._seed + lineIdx * 137 + wordIdx;
-        const rot = ((_hwRand(seed) - 0.5) * 2) * HW.rotation * 0.5;
-        const sizeOff = ((_hwRand(seed + 1) - 0.5) * 2) * HW.sizeVar * 0.6;
-        const linePhase = _hwRand(seed * 0.01 + lineIdx * 7.3) * Math.PI * 2;
-        const driftY = Math.sin(linePhase + wordIdx * 0.4) * HW.drift;
-        const opVar = 1.0 - _hwRand(seed + 2) * HW.opacity;
-
-        span.style.cssText =
-          'display:inline-block;direction:rtl;unicode-bidi:embed;' +
-          'transform:rotate(' + rot.toFixed(2) + 'deg);' +
+        charSpan.style.cssText =
+          'display:inline-block;' +
+          'transform:rotate(' + rot.toFixed(2) + 'deg) skewY(' + skew.toFixed(2) + 'deg);' +
           'font-size:' + (baseFontSize + sizeOff).toFixed(1) + 'px;' +
           'position:relative;top:' + driftY.toFixed(1) + 'px;' +
-          'opacity:' + opVar.toFixed(3) + ';';
+          'opacity:' + Math.max(opVar, 0.55).toFixed(3) + ';' +
+          'margin-left:' + spacingOff.toFixed(1) + 'px;';
 
-        frag.appendChild(span);
+        wordSpan.appendChild(charSpan);
+        globalCharIdx++;
       }
+
+      frag.appendChild(wordSpan);
       wordIdx++;
     });
 
@@ -183,56 +152,4 @@ export function stripHandwriting(root) {
     span.remove();
   });
   root.normalize();
-}
-
-function _getCursorOffset(root) {
-  const sel = window.getSelection();
-  if (!sel.rangeCount) return -1;
-  const range = document.createRange();
-  range.selectNodeContents(root);
-  range.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset);
-  return range.toString().length;
-}
-
-function _setCursorOffset(root, offset) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let charCount = 0;
-  let node;
-  while ((node = walker.nextNode())) {
-    const len = node.textContent.length;
-    if (charCount + len >= offset) {
-      const sel = window.getSelection();
-      const range = document.createRange();
-      range.setStart(node, offset - charCount);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      return;
-    }
-    charCount += len;
-  }
-}
-
-export function refreshScreenEffects(immediate) {
-  const editor = document.getElementById('rotate-container');
-  if (!editor) return;
-
-  clearTimeout(_refreshTimer);
-
-  const doRefresh = () => {
-    const offset = _getCursorOffset(editor);
-    stripHandwriting(editor);
-    if (HW.enabled) {
-      applyHandwriting(editor);
-    }
-    if (offset >= 0) {
-      _setCursorOffset(editor, offset);
-    }
-  };
-
-  if (immediate) {
-    doRefresh();
-  } else {
-    _refreshTimer = setTimeout(doRefresh, REFRESH_DELAY);
-  }
 }
