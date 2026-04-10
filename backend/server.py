@@ -89,7 +89,7 @@ async def generate_pdf(req: PdfRequest):
             // Set output-edit state
             const oe = document.getElementById('output-edit');
             oe.className = oeClass;
-            oe.style.cssText = oeStyle + ';margin:0;box-shadow:none;';
+            oe.style.cssText = oeStyle + ';margin:0;box-shadow:none;box-sizing:border-box;width:794px;min-height:1123px;';
 
             // Set editor content
             const editor = document.getElementById('rotate-container');
@@ -133,10 +133,14 @@ async def generate_pdf(req: PdfRequest):
         shot = await element.screenshot(type="png")
         await browser.close()
 
+    scale = 2  # must match device_scale_factor
     full_img = Image.open(io.BytesIO(shot))
     img_w, img_h = full_img.size
-    page_h_px = int(PAGE_HEIGHT * (img_w / PAGE_WIDTH))
+    page_h_px = PAGE_HEIGHT * scale
     total_pages = max(1, math.ceil(img_h / page_h_px))
+
+    target_w = PAGE_WIDTH * scale
+    target_h = PAGE_HEIGHT * scale
 
     pages = []
     for i in range(total_pages):
@@ -144,12 +148,11 @@ async def generate_pdf(req: PdfRequest):
         y_end = min(y_start + page_h_px, img_h)
         crop = full_img.crop((0, y_start, img_w, y_end))
 
-        if crop.height < page_h_px:
-            padded = Image.new("RGB", (img_w, page_h_px), "white")
-            padded.paste(crop, (0, 0))
-            crop = padded
+        page_img = Image.new("RGB", (target_w, target_h), "white")
+        resized = crop.resize((target_w, int(crop.height * target_w / crop.width)), Image.LANCZOS)
+        page_img.paste(resized, (0, 0))
 
-        pages.append(crop.convert("RGB"))
+        pages.append(page_img)
 
     pdf_buf = io.BytesIO()
     pages[0].save(
