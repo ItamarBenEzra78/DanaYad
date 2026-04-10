@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400&display=swap" rel="stylesheet">
+<style>
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: local('Dana Yad AlefAlefAlef'), local('DanaYadAlefAlefAlef'), local('Dana Yad');
+  font-weight: 300 700;
+  unicode-range: U+0590-U+05FF, U+FB1D-U+FB4E, U+20AA;
+}
+@font-face {
+  font-family: 'HandwritingCombo';
+  src: url('https://fonts.gstatic.com/s/playpen+sans+hebrew/v1/regular.woff2') format('woff2');
+  font-weight: 300;
+  unicode-range: U+0000-U+058F, U+0600-U+FFFF;
+}
+
+@page { size: A4; margin: 0; }
+
+body {
+  font-family: 'HandwritingCombo', 'Playpen Sans Hebrew', 'Dana Yad AlefAlefAlef', cursive;
+  font-size: 15px;
+  line-height: 1.75;
+  direction: rtl;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 0;
+  font-feature-settings: "calt" 1, "salt" 1;
+}
+
+.page {
+  width: 794px;
+  min-height: 1123px;
+  padding: 55px 60px 80px;
+  margin: 0 auto;
+  position: relative;
+  background-color: #FFFEF8;
+  background-image: repeating-linear-gradient(
+    180deg, transparent, transparent calc(1.75em - 1px),
+    rgba(180,200,220,0.3) calc(1.75em - 1px), rgba(180,200,220,0.3) 1.75em
+  );
+  background-size: 100% 1.75em;
+  background-position: 0 55px;
+  box-sizing: border-box;
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+
+#content { visibility: hidden; }
+#content.ready { visibility: visible; }
+
+.x { text-decoration: line-through; text-decoration-thickness: 1.8px; color: #555; text-decoration-color: #333; }
+.s { font-size: 12px; color: #666; }
+.a { border-bottom: 1.5px solid #222; padding-bottom: 1px; }
+.q { text-decoration: underline; margin-top: 18px; display: block; }
+.sep { border: none; border-top: 1px solid #ccc; margin: 14px 0; }
+.sm { font-size: 13px; line-height: 1.55; }
+
+/* SVG ink tremor filter */
+svg.filters { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+@media print {
+  body { background: none; }
+  .page { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+
+<svg class="filters" xmlns="http://www.w3.org/2000/svg">
+  <filter id="ink" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="4" seed="3" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.0" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<div id="content">
+<div class="page" style="filter:url(#ink);">
+
+<div style="margin-bottom:12px; font-size:14px;">
+תרגיל 1 — תזמון, אלגוריתמים וסידורים פולינומיאליים
+<br>שם: _____________&nbsp;&nbsp; ת.ז: _____________
+</div>
+
+<span class="q">שאלה 1</span>
+
+1) min ∑Cj
+
+SPT:  1(12), 2(14), 5(14), 3(16), 4(18)
+
+C1=12  C2=12+14=26  C5=26+14=40  C3=<span class="x">46</span> 56  C4=56+18=74
+∑ = 12+26+40+56+74 = <span class="a">208</span>
+
+2) min Lmax
+
+EDD:  4(d=24), 1(30), 2(36), 5(40), 3(52)
+
+C4=18  L=18-24=-6
+C1=30  L=0
+C2=44  L=44-36=8
+C5=58  L=18
+C3=74  L=74-52=22
+
+<span class="a">Lmax=22</span>  סידור (4,1,2,5,3)
+
+3) Tmax
+
+T=max(L,0)  ⇒  אותו סידור כמו 2
+(על מכ' בודדת min Tmax = min Lmax כי T=max(L,0) מונוטוני)
+<span class="a">Tmax=22</span> ,  סידור (4,1,2,5,3)
+
+4) min max{wj·Lj}
+
+EDD:  w·L =  3(-6)=-18, 3(0)=0, 4(8)=32, 1(18)=18, 5(22)=110
+max=110   ← ג'וב 3 אחרון עם w=5 הורג
+
+ננסה להזיז 3 קדימה:
+(4,1,2,3,5):
+C: 18, 30, 44, 60, 74
+L: -6, 0, 8, 8, 34
+wL: <span class="x">-18, 0, 32, 8, 34 ⇒ max=34</span>
+רגע, w3·L3 = 5·8 = 40 לא 8
+wL: -18, 0, 32, 40, 34 ⇒ max=40
+
+<span class="x">(4,2,1,3,5) → wL: -18,-16,42,40,34 max=42</span>  ×
+
+<span class="a">סידור (4,1,2,3,5)  max{wjLj}=40</span>
+
+5) min ∑wjCj
+
+WSPT:  wj/tj יורד
+
+3: 5/16=.31
+2: 4/14=.29
+1: 3/12=.25
+4: 3/18=.17
+5: 1/14=.07
+
+<span class="a">סידור (3,2,1,4,5)</span>  (א"צ לחשב ערך)
+
+<hr class="sep">
+
+<span class="q">שאלה 2</span>
+
+מקצרים ג'וב אחד ל-tj/2. הארוך ביותר אופטימלי?
+
+א) ∑Cj — כן
+
+קיצור j חוסך tj/2 מ-Cj ומכל הבאים אחריו
+⇒ tj גדול יותר = חיסכון גדול יותר
+
+דוגמה:  t1=2 t2=10
+רגיל(SPT 1,2): 2+12=14
+קיצור 2: 2+7=9   חסכנו 5
+קיצור 1: 1+11=12  חסכנו <span class="x">3</span> 2
+הארוך עדיף →  מש"ל
+
+ב) Lmax — לא!
+
+דוגמה נגדית:  t1=6 t2=10  d1=5 d2=100
+
+EDD(1,2):  C1=6 C2=16  L1=1 L2=-84  Lmax=1
+
+קיצור 2(ארוך) t2'=5:
+C1=6 C2=11  L1=1  Lmax=1  <span class="s">← בדיוק אותו דבר!!</span>
+
+קיצור 1  t1'=3:
+C1=3 C2=13  L1=-2  Lmax=-2  <span class="s">← שיפור</span>
+
+⇒ הbottleneck = ג'וב 1 (d קטן), לא 2 (ארוך)
+<span class="a">לקצר הארוך לא תמיד אופטימלי</span>
+
+<hr class="sep">
+
+<span class="q">שאלה 3</span>
+
+פ.מ = max(wjTj)
+
+1) מקובלת? כן
+Tj=max(Cj-dj,0) לא יורד ב-Cj
+wjTj לא יורד ב-Cj
+max של לא-יורדות = לא-יורדת ⇒ מקובלת
+
+2) הבעיה NP-hard בכללי
+אם wj=w לכל j ⇒ max(wTj) = w·Tmax ⇒ EDD
+אחרת סריקה/תכנות דינמי
+
+3) a. dj השתנו — סידור עשוי להשתנה, ערך ישתנה
+b. dj קטנו ב-1 — סידור נשאר (סדר יחסי קבוע),
+   ערך עולה כי Lj גדל ב-1 ⇒ Tj גדל למי שכבר מפגר
+
+<hr class="sep">
+
+<span class="q">שאלה 4</span>
+
+<span class="sm">
+1) נתון tl≤tm, dl≤dm.  נוכיח ש-l לפני m באופטימום.
+
+נניח S* אופטימלי עם m לפני l:  ...m [B] l...
+נחליף ⇒ S': ...l [B] m...
+
+A = סכום עיבוד לפני m
+
+S*:  Cm=A+tm    Cl=A+tm+∑tB+tl
+S':  C'l=A+tl   C'm=A+tl+∑tB+tm = Cl
+
+ג'ובי B:  C'b = Cb-tm+tl ≤ Cb  (tl≤tm) ⇒ T'b≤Tb ✓
+ג'וב l:  C'l = A+tl ≤ Cl ⇒ T'l≤Tl ✓
+ג'וב m:  T'm = max(C'm-dm, 0) = max(Cl-dm, 0)
+         <span class="x">Tm = max(Cl-dl,0)</span>  ← לא, זה Tl
+         Tl = max(Cl-dl, 0)
+         dl≤dm ⇒ Cl-dl ≥ Cl-dm ⇒ Tl ≥ T'm
+
+⇒ ∑T'j ≤ ∑Tj  S' טוב כמו S*
+קיים אופטימום עם l לפני m.  מש"ל
+
+2) dj=d לכל j:
+
+לכל זוג l,m עם tl≤tm:  dl=dm=d ⇒ dl≤dm
+לפי (1) ⇒ l לפני m ⇒ סדר אופטימלי = מיון לפי t = SPT
+מיון O(nlogn) פולינומיאלי   מש"ל
+</span>
+
+</div>
+</div>
+
+<script>
+// ── Per-character handwriting engine (baked into the HTML) ──
+(function(){
+  const SEED = 42.7;
+  const CFG = {
+    rotation: 1.8,
+    skew: 1.2,
+    sizeVar: 1.0,
+    drift: 1.5,
+    opacity: 0.15,
+    pressure: 0.10,
+    spacingVar: 0.6,
+  };
+
+  function rand(seed){
+    let x = Math.sin(seed) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  function processNode(tNode, state){
+    const text = tNode.textContent;
+    if(!text) return;
+    const parent = tNode.parentNode;
+    if(!parent) return;
+    // skip already processed or special elements
+    if(parent.classList && (parent.classList.contains('hw-c') || parent.classList.contains('hw-w'))) return;
+    if(parent.closest && parent.closest('.q, .filters')) return;
+
+    const baseFontSize = parseFloat(getComputedStyle(parent).fontSize) || 15;
+    const frag = document.createDocumentFragment();
+    const tokens = text.match(/[^\s]+|[\s]/g);
+    if(!tokens) return;
+
+    tokens.forEach(function(token){
+      if(token === '\n' || token === ' ' || token === '\t'){
+        frag.appendChild(document.createTextNode(token));
+        if(token === '\n') state.line++;
+        return;
+      }
+
+      const wSpan = document.createElement('span');
+      wSpan.className = 'hw-w';
+      wSpan.style.cssText = 'display:inline-block;direction:rtl;unicode-bidi:embed;';
+
+      const wSeed = SEED + state.line * 137 + state.word;
+      const wLen = token.length;
+
+      for(let ci = 0; ci < wLen; ci++){
+        const ch = token[ci];
+        const cs = document.createElement('span');
+        cs.className = 'hw-c';
+        cs.textContent = ch;
+
+        const s = wSeed + ci * 31 + state.ch * 7;
+
+        const rot = ((rand(s) - 0.5) * 2) * CFG.rotation * 0.35;
+        const skew = ((rand(s+1) - 0.5) * 2) * CFG.skew;
+        const sz = ((rand(s+2) - 0.5) * 2) * CFG.sizeVar * 0.4;
+        const phase = rand(wSeed * 0.01 + state.line * 7.3) * Math.PI * 2;
+        const dy = Math.sin(phase + ci * 0.7 + state.word * 0.4) * CFG.drift * 0.6;
+        const pPos = ci / Math.max(wLen - 1, 1);
+        const pFade = pPos * CFG.pressure;
+        const op = Math.max((1.0 - rand(s+3) * CFG.opacity) - pFade, 0.6);
+        const sp = ((rand(s+4) - 0.5) * 2) * CFG.spacingVar;
+
+        cs.style.cssText =
+          'display:inline-block;' +
+          'transform:rotate(' + rot.toFixed(2) + 'deg) skewY(' + skew.toFixed(2) + 'deg);' +
+          'font-size:' + (baseFontSize + sz).toFixed(1) + 'px;' +
+          'position:relative;top:' + dy.toFixed(1) + 'px;' +
+          'opacity:' + op.toFixed(3) + ';' +
+          'margin-left:' + sp.toFixed(1) + 'px;';
+
+        wSpan.appendChild(cs);
+        state.ch++;
+      }
+
+      frag.appendChild(wSpan);
+      state.word++;
+    });
+
+    parent.replaceChild(frag, tNode);
+  }
+
+  window.addEventListener('DOMContentLoaded', function(){
+    const content = document.getElementById('content');
+    const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    var n;
+    while(n = walker.nextNode()){
+      if(n.parentElement && n.parentElement.closest('style, script, svg')) continue;
+      if(n.textContent.trim().length === 0 && n.textContent.indexOf('\n') === -1) continue;
+      nodes.push(n);
+    }
+
+    const state = { line: 0, word: 0, ch: 0 };
+    nodes.forEach(function(nd){ processNode(nd, state); });
+
+    // Apply slight global rotation to mimic non-straight paper
+    var page = document.querySelector('.page');
+    if(page){
+      page.style.transform = 'rotate(0.3deg)';
+      page.style.transformOrigin = 'right top';
+    }
+
+    content.classList.add('ready');
+  });
+})();
+</script>
+
+</body>
+</html>
