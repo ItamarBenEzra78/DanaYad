@@ -26,7 +26,7 @@ import { setDrawColor, toggleEraser, clearCanvas, undoCanvas, canvasHistory } fr
 import { toggleRuler } from './drawing/RulerTool.js';
 
 // Export
-import { openPdfModal, closePdfModal, exportToPdf, initPrintEvents } from './export/PdfExporter.js';
+import { openPdfModal, closePdfModal, exportToPdf } from './export/PdfExporter.js';
 
 // Auth
 import { handleGoogleLogin, handleLogout, checkSession, checkAndExport, initAuthListener } from './auth/AuthManager.js';
@@ -102,7 +102,6 @@ window.onload = () => {
   detectInstalledFonts();
   buildFontGrid();
   initCanvasEvents();
-  initPrintEvents();
   initAuthListener();
 
   const editor = document.getElementById('rotate-container');
