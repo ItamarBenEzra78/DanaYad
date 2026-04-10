@@ -123,53 +123,23 @@ export function buildPrintPages() {
     stripHandwriting(inner);
 
     // Apply handwriting effects to print clone.
-    // html2canvas cannot render SVG filters, so we heavily boost
-    // per-character transforms to simulate the ink-tremor effect.
     if (HW.enabled) {
       const saved = {
         rotation: HW.rotation, skew: HW.skew, drift: HW.drift,
-        spacingVar: HW.spacingVar, opacity: HW.opacity,
+        sizeVar: HW.sizeVar, spacingVar: HW.spacingVar, opacity: HW.opacity,
         pressureFade: HW.pressureFade, charMode: HW.charMode,
       };
-      // Force per-character mode for maximum realism in PDF
       HW.charMode = true;
-      // Aggressively boost to compensate for missing SVG filter
-      HW.rotation = Math.max(saved.rotation * 1.8, 1.5);
-      HW.skew = Math.max((saved.skew || 1.5) * 2.0, 2.0);
-      HW.drift = Math.max(saved.drift * 1.8, 1.5);
-      HW.spacingVar = Math.max((saved.spacingVar || 0.8) * 1.8, 1.0);
-      // Subtle opacity variation for ink feel
-      HW.opacity = 0.08;
-      HW.pressureFade = 0.06;
+      HW.rotation = Math.max(saved.rotation * 2.5, 2.5);
+      HW.skew = Math.max((saved.skew || 1.5) * 2.5, 3.0);
+      HW.drift = Math.max(saved.drift * 2.5, 2.5);
+      HW.sizeVar = Math.max(saved.sizeVar * 2.0, 2.0);
+      HW.spacingVar = Math.max((saved.spacingVar || 0.8) * 2.0, 1.5);
+      HW.opacity = 0.1;
+      HW.pressureFade = 0.08;
       applyHandwriting(inner);
-      // Restore
       Object.assign(HW, saved);
     }
-
-    // Ink tremor noise layer — replaces SVG filter that html2canvas can't render.
-    // Draws subtle pixel displacement noise over the text area.
-    const noiseCanvas = document.createElement('canvas');
-    const nw = 794, nh = 1123, nScale = 2;
-    noiseCanvas.width = nw * nScale;
-    noiseCanvas.height = nh * nScale;
-    noiseCanvas.style.cssText = 'position:absolute;top:0;left:0;width:794px;height:1123px;pointer-events:none;z-index:3;mix-blend-mode:multiply;opacity:0.12;';
-    const nCtx = noiseCanvas.getContext('2d');
-    nCtx.scale(nScale, nScale);
-    // Generate ink speckle noise
-    const tremorScale = HW.tremor || 1.2;
-    for (let ny = 0; ny < nh; ny += 3) {
-      for (let nx = 0; nx < nw; nx += 3) {
-        if (Math.random() < 0.03 * tremorScale) {
-          const gray = Math.floor(30 + Math.random() * 40);
-          const size = 0.5 + Math.random() * 1.5 * tremorScale;
-          nCtx.fillStyle = `rgba(${gray},${gray},${gray},${0.3 + Math.random() * 0.4})`;
-          nCtx.beginPath();
-          nCtx.arc(nx + Math.random() * 3, ny + Math.random() * 3, size, 0, Math.PI * 2);
-          nCtx.fill();
-        }
-      }
-    }
-    page.appendChild(noiseCanvas);
 
     // Merge draw canvas
     const srcCanvas = document.getElementById('draw-canvas');
