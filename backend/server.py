@@ -155,8 +155,10 @@ async def generate_pdf(req: PdfRequest):
         pages.append(page_img)
 
     pdf_buf = io.BytesIO()
+    a4_width_inches = 210 / 25.4
+    dpi = round(target_w / a4_width_inches)
     pages[0].save(
-        pdf_buf, "PDF", save_all=True, append_images=pages[1:], resolution=150,
+        pdf_buf, "PDF", save_all=True, append_images=pages[1:], resolution=dpi,
     )
 
     return Response(
