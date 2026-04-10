@@ -1,12 +1,12 @@
 """
 DanaYad Handwriting Backend — FastAPI server
 Renders text as SVG with per-character glyph variation.
-Generates pixel-perfect PDFs via headless browser screenshot.
+Generates pixel-perfect PDFs by screenshotting the live app via Playwright.
 """
 import io
+import json
 import math
 import os
-import uuid
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,9 +31,6 @@ renderer = HandwritingRenderer(FONT_PATH)
 
 PAGE_WIDTH = 794
 PAGE_HEIGHT = 1123
-SERVER_PORT = int(os.environ.get("PORT", 8000))
-
-_pending_exports = {}
 
 
 class RenderRequest(BaseModel):
@@ -44,7 +41,13 @@ class RenderRequest(BaseModel):
 
 
 class PdfRequest(BaseModel):
-    html: str
+    app_url: str
+    editor_html: str
+    output_edit_class: str
+    output_edit_style: str
+    editor_style: str
+    root_style: str
+    hw_params: dict
 
 
 @app.post("/api/render")
@@ -58,70 +61,103 @@ def render_handwriting(req: RenderRequest):
     return Response(content=svg, media_type="image/svg+xml")
 
 
-@app.get("/api/pdf/render/{export_id}")
-async def serve_export_html(export_id: str):
-    """Serve the stored HTML so Playwright can navigate to a real URL."""
-    html = _pending_exports.get(export_id)
-    if not html:
-        return Response(content="Not found", status_code=404)
-    return Response(content=html, media_type="text/html")
-
-
 @app.post("/api/pdf")
 async def generate_pdf(req: PdfRequest):
-    export_id = str(uuid.uuid4())
-    _pending_exports[export_id] = req.html
-
-    try:
-        render_url = f"http://127.0.0.1:{SERVER_PORT}/api/pdf/render/{export_id}"
-
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            page = await browser.new_page(
-                viewport={"width": PAGE_WIDTH, "height": PAGE_HEIGHT},
-                device_scale_factor=2,
-            )
-            await page.goto(render_url, wait_until="networkidle")
-            await page.wait_for_timeout(1000)
-
-            full_height = await page.evaluate("document.body.scrollHeight")
-            total_pages = max(1, math.ceil(full_height / PAGE_HEIGHT))
-
-            shot = await page.screenshot(full_page=True, type="png")
-            await browser.close()
-
-        full_img = Image.open(io.BytesIO(shot))
-        img_w, img_h = full_img.size
-        page_h_px = int(PAGE_HEIGHT * (img_w / PAGE_WIDTH))
-
-        pages = []
-        for i in range(total_pages):
-            y_start = i * page_h_px
-            y_end = min(y_start + page_h_px, img_h)
-            crop = full_img.crop((0, y_start, img_w, y_end))
-
-            if crop.height < page_h_px:
-                padded = Image.new("RGB", (img_w, page_h_px), "white")
-                padded.paste(crop, (0, 0))
-                crop = padded
-
-            pages.append(crop.convert("RGB"))
-
-        pdf_buf = io.BytesIO()
-        pages[0].save(
-            pdf_buf, "PDF", save_all=True, append_images=pages[1:], resolution=150
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page(
+            viewport={"width": PAGE_WIDTH, "height": PAGE_HEIGHT},
+            device_scale_factor=2,
         )
-        pdf_bytes = pdf_buf.getvalue()
 
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": "attachment; filename=DanaYad_Document.pdf"
-            },
-        )
-    finally:
-        _pending_exports.pop(export_id, None)
+        await page.goto(req.app_url, wait_until="networkidle")
+
+        hw = req.hw_params
+        inject_js = """(args) => {
+            const { editorHtml, oeClass, oeStyle, edStyle, rootStyle, hw } = args;
+
+            // Hide auth overlay
+            const auth = document.getElementById('auth-overlay');
+            if (auth) auth.style.display = 'none';
+
+            // Apply CSS variables
+            document.documentElement.style.cssText = rootStyle;
+
+            // Set output-edit state
+            const oe = document.getElementById('output-edit');
+            oe.className = oeClass;
+            oe.style.cssText = oeStyle + ';margin:0;box-shadow:none;';
+
+            // Set editor content
+            const editor = document.getElementById('rotate-container');
+            editor.style.cssText = edStyle;
+            editor.innerHTML = editorHtml;
+
+            // Update SVG filter parameters
+            const ids = [
+                ['hw-wobble-scale', hw.drift],
+                ['hw-jitter-scale', hw.jitter],
+                ['hw-ink-scale', hw.tremor],
+            ];
+            ids.forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el) el.setAttribute('scale', val);
+            });
+
+            // Clean up for export
+            oe.querySelectorAll('.page-break-marker').forEach(m => m.remove());
+
+            // Hide all UI except the editor
+            ['header', '.sidebar', '.fmt-bar', '#draw-toolbar',
+             '#page-indicator', '.pdf-overlay'].forEach(sel => {
+                const el = document.querySelector(sel);
+                if (el) el.style.display = 'none';
+            });
+        }"""
+
+        await page.evaluate(inject_js, {
+            "editorHtml": req.editor_html,
+            "oeClass": req.output_edit_class,
+            "oeStyle": req.output_edit_style,
+            "edStyle": req.editor_style,
+            "rootStyle": req.root_style,
+            "hw": hw,
+        })
+
+        await page.wait_for_timeout(1500)
+
+        element = await page.query_selector("#output-edit")
+        shot = await element.screenshot(type="png")
+        await browser.close()
+
+    full_img = Image.open(io.BytesIO(shot))
+    img_w, img_h = full_img.size
+    page_h_px = int(PAGE_HEIGHT * (img_w / PAGE_WIDTH))
+    total_pages = max(1, math.ceil(img_h / page_h_px))
+
+    pages = []
+    for i in range(total_pages):
+        y_start = i * page_h_px
+        y_end = min(y_start + page_h_px, img_h)
+        crop = full_img.crop((0, y_start, img_w, y_end))
+
+        if crop.height < page_h_px:
+            padded = Image.new("RGB", (img_w, page_h_px), "white")
+            padded.paste(crop, (0, 0))
+            crop = padded
+
+        pages.append(crop.convert("RGB"))
+
+    pdf_buf = io.BytesIO()
+    pages[0].save(
+        pdf_buf, "PDF", save_all=True, append_images=pages[1:], resolution=150,
+    )
+
+    return Response(
+        content=pdf_buf.getvalue(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=DanaYad_Document.pdf"},
+    )
 
 
 @app.get("/api/health")

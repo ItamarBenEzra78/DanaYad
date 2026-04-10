@@ -1,5 +1,6 @@
 import { getEditor, getOutputEdit } from '../utils/dom.js';
 import { API_URL } from '../config.js';
+import { HW } from '../handwriting/HandwritingEngine.js';
 
 export function openPdfModal() {
   document.getElementById('pdf-overlay').classList.add('open');
@@ -10,44 +11,26 @@ export function closePdfModal() {
 }
 
 /**
- * Build a self-contained HTML page from the current editor state.
- * Uses absolute URLs for CSS/fonts so the headless browser can fetch them.
+ * Capture the current editor state so the backend can replicate it
+ * inside the live app opened by Playwright.
  */
-function _buildExportHtml() {
+function _captureEditorState() {
   const outputEdit = getOutputEdit();
+  const editor = getEditor();
 
-  const cssLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-    .map(el => `<link rel="stylesheet" href="${el.href}">`)
-    .join('\n');
-
-  const fontLinks = Array.from(
-    document.querySelectorAll('link[href*="fonts.googleapis"]')
-  ).map(el => `<link rel="stylesheet" href="${el.href}">`).join('\n');
-
-  const svgEl = document.querySelector('svg[style*="position:absolute"]');
-  const svgHtml = svgEl ? svgEl.outerHTML : '';
-
-  const clone = outputEdit.cloneNode(true);
-  clone.querySelectorAll('.page-break-marker').forEach(m => m.remove());
-  clone.style.margin = '0';
-  clone.style.boxShadow = 'none';
-
-  return `<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-<meta charset="UTF-8">
-${fontLinks}
-${cssLinks}
-<style>
-body { margin: 0; padding: 0; background: #fff; }
-#output-edit { margin: 0 !important; box-shadow: none !important; }
-</style>
-</head>
-<body>
-${svgHtml}
-${clone.outerHTML}
-</body>
-</html>`;
+  return {
+    app_url: window.location.origin + window.location.pathname,
+    editor_html: editor.innerHTML,
+    output_edit_class: outputEdit.className,
+    output_edit_style: outputEdit.style.cssText,
+    editor_style: editor.style.cssText,
+    root_style: document.documentElement.style.cssText,
+    hw_params: {
+      drift: HW.drift,
+      jitter: HW.jitter,
+      tremor: HW.tremor,
+    },
+  };
 }
 
 export async function exportToPdf() {
@@ -64,12 +47,12 @@ export async function exportToPdf() {
   }
 
   try {
-    const html = _buildExportHtml();
+    const state = _captureEditorState();
 
     const res = await fetch(`${API_URL}/api/pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html }),
+      body: JSON.stringify(state),
     });
 
     if (!res.ok) {
