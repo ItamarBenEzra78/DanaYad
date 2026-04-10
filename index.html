@@ -1878,20 +1878,26 @@ function unscrambleText(){
   }
 }
 
-/* ── Line drift: simple rotation on the whole editor ── */
+/* ── Line drift: per-line rotation like a clock hand ── */
 let _lineDriftVal = 0;
+
+/* Inject a dynamic style rule for line drift */
+const _driftStyle = document.createElement('style');
+_driftStyle.id = 'line-drift-style';
+document.head.appendChild(_driftStyle);
 
 function updateLineDrift(val){
   _lineDriftVal = parseFloat(val);
   document.getElementById('line-drift-val').textContent = val + '°';
-  const ed = document.getElementById('output-edit');
-  if(!ed) return;
   if(_lineDriftVal === 0){
-    ed.style.transform = '';
-    ed.style.transformOrigin = '';
+    _driftStyle.textContent = '';
   } else {
-    ed.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
-    ed.style.transformOrigin = 'right top';
+    _driftStyle.textContent =
+      '#output-edit > div, #output-edit > p, #output-edit > br + br {' +
+        'transform: rotate(' + _lineDriftVal + 'deg);' +
+        'transform-origin: right center;' +
+        'display: block;' +
+      '}';
   }
 }
 
@@ -1904,8 +1910,10 @@ buildPrintPages = function(){
   if(result){
     result.container.querySelectorAll('.print-page-inner').forEach(inner => {
       if(_lineDriftVal !== 0){
-        inner.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
-        inner.style.transformOrigin = 'right top';
+        inner.querySelectorAll(':scope > div, :scope > p').forEach(line => {
+          line.style.transform = 'rotate(' + _lineDriftVal + 'deg)';
+          line.style.transformOrigin = 'right center';
+        });
       }
       if(HW.enabled){
         applyHandwriting(inner);
