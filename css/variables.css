@@ -1,7 +1,8 @@
 /* ── Font faces ── */
 @font-face {
   font-family: 'HandwritingCombo';
-  src: local('Dana Yad AlefAlefAlef'), local('DanaYadAlefAlefAlef'), local('Dana Yad');
+  src: local('Dana Yad AlefAlefAlef'), local('DanaYadAlefAlefAlef'), local('Dana Yad'),
+       local('Gveret Levin'), local('GveretLevin-Regular');
   font-weight: 300 700;
   unicode-range:
     U+0590-U+05FF,
@@ -14,10 +15,16 @@
   font-weight: 300;
   unicode-range: U+0000-U+058F, U+0600-U+FFFF;
 }
+/* Gveret Levin — free Hebrew handwriting font (AlefAlefAlef) */
+@font-face {
+  font-family: 'Gveret Levin';
+  src: local('GveretLevin-Regular'), local('Gveret Levin');
+  font-weight: 400;
+}
 
 /* ── CSS custom properties ── */
 :root {
-  --font: 'HandwritingCombo', 'Playpen Sans Hebrew', 'Dana Yad AlefAlefAlef', cursive;
+  --font: 'HandwritingCombo', 'Gveret Levin', 'Playpen Sans Hebrew', 'Dana Yad AlefAlefAlef', cursive;
   --bg: #F8F6F2;
   --surface: #EDE9E3;
   --surface2: #F3F0EB;
