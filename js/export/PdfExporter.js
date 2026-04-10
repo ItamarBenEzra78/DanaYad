@@ -1,5 +1,5 @@
 import { getEditor, getOutputEdit } from '../utils/dom.js';
-import { PAGE_HEIGHT } from '../config.js';
+import { API_URL } from '../config.js';
 
 export function openPdfModal() {
   document.getElementById('pdf-overlay').classList.add('open');
@@ -9,19 +9,53 @@ export function closePdfModal() {
   document.getElementById('pdf-overlay').classList.remove('open');
 }
 
-function _overlayDrawCanvas(ctx, pageIndex, canvasWidth, canvasHeight) {
-  const drawCanvas = document.getElementById('draw-canvas');
-  if (!drawCanvas || drawCanvas.width === 0 || drawCanvas.height === 0) return;
+/**
+ * Build a self-contained HTML page from the current editor state.
+ * Includes all CSS (inlined), SVG filter, fonts, and the output-edit element.
+ * Playwright renders this in a real browser for pixel-perfect PDF.
+ */
+function _buildExportHtml() {
+  const outputEdit = getOutputEdit();
 
-  const sy = drawCanvas.height / drawCanvas.offsetHeight;
+  let cssText = '';
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        cssText += rule.cssText + '\n';
+      }
+    } catch (_e) {
+      /* cross-origin sheet — handled via link tags below */
+    }
+  }
 
-  ctx.drawImage(
-    drawCanvas,
-    0, pageIndex * PAGE_HEIGHT * sy,
-    drawCanvas.width, PAGE_HEIGHT * sy,
-    0, 0,
-    canvasWidth, canvasHeight
-  );
+  const fontLinks = Array.from(
+    document.querySelectorAll('link[href*="fonts.googleapis"]')
+  ).map(el => el.outerHTML).join('\n');
+
+  const svgEl = document.querySelector('svg[style*="position:absolute"]');
+  const svgHtml = svgEl ? svgEl.outerHTML : '';
+
+  const clone = outputEdit.cloneNode(true);
+  clone.querySelectorAll('.page-break-marker').forEach(m => m.remove());
+  clone.style.margin = '0';
+  clone.style.boxShadow = 'none';
+
+  return `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+${fontLinks}
+<style>
+${cssText}
+body { margin: 0; padding: 0; background: #fff; }
+#output-edit { margin: 0 !important; box-shadow: none !important; }
+</style>
+</head>
+<body>
+${svgHtml}
+${clone.outerHTML}
+</body>
+</html>`;
 }
 
 export async function exportToPdf() {
@@ -30,8 +64,6 @@ export async function exportToPdf() {
   btn.innerHTML = '<span class="pdf-spinner"></span> מייצא...';
 
   const editor = getEditor();
-  const outputEdit = getOutputEdit();
-
   if (!editor || editor.textContent.trim() === '') {
     alert('אין תוכן להדפסה');
     btn.disabled = false;
@@ -39,51 +71,32 @@ export async function exportToPdf() {
     return;
   }
 
-  const markers = outputEdit.querySelectorAll('.page-break-marker');
-  markers.forEach(m => { m.style.display = 'none'; });
-
   try {
-    const fullCanvas = await html2canvas(outputEdit, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#ffffff',
+    const html = _buildExportHtml();
+
+    const res = await fetch(`${API_URL}/api/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html }),
     });
 
-    const scale = fullCanvas.width / outputEdit.offsetWidth;
-    const pageWidthPx = fullCanvas.width;
-    const pageHeightPx = Math.round(PAGE_HEIGHT * scale);
-    const totalPages = Math.max(1, Math.ceil(fullCanvas.height / pageHeightPx));
-
-    const pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-    for (let i = 0; i < totalPages; i++) {
-      if (i > 0) pdf.addPage();
-
-      const srcY = i * pageHeightPx;
-      const srcH = Math.min(pageHeightPx, fullCanvas.height - srcY);
-
-      const pageCanvas = document.createElement('canvas');
-      pageCanvas.width = pageWidthPx;
-      pageCanvas.height = pageHeightPx;
-      const ctx = pageCanvas.getContext('2d');
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, pageWidthPx, pageHeightPx);
-      ctx.drawImage(fullCanvas, 0, srcY, pageWidthPx, srcH, 0, 0, pageWidthPx, srcH);
-
-      _overlayDrawCanvas(ctx, i, pageWidthPx, pageHeightPx);
-
-      pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+    if (!res.ok) {
+      throw new Error(`Server error: ${res.status}`);
     }
 
-    pdf.save('DanaYad_Document.pdf');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'DanaYad_Document.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+
     closePdfModal();
   } catch (err) {
     console.error('PDF export failed:', err);
     alert('שגיאה בייצוא PDF: ' + err.message);
   } finally {
-    markers.forEach(m => { m.style.display = ''; });
     btn.disabled = false;
     btn.innerHTML = 'שמור כ-PDF';
   }

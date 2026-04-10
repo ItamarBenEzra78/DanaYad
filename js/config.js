@@ -5,13 +5,14 @@ export const STRIPE_PRICE_ID = 'price_YOUR_PRICE_ID';
 export const ADMIN_EMAIL = 'itamar4747@gmail.com';
 
 export const PAGE_HEIGHT = 1123; // A4 height at 96dpi (297mm)
+export const API_URL = 'http://localhost:8000';
 
 export const DY_FREE = 3;
 export const DY_KEY = 'dy_exports_used';
 
 export const FONTS = [
-  {name:'גברת לווין',css:'GveretLevin',google:null,preview:'שלום עולם אבג',cat:'handwriting',weight:400},
-  {name:'Playpen Sans עברית',css:'PlaypenSansHebrew',google:null,preview:'שלום עולם אבג',cat:'handwriting',weight:400},
+  {name:'גברת לווין',css:'GveretLevin',google:null,preview:'שלום עולם אבג',cat:'handwriting',weight:300},
+  {name:'Playpen Sans עברית',css:'PlaypenSansHebrew',google:null,preview:'שלום עולם אבג',cat:'handwriting',weight:300},
   {name:'Playpen Sans',css:'Playpen Sans Hebrew',google:'Playpen+Sans+Hebrew:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:700},
   {name:'Secular One',css:'Secular One',google:'Secular+One',preview:'שלום Hello',cat:'hebrew',weight:400},
   {name:'Rubik',css:'Rubik',google:'Rubik:wght@400;700',preview:'שלום Hello',cat:'hebrew',weight:400},
