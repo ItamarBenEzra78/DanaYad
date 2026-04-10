@@ -68,7 +68,7 @@ async def generate_pdf(req: PdfRequest):
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         page = await browser.new_page(
-            viewport={"width": PAGE_WIDTH, "height": PAGE_HEIGHT},
+            viewport={"width": 1200, "height": PAGE_HEIGHT},
             device_scale_factor=2,
         )
 
@@ -79,46 +79,49 @@ async def generate_pdf(req: PdfRequest):
         inject_js = """(args) => {
             const { editorHtml, oeClass, oeStyle, edStyle, rootStyle, hw } = args;
 
-            // Hide auth overlay
-            const auth = document.getElementById('auth-overlay');
-            if (auth) auth.style.display = 'none';
-
-            // Apply CSS variables
             document.documentElement.style.cssText = rootStyle;
 
-            // Set output-edit state
             const oe = document.getElementById('output-edit');
-            oe.className = oeClass;
-            oe.style.cssText = oeStyle + ';margin:0;box-shadow:none;box-sizing:border-box;width:794px;min-height:1123px;';
-
-            // Set editor content
             const editor = document.getElementById('rotate-container');
+            const svg = document.querySelector('svg');
+
+            // Set content before detaching
+            oe.className = oeClass;
             editor.style.cssText = edStyle;
             editor.innerHTML = editorHtml;
 
             // Update SVG filter parameters
-            const ids = [
-                ['hw-wobble-scale', hw.drift],
-                ['hw-jitter-scale', hw.jitter],
-                ['hw-ink-scale', hw.tremor],
-            ];
-            ids.forEach(([id, val]) => {
+            [['hw-wobble-scale', hw.drift],
+             ['hw-jitter-scale', hw.jitter],
+             ['hw-ink-scale', hw.tremor]].forEach(([id, val]) => {
                 const el = document.getElementById(id);
                 if (el) el.setAttribute('scale', val);
             });
 
-            // Clean up for export
+            // Remove markers
             oe.querySelectorAll('.page-break-marker').forEach(m => m.remove());
 
-            // Hide all UI except the editor
-            ['header', '.sidebar', '.fmt-bar', '#draw-toolbar',
-             '#page-indicator', '.pdf-overlay'].forEach(sel => {
-                const el = document.querySelector(sel);
-                if (el) el.style.display = 'none';
-            });
+            // Detach output-edit from all parent containers —
+            // rebuild body with just SVG filter + output-edit
+            document.body.replaceChildren();
+            document.body.style.cssText = 'margin:0;padding:0;background:#fff;';
+            if (svg) document.body.appendChild(svg);
+            document.body.appendChild(oe);
+
+            // Exact A4 at 96dpi: 794×1123, padding acts as page margins
+            oe.style.cssText = [
+                oeStyle,
+                'margin:0',
+                'box-shadow:none',
+                'box-sizing:border-box',
+                'width:794px',
+                'min-height:1123px',
+            ].join(';');
+
+            return { w: oe.offsetWidth, h: oe.scrollHeight };
         }"""
 
-        await page.evaluate(inject_js, {
+        dims = await page.evaluate(inject_js, {
             "editorHtml": req.editor_html,
             "oeClass": req.output_edit_class,
             "oeStyle": req.output_edit_style,
@@ -127,6 +130,7 @@ async def generate_pdf(req: PdfRequest):
             "hw": hw,
         })
 
+        print(f"[PDF] element dims: {dims['w']}x{dims['h']}px")
         await page.wait_for_timeout(1500)
 
         element = await page.query_selector("#output-edit")
