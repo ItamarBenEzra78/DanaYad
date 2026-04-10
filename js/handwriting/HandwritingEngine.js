@@ -110,18 +110,18 @@ export function applyHandwriting(root) {
 
           const cSeed = wordSeed + ci * 31 + globalCharIdx * 7;
 
-          // Rotation — per character, subtle
-          const rot = ((_hwRand(cSeed) - 0.5) * 2) * HW.rotation * 0.35;
+          // Rotation — per character
+          const rot = ((_hwRand(cSeed) - 0.5) * 2) * HW.rotation;
 
           // Skew — makes each letter lean differently
           const skew = ((_hwRand(cSeed + 1) - 0.5) * 2) * HW.skew;
 
           // Size variation — per character
-          const sizeOff = ((_hwRand(cSeed + 2) - 0.5) * 2) * HW.sizeVar * 0.4;
+          const sizeOff = ((_hwRand(cSeed + 2) - 0.5) * 2) * HW.sizeVar;
 
           // Baseline wobble — sinusoidal drift per character
           const phase = _hwRand(wordSeed * 0.01 + lineIdx * 7.3) * Math.PI * 2;
-          const driftY = Math.sin(phase + ci * 0.7 + wordIdx * 0.4) * HW.drift * 0.6;
+          const driftY = Math.sin(phase + ci * 0.7 + wordIdx * 0.4) * HW.drift;
 
           // Ink pressure — darker at word start, lighter toward end
           const pressurePos = ci / Math.max(wordLen - 1, 1);
