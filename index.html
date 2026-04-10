@@ -340,6 +340,25 @@
   </div>
 </div>
 
+<!-- Temporary debug overlay — remove after fixing -->
+<script>
+window.addEventListener('load', function() {
+  var el = document.getElementById('output-edit');
+  var cs = getComputedStyle(el);
+  var svg = document.getElementById('ink-tremor');
+  var info = [
+    'filter: ' + cs.filter,
+    'class: ' + el.className,
+    'svg exists: ' + !!svg,
+    'webkitFilter: ' + cs.webkitFilter
+  ];
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;bottom:10px;right:10px;background:red;color:white;padding:12px;font-size:14px;z-index:99999;direction:ltr;font-family:monospace;border-radius:8px;max-width:90vw;word-break:break-all;';
+  d.textContent = info.join(' | ');
+  document.body.appendChild(d);
+});
+</script>
+
 <!-- App JS (ES6 module) -->
 <script type="module" src="js/app.js"></script>
 </body>
