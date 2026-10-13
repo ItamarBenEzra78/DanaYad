@@ -53,15 +53,21 @@ export function buildFontGrid(cat = 'all') {
   });
 }
 
-export function detectInstalledFonts() {
+/**
+ * Confirm the bundled handwriting fonts (css/variables.css @font-face)
+ * actually loaded, and say so in the header badge.
+ */
+export async function checkBundledFonts() {
   const badge = document.getElementById('font-badge');
-  const c = document.createElement('canvas'), ctx = c.getContext('2d');
-  ctx.font = '20px monospace'; const w1 = ctx.measureText('א').width;
-  ctx.font = "20px 'Dana Yad AlefAlefAlef'"; const w2 = ctx.measureText('א').width;
-  ctx.font = '20px monospace'; const w3 = ctx.measureText('a').width;
-  ctx.font = "20px 'Playpen Sans Hebrew'"; const w4 = ctx.measureText('a').width;
-  const danaOk = w1 !== w2, caveatOk = w3 !== w4;
-  if (danaOk && caveatOk) { badge.textContent = '✓ דנה יד + Playpen'; }
-  else if (danaOk) { badge.textContent = '✓ דנה יד | Playpen נטען'; }
-  else { badge.textContent = '⚠ דנה יד לא מותקן'; badge.classList.add('missing'); }
+  const bundled = FONTS.filter(f => !f.google).map(f => f.css);
+  try {
+    await Promise.all(bundled.map(css => document.fonts.load(`20px '${css}'`)));
+    const ok = bundled.every(css => document.fonts.check(`20px '${css}'`));
+    badge.textContent = ok ? '✓ גופני כתב יד נטענו' : '⚠ גופני כתב יד לא נטענו';
+    badge.classList.toggle('missing', !ok);
+  } catch (err) {
+    console.error('Font check failed:', err);
+    badge.textContent = '⚠ לא ניתן לבדוק גופנים';
+    badge.classList.add('missing');
+  }
 }

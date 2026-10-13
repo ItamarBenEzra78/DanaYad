@@ -10,7 +10,7 @@ import { toggleTablePopup, insertTable } from './editor/TableManager.js';
 import { insertSymbol, showSymbolGrid } from './editor/SymbolInserter.js';
 
 // Font
-import { buildFontGrid, filterFonts, detectInstalledFonts } from './font/FontManager.js';
+import { buildFontGrid, filterFonts, checkBundledFonts } from './font/FontManager.js';
 
 // Handwriting
 import { updateHwParam, toggleHandwriting, HW } from './handwriting/HandwritingEngine.js';
@@ -91,7 +91,7 @@ window.clearAll = function () {
 
 // ── Initialize on DOM ready ──
 window.onload = () => {
-  detectInstalledFonts();
+  checkBundledFonts();
   buildFontGrid();
   initCanvasEvents();
 
