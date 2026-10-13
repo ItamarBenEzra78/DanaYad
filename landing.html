@@ -62,21 +62,6 @@ nav{background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-bottom:1
 .feat-card h3{font-size:18px;font-weight:700;margin-bottom:8px;}
 .feat-card p{font-size:14px;color:var(--text2);line-height:1.7;}
 
-/* Pricing */
-.pricing{padding:80px 24px;background:linear-gradient(180deg,var(--bg) 0%,#EEF2FF 100%);}
-.pricing h2{text-align:center;font-size:32px;font-weight:800;margin-bottom:12px;}
-.pricing .sub{text-align:center;color:var(--text2);font-size:16px;margin-bottom:48px;}
-.price-card{max-width:420px;margin:0 auto;background:var(--surface);border:2px solid var(--primary);border-radius:20px;padding:40px 36px;text-align:center;box-shadow:0 8px 40px rgba(79,70,229,0.12);position:relative;overflow:hidden;}
-.price-badge{position:absolute;top:20px;left:20px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;}
-.price-amount{font-size:52px;font-weight:900;color:var(--primary);margin:16px 0 4px;}
-.price-amount span{font-size:20px;font-weight:500;color:var(--text2);}
-.price-period{font-size:14px;color:var(--text2);margin-bottom:28px;}
-.price-features{list-style:none;text-align:right;margin-bottom:32px;}
-.price-features li{padding:8px 0;font-size:15px;color:var(--text);border-bottom:1px solid #f3f4f6;}
-.price-features li::before{content:'✓';color:var(--success);font-weight:700;margin-left:10px;}
-.price-cta{width:100%;padding:16px;border-radius:12px;background:var(--primary);color:#fff;border:none;font-size:17px;font-weight:700;cursor:pointer;transition:all .2s;}
-.price-cta:hover{background:var(--primary-dark);transform:translateY(-1px);}
-
 /* FAQ */
 .faq{padding:80px 24px;max-width:720px;margin:0 auto;}
 .faq h2{text-align:center;font-size:32px;font-weight:800;margin-bottom:40px;}
@@ -98,7 +83,6 @@ footer a{color:var(--primary-light);}
   .hero h1{font-size:28px;}
   .hero p{font-size:16px;}
   .feat-grid{grid-template-columns:1fr;}
-  .price-card{padding:28px 20px;}
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400&display=swap" rel="stylesheet">
@@ -110,7 +94,6 @@ footer a{color:var(--primary-light);}
     <div class="nav-logo">Dana<span>Yad</span> ✍️</div>
     <div class="nav-links">
       <a href="#features">פיצ'רים</a>
-      <a href="#pricing">מחיר</a>
       <a href="#faq">שאלות</a>
       <a href="index.html" class="nav-cta">התחל עכשיו</a>
     </div>
@@ -122,10 +105,10 @@ footer a{color:var(--primary-light);}
   <h1>הפוך טקסט מוקלד ל<em>כתב יד אמיתי</em></h1>
   <p>DanaYad הוא הכלי שכל סטודנט ישראלי צריך. מטלות, סיכומים ומבחנים — בכתב יד טבעי ומקצועי תוך שניות.</p>
   <div class="hero-btns">
-    <a href="index.html" class="btn-hero btn-primary">התחל בחינם</a>
+    <a href="index.html" class="btn-hero btn-primary">התחל עכשיו</a>
     <a href="#features" class="btn-hero btn-secondary">איך זה עובד?</a>
   </div>
-  <p class="hero-note">2 ייצואי PDF בחינם. ללא כרטיס אשראי.</p>
+  <p class="hero-note">חינמי, ללא הרשמה. הכל רץ בדפדפן שלך.</p>
 </section>
 
 <!-- Demo -->
@@ -146,7 +129,7 @@ footer a{color:var(--primary-light);}
 <!-- Features -->
 <section class="features" id="features">
   <h2>למה DanaYad?</h2>
-  <p class="sub">הכלי המתקדם ביותר להמרת טקסט לכתב יד בעברית</p>
+  <p class="sub">המרת טקסט לכתב יד בעברית, ישירות בדפדפן</p>
   <div class="feat-grid">
     <div class="feat-card">
       <div class="feat-icon" style="background:#EEF2FF;color:var(--primary);">✍️</div>
@@ -155,8 +138,8 @@ footer a{color:var(--primary-light);}
     </div>
     <div class="feat-card">
       <div class="feat-icon" style="background:#FEF3C7;color:var(--accent-dark);">🔬</div>
-      <h3>תמיכה בנוסחאות</h3>
-      <p>כתוב LaTeX ישירות — סימנים מתמטיים, אותיות יווניות וביטויים מורכבים מומרים אוטומטית.</p>
+      <h3>סמלים מתמטיים</h3>
+      <p>לוח סמלים מובנה — אותיות יווניות, אופרטורים, חצים וסימנים מיוחדים — בלחיצה אחת לתוך הטקסט.</p>
     </div>
     <div class="feat-card">
       <div class="feat-icon" style="background:#ECFDF5;color:var(--success);">📄</div>
@@ -166,7 +149,7 @@ footer a{color:var(--primary-light);}
     <div class="feat-card">
       <div class="feat-icon" style="background:#FDF2F8;color:#DB2777;">🎨</div>
       <h3>עיצוב מלא</h3>
-      <p>בחר מתוך עשרות פונטים, שלוט בגודל, מרווח, צבעים, הדגשות ואפילו רמת "אנושיות" של הכתב.</p>
+      <p>בחר מתוך עשרות פונטים, שלוט בגודל, מרווח, הדגשות ואפילו רמת "אנושיות" של הכתב.</p>
     </div>
     <div class="feat-card">
       <div class="feat-icon" style="background:#EFF6FF;color:#2563EB;">✏️</div>
@@ -178,27 +161,6 @@ footer a{color:var(--primary-light);}
       <h3>בנוי לעברית</h3>
       <p>תמיכה מלאה ב-RTL, פונטים עבריים מותאמים, וממשק בעברית — מהשורה הראשונה.</p>
     </div>
-  </div>
-</section>
-
-<!-- Pricing -->
-<section class="pricing" id="pricing">
-  <h2>מחיר פשוט, בלי הפתעות</h2>
-  <p class="sub">התחל בחינם, שדרג כשתצטרך</p>
-  <div class="price-card">
-    <span class="price-badge">הכי פופולרי</span>
-    <div style="font-size:20px;font-weight:700;color:var(--text);margin-top:12px;">DanaYad Pro</div>
-    <div class="price-amount">₪19.90<span> /חודש</span></div>
-    <div class="price-period">ביטול בכל עת. ללא התחייבות.</div>
-    <ul class="price-features">
-      <li>ייצואי PDF ללא הגבלה</li>
-      <li>כל הפונטים והעיצובים</li>
-      <li>ציור חופשי על הדף</li>
-      <li>תמיכה בנוסחאות LaTeX</li>
-      <li>רקעים מותאמים (שורות, משבצות)</li>
-      <li>עדכונים ופיצ'רים חדשים</li>
-    </ul>
-    <a href="index.html"><button class="price-cta">התחל עם 2 ייצואים בחינם</button></a>
   </div>
 </section>
 
@@ -214,20 +176,8 @@ footer a{color:var(--primary-light);}
     <div class="faq-a">כן! האלגוריתם שלנו מוסיף שינויים קלים ואקראיים בכל אות — סיבוב, גודל ומיקום — כך שהתוצאה נראית טבעית לחלוטין. אפשר גם לכוונן את רמת ה"אנושיות".</div>
   </div>
   <div class="faq-item">
-    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">כמה זה עולה?</div>
-    <div class="faq-a">מתחילים בחינם עם 2 ייצואי PDF. מנוי Pro עולה ₪19.90 לחודש וכולל ייצואים ללא הגבלה וגישה לכל הפיצ'רים. אפשר לבטל בכל עת.</div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">האם אפשר לכתוב נוסחאות מתמטיות?</div>
-    <div class="faq-a">בהחלט! כתוב נוסחאות בתחביר LaTeX (בין סימני $) והן יומרו אוטומטית לסימנים מתמטיים — אותיות יווניות, אינטגרלים, שברים ועוד.</div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">איך מתבצע התשלום?</div>
-    <div class="faq-a">התשלום מתבצע בצורה מאובטחת דרך Stripe. אנחנו לא שומרים פרטי כרטיס אשראי. אפשר לבטל את המנוי בכל רגע.</div>
-  </div>
-  <div class="faq-item">
     <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">איזה פורמט הקובץ שמיוצא?</div>
-    <div class="faq-a">הקובץ מיוצא כ-PDF באיכות גבוהה, מוכן להדפסה או הגשה דיגיטלית. אפשר לבחור גודל עמוד (A4, A3, Letter) ורקע (חלק, שורות, משבצות).</div>
+    <div class="faq-a">הקובץ מיוצא כ-PDF בגודל A4, מוכן להדפסה או הגשה דיגיטלית, עם הרקע שבחרת (חלק, שורות, משבצות או נייר).</div>
   </div>
 </section>
 
@@ -235,7 +185,7 @@ footer a{color:var(--primary-light);}
 <footer>
   <div class="logo">DanaYad ✍️</div>
   <p>הכלי שכל סטודנט ישראלי צריך. <a href="index.html">התחל עכשיו</a></p>
-  <p style="margin-top:16px;font-size:12px;">&copy; 2025 DanaYad. כל הזכויות שמורות.</p>
+  <p style="margin-top:16px;font-size:12px;">&copy; 2026 DanaYad. קוד פתוח ברישיון MIT.</p>
 </footer>
 
 </body>
