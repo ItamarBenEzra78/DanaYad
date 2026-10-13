@@ -1,14 +1,5 @@
-export const SUPABASE_URL = 'https://tcxplzwmgmqayufccnzn.supabase.co';
-export const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHBsendtZ21xYXl1ZmNjbnpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Nzk3MzYsImV4cCI6MjA5MTE1NTczNn0.8CVdyt9FAaN2Wtue_1llhvwThWRqPYJ2FbEO_nZ1osg';
-export const STRIPE_PK = 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY';
-export const STRIPE_PRICE_ID = 'price_YOUR_PRICE_ID';
-export const ADMIN_EMAIL = 'itamar4747@gmail.com';
-
 export const PAGE_HEIGHT = 1123; // A4 height at 96dpi (297mm)
 export const API_URL = '';
-
-export const DY_FREE = 3;
-export const DY_KEY = 'dy_exports_used';
 
 export const FONTS = [
   {name:'גברת לווין',css:'GveretLevin',google:null,preview:'שלום עולם אבג',cat:'handwriting',weight:300},

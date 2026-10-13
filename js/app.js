@@ -28,9 +28,6 @@ import { toggleRuler } from './drawing/RulerTool.js';
 // Export
 import { openPdfModal, closePdfModal, exportToPdf } from './export/PdfExporter.js';
 
-// Auth
-import { handleGoogleLogin, handleLogout, checkSession, checkAndExport, initAuthListener } from './auth/AuthManager.js';
-
 // ── Expose functions to window for inline onclick handlers ──
 window.updateFontSize = updateFontSize;
 window.updateLineHeight = updateLineHeight;
@@ -72,10 +69,6 @@ window.toggleRuler = toggleRuler;
 window.openPdfModal = openPdfModal;
 window.closePdfModal = closePdfModal;
 window.exportToPdf = exportToPdf;
-window.checkAndExport = checkAndExport;
-
-window.handleGoogleLogin = handleGoogleLogin;
-window.handleLogout = handleLogout;
 
 window.globalUndo = function () {
   if (isDrawMode()) {
@@ -98,11 +91,9 @@ window.clearAll = function () {
 
 // ── Initialize on DOM ready ──
 window.onload = () => {
-  checkSession();
   detectInstalledFonts();
   buildFontGrid();
   initCanvasEvents();
-  initAuthListener();
 
   const editor = document.getElementById('rotate-container');
   const wrap = document.getElementById('output-wrap');

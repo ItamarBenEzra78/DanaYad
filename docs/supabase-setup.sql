@@ -1,3 +1,8 @@
+-- NOTE: optional, not wired. The app is fully static and does not use
+-- Supabase. This schema is kept only as a reference for a future
+-- accounts feature (Google OAuth via Supabase + a profiles table).
+-- Replace the hard-coded admin e-mail before running it.
+
 -- ═══════════════════════════════════════════════
 -- DanaYad – Supabase Database Setup
 -- Run this in Supabase SQL Editor (Dashboard > SQL)
@@ -14,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 2. Auto-create profile on signup + auto-admin for Itamar4747@gmail.com
+-- 2. Auto-create profile on signup + auto-admin for ADMIN_EMAIL_HERE
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -23,7 +28,7 @@ BEGIN
     NEW.id,
     NEW.email,
     CASE
-      WHEN LOWER(NEW.email) = 'itamar4747@gmail.com' THEN 'admin'
+      WHEN LOWER(NEW.email) = 'ADMIN_EMAIL_HERE' THEN 'admin'
       ELSE 'user'
     END
   );
