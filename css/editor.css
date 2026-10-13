@@ -4,7 +4,7 @@
 
 /* ── Editor containers ── */
 #output-edit{direction:rtl;text-align:right;cursor:text;}
-#rotate-container{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;direction:rtl;text-align:right;min-height:100%;font-feature-settings:"calt" 1,"salt" 1;}
+#rotate-container{position:relative;font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;direction:rtl;text-align:right;min-height:100%;font-feature-settings:"calt" 1,"salt" 1;}
 #rotate-container:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;display:block;}
 
 /* ── Table styles inside editor ── */
@@ -19,7 +19,7 @@
 .signature{position:absolute;bottom:40px;left:10px;font-size:12px;color:var(--text);border-top:1px solid var(--border);padding-top:5px;}
 .signature .name{font-weight:bold;}
 
-/* ── Page-aware layout ── */
+/* ── Page-aware layout (A4 at 96dpi; padding mirrored in js/config.js) ── */
 #output-edit{
   width:794px;
   min-height:1123px;

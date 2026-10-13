@@ -1,5 +1,5 @@
 import { getEditor } from '../utils/dom.js';
-import { PAGE_HEIGHT } from '../config.js';
+import { CONTENT_HEIGHT } from '../config.js';
 import { applyScreenDrift } from '../handwriting/LineDrift.js';
 
 let _rafPending = false;
@@ -80,7 +80,7 @@ export function computePageBreaks(editor) {
   if (lines.length === 0) return [0];
 
   const breaks = [0];
-  let targetEnd = PAGE_HEIGHT;
+  let targetEnd = CONTENT_HEIGHT;
   let searchFrom = 0;
 
   while (searchFrom < lines.length) {
@@ -94,7 +94,7 @@ export function computePageBreaks(editor) {
 
     if (bestIdx < searchFrom) {
       breaks.push(targetEnd);
-      targetEnd += PAGE_HEIGHT;
+      targetEnd += CONTENT_HEIGHT;
       while (searchFrom < lines.length && lines[searchFrom].y <= breaks[breaks.length - 1]) searchFrom++;
       continue;
     }
@@ -104,13 +104,13 @@ export function computePageBreaks(editor) {
       adjusted--;
     }
     const lastBreakY = breaks[breaks.length - 1];
-    if (adjusted >= searchFrom && (lines[adjusted].y - lastBreakY) >= PAGE_HEIGHT * 0.5) {
+    if (adjusted >= searchFrom && (lines[adjusted].y - lastBreakY) >= CONTENT_HEIGHT * 0.5) {
       bestIdx = adjusted;
     }
 
     const breakY = lines[bestIdx].y;
     breaks.push(breakY);
-    targetEnd = breakY + PAGE_HEIGHT;
+    targetEnd = breakY + CONTENT_HEIGHT;
     searchFrom = bestIdx + 1;
   }
 
@@ -123,14 +123,14 @@ function _doReflow() {
   if (!editor) return;
 
   editor.querySelectorAll('.page-break-marker,.page-gap').forEach(el => el.remove());
-  editor.style.minHeight = PAGE_HEIGHT + 'px';
+  editor.style.minHeight = CONTENT_HEIGHT + 'px';
 
   const breaks = computePageBreaks(editor);
   _lastBreaks = breaks;
   const totalPages = breaks.length;
 
   const lastBreak = breaks[breaks.length - 1];
-  editor.style.minHeight = (lastBreak + PAGE_HEIGHT) + 'px';
+  editor.style.minHeight = (lastBreak + CONTENT_HEIGHT) + 'px';
 
   for (let p = 1; p < breaks.length; p++) {
     const yPos = breaks[p];

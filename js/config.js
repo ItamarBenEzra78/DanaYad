@@ -1,4 +1,14 @@
-export const PAGE_HEIGHT = 1123; // A4 height at 96dpi (297mm)
+// A4 sheet at 96dpi. The sheet (#output-edit) carries its own padding,
+// so the text area of one page is PAGE_HEIGHT minus that padding.
+// PAGE_PADDING_* must match #output-edit in css/editor.css.
+export const PAGE_HEIGHT = 1123; // 297mm
+export const PAGE_PADDING_TOP = 60;
+export const PAGE_PADDING_BOTTOM = 80;
+export const CONTENT_HEIGHT = PAGE_HEIGHT - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM;
+
+// Optional FastAPI backend for high-fidelity (Playwright) PDF rendering.
+// Leave empty for same-origin; the client-side exporter is used whenever
+// /api/health does not answer with JSON.
 export const API_URL = '';
 
 export const FONTS = [
