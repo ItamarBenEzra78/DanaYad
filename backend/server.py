@@ -27,13 +27,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-FONT_PATH = os.environ.get("FONT_PATH", "Rubik.ttf")
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+FONT_PATH = os.environ.get("FONT_PATH", os.path.join(BACKEND_DIR, "fonts", "Rubik.ttf"))
 renderer = HandwritingRenderer(FONT_PATH)
 
 PAGE_WIDTH = 794
 PAGE_HEIGHT = 1123
 SERVER_PORT = int(os.environ.get("PORT", 8000))
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+FRONTEND_DIR = os.path.join(BACKEND_DIR, "..")
 
 
 class RenderRequest(BaseModel):
@@ -121,7 +122,7 @@ async def generate_pdf(req: PdfRequest):
             return { w: oe.offsetWidth, h: oe.scrollHeight };
         }"""
 
-        dims = await page.evaluate(inject_js, {
+        await page.evaluate(inject_js, {
             "editorHtml": req.editor_html,
             "oeClass": req.output_edit_class,
             "oeStyle": req.output_edit_style,
@@ -130,7 +131,6 @@ async def generate_pdf(req: PdfRequest):
             "hw": hw,
         })
 
-        print(f"[PDF] element dims: {dims['w']}x{dims['h']}px")
         await page.wait_for_timeout(1500)
 
         element = await page.query_selector("#output-edit")
@@ -174,7 +174,7 @@ async def generate_pdf(req: PdfRequest):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "font": FONT_PATH}
+    return {"status": "ok", "font": os.path.basename(FONT_PATH)}
 
 
 # Serve the frontend — must be LAST (catch-all)
