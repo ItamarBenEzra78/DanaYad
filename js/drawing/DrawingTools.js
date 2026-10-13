@@ -4,6 +4,13 @@ const CANVAS_HISTORY_MAX = 20;
 export let drawColor = '#1a1a1a';
 export let eraserMode = false;
 
+/** Pointer position (mouse or touch) relative to the canvas. */
+export function getCanvasPos(e, canvas) {
+  const r = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
+}
+
 export function setDrawColor(c, el) {
   drawColor = c;
   eraserMode = false;

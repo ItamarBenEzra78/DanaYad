@@ -1,4 +1,4 @@
-import { drawColor, eraserMode, saveCanvasState } from './DrawingTools.js';
+import { drawColor, saveCanvasState, getCanvasPos } from './DrawingTools.js';
 
 let rulerMode = false;
 let rulerStartX = 0, rulerStartY = 0;
@@ -16,7 +16,7 @@ export function toggleRuler() {
 
 export function startRuler(e) {
   const canvas = document.getElementById('draw-canvas');
-  const pos = getPos(e, canvas);
+  const pos = getCanvasPos(e, canvas);
   rulerStartX = pos.x;
   rulerStartY = pos.y;
   _rulerSnapshot = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
@@ -25,7 +25,7 @@ export function startRuler(e) {
 export function drawRulerPreview(e) {
   const canvas = document.getElementById('draw-canvas');
   const ctx = canvas.getContext('2d');
-  const pos = getPos(e, canvas);
+  const pos = getCanvasPos(e, canvas);
 
   if (_rulerSnapshot) ctx.putImageData(_rulerSnapshot, 0, 0);
 
@@ -54,12 +54,4 @@ export function drawRulerPreview(e) {
 export function endRuler() {
   _rulerSnapshot = null;
   saveCanvasState();
-}
-
-function getPos(e, canvas) {
-  const r = canvas.getBoundingClientRect();
-  if (e.touches) {
-    return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
-  }
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
 }

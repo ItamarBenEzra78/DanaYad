@@ -12,13 +12,6 @@
 #rotate-container th,#rotate-container td{border:1px solid #555;padding:6px 8px;text-align:right;min-width:40px;vertical-align:top;}
 #rotate-container th{background:rgba(0,0,0,0.04);font-weight:700;}
 
-/* ── Embedded images ── */
-.embedded-image{max-width:100%;height:auto;margin:10px 0;border:1px solid var(--border);border-radius:4px;}
-
-/* ── Signature ── */
-.signature{position:absolute;bottom:40px;left:10px;font-size:12px;color:var(--text);border-top:1px solid var(--border);padding-top:5px;}
-.signature .name{font-weight:bold;}
-
 /* ── Page-aware layout (A4 at 96dpi; padding mirrored in js/config.js) ── */
 #output-edit{
   width:794px;
@@ -98,8 +91,3 @@
   border-top:1px solid var(--border);
   z-index:6;
 }
-
-/* ── Page header ── */
-.page-header{position:absolute;top:10px;left:10px;right:10px;font-size:10px;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);padding-bottom:5px;}
-.page-header h3{font-size:12px;margin:0;color:var(--text);}
-.page-number{position:absolute;bottom:10px;right:10px;font-size:12px;color:var(--muted);background:var(--paper);padding:2px 8px;border-radius:4px;border:1px solid var(--border);}

@@ -4,8 +4,6 @@ import { FONTS } from '../config.js';
 let currentFont = FONTS[0];
 const loadedFonts = new Set();
 
-export function getCurrentFont() { return currentFont; }
-
 export function loadGoogleFont(font) {
   if (loadedFonts.has(font.css)) return;
   loadedFonts.add(font.css);

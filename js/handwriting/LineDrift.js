@@ -1,7 +1,5 @@
 let _lineDriftVal = 0;
 
-export function getLineDriftVal() { return _lineDriftVal; }
-
 export function updateLineDrift(val) {
   _lineDriftVal = parseFloat(val);
   document.getElementById('line-drift-val').textContent = val + '°';

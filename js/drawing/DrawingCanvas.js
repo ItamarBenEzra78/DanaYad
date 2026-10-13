@@ -1,4 +1,4 @@
-import { drawColor, eraserMode, saveCanvasState } from './DrawingTools.js';
+import { drawColor, eraserMode, saveCanvasState, getCanvasPos } from './DrawingTools.js';
 import { isRulerMode, startRuler, drawRulerPreview, endRuler } from './RulerTool.js';
 
 let drawMode = false;
@@ -36,13 +36,6 @@ export function resizeCanvas() {
   canvas.getContext('2d').drawImage(tmp, 0, 0);
 }
 
-function getPos(e, canvas) {
-  const r = canvas.getBoundingClientRect();
-  if (e.touches) {
-    return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
-  }
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
-}
 
 function startDraw(e) {
   if (!drawMode) return;
@@ -50,7 +43,7 @@ function startDraw(e) {
   if (isRulerMode()) { startRuler(e); isDrawing = true; return; }
   isDrawing = true;
   const canvas = document.getElementById('draw-canvas');
-  const pos = getPos(e, canvas);
+  const pos = getCanvasPos(e, canvas);
   lastX = pos.x; lastY = pos.y;
 }
 
@@ -60,7 +53,7 @@ function draw(e) {
   if (isRulerMode()) { drawRulerPreview(e); return; }
   const canvas = document.getElementById('draw-canvas');
   const ctx = canvas.getContext('2d');
-  const pos = getPos(e, canvas);
+  const pos = getCanvasPos(e, canvas);
   ctx.beginPath();
   ctx.moveTo(lastX, lastY);
   ctx.lineTo(pos.x, pos.y);
