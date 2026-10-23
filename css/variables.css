@@ -4,7 +4,7 @@
 @font-face {
   font-family: 'GveretLevin';
   src: url('../fonts/GveretLevin-Regular.ttf') format('truetype');
-  font-weight: normal;
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }

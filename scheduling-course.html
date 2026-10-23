@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מצגת לימוד — תזמון: אלגוריתמים וסידורים פולינומיאליים</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.7;}
+.slide{min-height:100vh;padding:60px 80px;display:flex;flex-direction:column;justify-content:center;border-bottom:2px solid #1e293b;position:relative;}
+.slide:nth-child(odd){background:#0f172a;}
+.slide:nth-child(even){background:#1e293b;}
+.slide-num{position:absolute;top:20px;left:20px;font-size:12px;color:#475569;font-family:monospace;}
+h1{font-size:42px;color:#38bdf8;margin-bottom:16px;font-weight:800;}
+h2{font-size:32px;color:#38bdf8;margin-bottom:20px;font-weight:700;}
+h3{font-size:22px;color:#7dd3fc;margin-bottom:12px;margin-top:24px;}
+p,li{font-size:18px;margin-bottom:10px;}
+ul{margin-right:24px;margin-bottom:16px;}
+li{margin-bottom:8px;}
+.highlight{background:#1e3a5f;border-right:4px solid #38bdf8;padding:16px 20px;border-radius:0 8px 8px 0;margin:16px 0;}
+.formula{background:#0c1a2e;padding:14px 20px;border-radius:8px;font-family:'Courier New',monospace;font-size:20px;color:#7dd3fc;margin:12px 0;display:inline-block;direction:ltr;text-align:left;}
+.example{background:#14532d;border:1px solid #166534;border-radius:8px;padding:20px;margin:16px 0;}
+.example-title{color:#4ade80;font-weight:700;margin-bottom:8px;}
+.warning{background:#451a03;border:1px solid #92400e;border-radius:8px;padding:16px;margin:12px 0;}
+.warning-title{color:#fbbf24;font-weight:700;}
+table{border-collapse:collapse;margin:16px 0;width:auto;}
+th,td{border:1px solid #475569;padding:8px 16px;text-align:center;font-size:16px;}
+th{background:#1e3a5f;color:#7dd3fc;font-weight:700;}
+td{background:#0f172a;}
+.keyword{color:#f472b6;font-weight:700;}
+.answer{color:#4ade80;font-weight:700;}
+.script{background:#1a1a2e;border:1px dashed #475569;border-radius:8px;padding:16px;margin-top:20px;font-size:14px;color:#94a3b8;}
+.script-label{color:#f472b6;font-size:12px;font-weight:700;margin-bottom:6px;}
+.nav{position:fixed;bottom:20px;right:20px;display:flex;gap:8px;z-index:100;}
+.nav a{background:#1e293b;color:#38bdf8;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:14px;border:1px solid #334155;}
+.nav a:hover{background:#334155;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin:16px 0;}
+.exercise{background:#1e1b4b;border:1px solid #3730a3;border-radius:8px;padding:20px;margin:16px 0;}
+.exercise-title{color:#a78bfa;font-weight:700;margin-bottom:8px;}
+.sep{height:2px;background:linear-gradient(90deg,#38bdf8,transparent);margin:24px 0;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SLIDE 1: TITLE ═══════════ -->
+<div class="slide" id="s1">
+<span class="slide-num">1/25</span>
+<h1>תזמון — אלגוריתמים וסידורים פולינומיאליים</h1>
+<p style="font-size:24px;color:#94a3b8;">מצגת לימוד מקיפה להכנה לתרגיל בית 1</p>
+<div class="sep"></div>
+<p>מה נלמד:</p>
+<ul>
+<li>הגדרות ומושגי יסוד (Cj, Lj, Tj, Wj, Fj)</li>
+<li>פונקציות מטרה — סוג 1 (סכום) וסוג 2 (מקסימום)</li>
+<li>כללי תזמון: <span class="keyword">SPT</span>, <span class="keyword">EDD</span>, <span class="keyword">WSPT</span></li>
+<li>הוכחות בהחלפה זוגית (Pairwise Interchange)</li>
+<li>פונקציה מקובלת (Regular)</li>
+<li>סיבוכיות: P vs NP-Hard</li>
+<li>תרגילים + פתרונות</li>
+</ul>
+<div class="script">
+<div class="script-label">🎙️ סקריפט לקריינות AI</div>
+שלום, במצגת הזו נלמד את כל מה שצריך לדעת כדי לפתור תרגילי תזמון על מכונה בודדת. נתחיל מהגדרות בסיסיות, נעבור לכללי תזמון כמו SPT ו-EDD, נלמד איך להוכיח אופטימליות, ונתרגל עם דוגמאות מספריות. בסוף תהיו מוכנים לפתור את תרגיל הבית לבד.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 2: WHAT IS SCHEDULING ═══════════ -->
+<div class="slide" id="s2">
+<span class="slide-num">2/25</span>
+<h2>מהי בעיית תזמון?</h2>
+<div class="highlight">
+<strong>בעיית תזמון (Scheduling)</strong> — שיבוץ אוסף עבודות (ג'ובים) על משאבים (מכונות) מוגבלים, כך שפונקציית מטרה שנקבעה מראש תמוזער.
+</div>
+<h3>דוגמאות מהחיים</h3>
+<ul>
+<li>סטודנט שצריך לעשות 5 עבודות לקורסים — באיזה סדר?</li>
+<li>תזמון ניתוחים בחדרי ניתוח</li>
+<li>תזמון משימות על CPU במחשב</li>
+<li>תזמון ג'ובים על מכונות במפעל</li>
+</ul>
+<h3>מינוח</h3>
+<p><span class="keyword">Job</span> = ג'וב/עבודה &nbsp;&nbsp; <span class="keyword">Machine</span> = מכונה &nbsp;&nbsp; כל מכונה מבצעת ג'וב אחד בכל רגע.</p>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+בעיית תזמון היא כמו לארגן תור — יש לכם כמה עבודות שצריך לעשות, ומשאבים מוגבלים. השאלה היא באיזה סדר לעשות את העבודות כדי להשיג את התוצאה הטובה ביותר. בקורס הזה אנחנו משתמשים במינוח של ייצור: "ג'וב" זו עבודה, ו"מכונה" זה המשאב. הנחה חשובה: כל מכונה יכולה לעבוד רק על ג'וב אחד בכל רגע.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 3: INPUT ═══════════ -->
+<div class="slide" id="s3">
+<span class="slide-num">3/25</span>
+<h2>קלט של בעיית תזמון</h2>
+<table>
+<tr><th>סימון</th><th>שם</th><th>משמעות</th></tr>
+<tr><td>n</td><td>מספר ג'ובים</td><td>כמה עבודות יש לבצע</td></tr>
+<tr><td>m</td><td>מספר מכונות</td><td>כמה מכונות זמינות</td></tr>
+<tr><td>t<sub>j</sub></td><td>Processing time</td><td>זמן ביצוע של ג'וב j</td></tr>
+<tr><td>r<sub>j</sub></td><td>Ready time</td><td>הזמן המוקדם שג'וב j יכול להתחיל</td></tr>
+<tr><td>d<sub>j</sub></td><td>Due date</td><td>זמן היעד לסיום ג'וב j</td></tr>
+<tr><td>w<sub>j</sub></td><td>Weight</td><td>משקל/חשיבות כלכלית של ג'וב j</td></tr>
+</table>
+<div class="warning">
+<div class="warning-title">⚠️ הנחה חשובה</div>
+<p>ברוב הבעיות בקורס: r<sub>j</sub> = 0 לכל j (כל הג'ובים זמינים מזמן 0), אלא אם נאמר אחרת.</p>
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+כל בעיית תזמון מתחילה עם נתונים. לכל ג'וב יש זמן ביצוע — כמה זמן לוקח לעשות אותו. יש זמן יעד — מתי הוא צריך להיגמר. יש משקל — כמה חשוב הג'וב הזה. ויש זמן הגעה — מתי הג'וב מוכן להתחיל. בשלב הזה של הקורס, אנחנו מניחים שכל הג'ובים מוכנים מזמן אפס. אותיות קטנות — t, d, w, r — זה הקלט. אותיות גדולות — C, L, T — זה מה שאנחנו מחשבים.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 4: PERFORMANCE MEASURES ═══════════ -->
+<div class="slide" id="s4">
+<span class="slide-num">4/25</span>
+<h2>מדדי ביצוע — הגדרות קריטיות</h2>
+<p>אלה המדדים שמודדים כמה "טוב" תזמון מסוים:</p>
+<table>
+<tr><th>סימון</th><th>שם</th><th>נוסחה</th><th>הסבר</th></tr>
+<tr><td><strong>C<sub>j</sub></strong></td><td>Completion time</td><td>—</td><td>מתי ג'וב j סיים</td></tr>
+<tr><td><strong>F<sub>j</sub></strong></td><td>Flow time</td><td>C<sub>j</sub> - r<sub>j</sub></td><td>כמה זמן ג'וב j שהה במערכת</td></tr>
+<tr><td><strong>W<sub>j</sub></strong></td><td>Waiting time</td><td>F<sub>j</sub> - t<sub>j</sub></td><td>כמה זמן ג'וב j חיכה</td></tr>
+<tr><td><strong>L<sub>j</sub></strong></td><td>Lateness</td><td>C<sub>j</sub> - d<sub>j</sub></td><td>איחור (יכול להיות שלילי!)</td></tr>
+<tr><td><strong>T<sub>j</sub></strong></td><td>Tardiness</td><td>max(0, L<sub>j</sub>)</td><td>פיגור (רק חיובי)</td></tr>
+<tr><td><strong>U<sub>j</sub></strong></td><td>Unit penalty</td><td>1 אם T<sub>j</sub>&gt;0</td><td>האם הג'וב פיגר? כן/לא</td></tr>
+</table>
+<div class="highlight">
+<strong>ההבדל בין L ל-T:</strong> <br>
+L<sub>j</sub> = C<sub>j</sub> - d<sub>j</sub> (יכול להיות שלילי — "הקדמה") <br>
+T<sub>j</sub> = max(0, L<sub>j</sub>) (תמיד ≥ 0 — רק פיגור נספר)
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+זה הלב של הנושא — ההבדלים בין המדדים. C זה פשוט מתי הג'וב נגמר. F זה כמה זמן הוא שהה במערכת מרגע שהגיע. W זה כמה חיכה — F פחות זמן הביצוע. עכשיו L, הlateness — זה ההפרש בין מתי נגמר למתי היה צריך להיגמר. שימו לב — L יכול להיות שלילי! אם סיימנו לפני הזמן, L שלילי. T, הtardiness — זה כמו L אבל בלי שליליים. אם סיימנו בזמן, T אפס. אם איחרנו, T שווה ל-L.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 5: EXAMPLE ═══════════ -->
+<div class="slide" id="s5">
+<span class="slide-num">5/25</span>
+<h2>דוגמה מספרית — חישוב מדדים</h2>
+<table>
+<tr><th>j</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+<tr><td>t<sub>j</sub></td><td>4</td><td>3</td><td>7</td><td>2</td><td>2</td></tr>
+<tr><td>d<sub>j</sub></td><td>5</td><td>6</td><td>8</td><td>8</td><td>17</td></tr>
+</table>
+<h3>תזמון לפי אינדקס: (1,2,3,4,5)</h3>
+<table>
+<tr><th></th><th>j=1</th><th>j=2</th><th>j=3</th><th>j=4</th><th>j=5</th></tr>
+<tr><td>C<sub>j</sub></td><td>4</td><td>7</td><td>14</td><td>16</td><td>18</td></tr>
+<tr><td>L<sub>j</sub></td><td>-1</td><td>1</td><td>6</td><td>8</td><td>1</td></tr>
+<tr><td>T<sub>j</sub></td><td>0</td><td>1</td><td>6</td><td>8</td><td>1</td></tr>
+</table>
+<p>∑C<sub>j</sub> = 4+7+14+16+18 = 59 &nbsp;&nbsp; ∑T<sub>j</sub> = 0+1+6+8+1 = 16 &nbsp;&nbsp; T<sub>max</sub> = 8</p>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ תרגיל: תזמון SPT — (4,5,2,1,3)</div>
+<p>חשבו את C<sub>j</sub>, L<sub>j</sub>, T<sub>j</sub> עבור הסידור לפי SPT. האם ∑T<sub>j</sub> קטן יותר?</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 הצג פתרון</summary>
+<table>
+<tr><th></th><th>j=4</th><th>j=5</th><th>j=2</th><th>j=1</th><th>j=3</th></tr>
+<tr><td>C<sub>j</sub></td><td>2</td><td>4</td><td>7</td><td>11</td><td>18</td></tr>
+<tr><td>T<sub>j</sub></td><td>0</td><td>0</td><td>1</td><td>6</td><td>10</td></tr>
+</table>
+<p>∑T<sub>j</sub> = 17. SPT לא בהכרח ממזער ∑T!</p>
+</details>
+</div>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+בואו נתרגל חישוב. יש לנו 5 ג'ובים. אם עושים אותם לפי הסדר 1,2,3,4,5 — ג'וב 1 נגמר בזמן 4, ג'וב 2 נגמר ב-7, וכן הלאה. שימו לב לג'וב 1 — L שלו מינוס 1, כלומר סיימנו לפני הזמן. T שלו אפס כי אין פיגור. ג'וב 4 הכי מפגר — L שלו 8. עכשיו נסו בעצמכם: חשבו את אותם מדדים לסידור SPT ותבדקו — האם SPT תמיד נותן תוצאה טובה יותר?
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 6: OBJECTIVE FUNCTIONS ═══════════ -->
+<div class="slide" id="s6">
+<span class="slide-num">6/25</span>
+<h2>פונקציות מטרה — שני סוגים</h2>
+<div class="two-col">
+<div>
+<h3>סוג 1: סכום (∑)</h3>
+<ul>
+<li>∑C<sub>j</sub> — סכום זמני סיום</li>
+<li>∑F<sub>j</sub> — סכום זמני שהייה</li>
+<li>∑T<sub>j</sub> — סכום פיגורים</li>
+<li>∑w<sub>j</sub>F<sub>j</sub> — סכום שהייה משוקלל</li>
+<li>∑U<sub>j</sub> — מספר עבודות מפגרות</li>
+</ul>
+</div>
+<div>
+<h3>סוג 2: מקסימום (max)</h3>
+<ul>
+<li>L<sub>max</sub> — איחור מקסימלי</li>
+<li>T<sub>max</sub> — פיגור מקסימלי</li>
+<li>C<sub>max</sub> — makespan (זמן סיום כולל)</li>
+</ul>
+</div>
+</div>
+<div class="warning">
+<div class="warning-title">⚠️ קריטי להבין</div>
+<p>תזמון שטוב לפונקצית מטרה אחת <strong>לא בהכרח</strong> טוב לאחרת! תמיד צריך להגדיר קודם מה ממזערים.</p>
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+יש שני סוגים של פונקציות מטרה. סוג ראשון — סכום: כמה פיגור בסך הכל, כמה זמן שהייה בסך הכל. סוג שני — מקסימום: מי הג'וב הכי מאחר. הנקודה החשובה: תזמון שממזער סכום פיגורים לא בהכרח ממזער את הפיגור המקסימלי. לכן תמיד קודם מגדירים מה רוצים למזער, ורק אחר כך מחפשים תזמון.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 7: REGULAR FUNCTION ═══════════ -->
+<div class="slide" id="s7">
+<span class="slide-num">7/25</span>
+<h2>פונקציית מטרה מקובלת (Regular)</h2>
+<div class="highlight">
+<strong>הגדרה:</strong> פונקציית מטרה F היא <span class="keyword">מקובלת</span> אם ערכה הוא פונקציה <strong>לא יורדת</strong> של C<sub>j</sub> לכל j.
+</div>
+<p>כלומר: אם Cj עולה → F לא יורד. "לסיים מאוחר יותר לא יכול לשפר את המצב."</p>
+<h3>דוגמאות</h3>
+<ul>
+<li>∑C<sub>j</sub>, L<sub>max</sub>, T<sub>max</sub>, ∑T<sub>j</sub>, ∑w<sub>j</sub>C<sub>j</sub> — <span class="answer">כולן מקובלות ✓</span></li>
+<li>∑(E<sub>j</sub> + T<sub>j</sub>) — <span style="color:#f87171;font-weight:700;">לא מקובלת ✗</span></li>
+</ul>
+<div class="example">
+<div class="example-title">למה ∑(Ej+Tj) לא מקובלת?</div>
+<p>ג'וב אחד: t=4, d=7. תזמון 1: התחלה ב-0 → C=4, E=3, T=0, F=3.<br>
+תזמון 2: התחלה ב-1 → C=5, E=2, T=0, F=2.<br>
+C עלה (4→5) אבל F ירד (3→2). → לא מקובלת!</p>
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+פונקציה מקובלת היא כזו שכשג'וב מסיים מאוחר יותר, הפונקציה לא יכולה לרדת. זה הגיוני — אם סיימתי מאוחר, המצב לא יכול להשתפר. רוב פונקציות המטרה שנפגוש הן מקובלות. אבל יש חריגים — כמו סכום ההקדמה והפיגור. שם אם מתחילים מאוחר יותר, ההקדמה יורדת ויכול להיות שסך הכל המצב השתפר.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 8: SPT RULE ═══════════ -->
+<div class="slide" id="s8">
+<span class="slide-num">8/25</span>
+<h2>כלל SPT — Shortest Processing Time</h2>
+<div class="highlight">
+<strong>הגדרה:</strong> סידור SPT = מיון הג'ובים לפי זמן ביצוע מהקצר לארוך:<br>
+<span class="formula">t<sub>[1]</sub> ≤ t<sub>[2]</sub> ≤ ... ≤ t<sub>[n]</sub></span>
+</div>
+<h3>מה SPT ממזער?</h3>
+<ul>
+<li><span class="answer">∑C<sub>j</sub></span> — סכום זמני סיום ✓</li>
+<li><span class="answer">∑F<sub>j</sub></span> — סכום זמני שהייה (= ∑Cj כי rj=0) ✓</li>
+<li><span class="answer">∑W<sub>j</sub></span> — סכום זמני המתנה ✓</li>
+<li><span class="answer">∑L<sub>j</sub></span> — סכום איחורים ✓</li>
+</ul>
+<h3>למה זה עובד? (אינטואיציה)</h3>
+<p>הג'וב הראשון "מעכב" את כל מי שאחריו. אם שמים את הקצר ראשון, הוא מעכב פחות → סך ההמתנה יורד.</p>
+<div class="formula">∑F<sub>j</sub> = n·t<sub>[1]</sub> + (n-1)·t<sub>[2]</sub> + ... + 1·t<sub>[n]</sub></div>
+<p>מכפלה סקלרית של (n, n-1, ..., 1) עם (t<sub>[1]</sub>, t<sub>[2]</sub>, ..., t<sub>[n]</sub>). ממזערים ע"י סידור t עולה.</p>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+SPT — קצר ראשון. זה הכלל הכי אינטואיטיבי. תחשבו על תור בסופר — אם יש מישהו עם פריט אחד ומישהו עם עגלה מלאה, ברור ששמים את הפריט האחד ראשון. זה מקטין את סך ההמתנה של כולם. מתמטית, סכום זמני השהייה הוא מכפלה סקלרית. הוקטור הראשון הוא n, n-1, ..., 1 — קבוע. כדי למזער את המכפלה, מסדרים את זמני הביצוע בסדר עולה. זה SPT.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 9: EDD RULE ═══════════ -->
+<div class="slide" id="s9">
+<span class="slide-num">9/25</span>
+<h2>כלל EDD — Earliest Due Date</h2>
+<div class="highlight">
+<strong>הגדרה:</strong> סידור EDD = מיון לפי זמן יעד מהמוקדם למאוחר:<br>
+<span class="formula">d<sub>[1]</sub> ≤ d<sub>[2]</sub> ≤ ... ≤ d<sub>[n]</sub></span>
+</div>
+<h3>מה EDD ממזער?</h3>
+<ul>
+<li><span class="answer">L<sub>max</sub></span> — האיחור המקסימלי ✓</li>
+<li><span class="answer">T<sub>max</sub></span> — הפיגור המקסימלי (כי T<sub>max</sub> = max(L<sub>max</sub>, 0) על מכונה בודדת) ✓</li>
+</ul>
+<div class="warning">
+<div class="warning-title">⚠️ EDD לא ממזער</div>
+<p>∑T<sub>j</sub> — סכום הפיגורים. בעיה זו NP-hard!</p>
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+EDD — דדליין מוקדם ראשון. הרעיון: מי שצריך לסיים הכי מוקדם, מקבל עדיפות. זה ממזער את האיחור המקסימלי — כלומר, את הג'וב הכי מאחר. שימו לב לנקודה חשובה: EDD גם ממזער Tmax, כי על מכונה בודדת הפיגור המקסימלי שווה למקסימום של Lmax ואפס. אבל — EDD לא ממזער סכום פיגורים! בעיית מזעור סכום הפיגורים היא NP-hard.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 10: WSPT RULE ═══════════ -->
+<div class="slide" id="s10">
+<span class="slide-num">10/25</span>
+<h2>כלל WSPT — Weighted SPT</h2>
+<div class="highlight">
+<strong>הגדרה:</strong> סידור WSPT = מיון לפי יחס w<sub>j</sub>/t<sub>j</sub> בסדר <strong>יורד</strong>:<br>
+<span class="formula">w<sub>[1]</sub>/t<sub>[1]</sub> ≥ w<sub>[2]</sub>/t<sub>[2]</sub> ≥ ... ≥ w<sub>[n]</sub>/t<sub>[n]</sub></span>
+</div>
+<h3>מה WSPT ממזער?</h3>
+<ul>
+<li><span class="answer">∑w<sub>j</sub>F<sub>j</sub></span> — סכום שהייה משוקלל ✓</li>
+<li><span class="answer">∑w<sub>j</sub>C<sub>j</sub></span> — סכום סיום משוקלל ✓</li>
+<li><span class="answer">∑w<sub>j</sub>L<sub>j</sub></span> — סכום איחור משוקלל ✓</li>
+</ul>
+<p>כשכל ה-w<sub>j</sub> שווים, WSPT = SPT.</p>
+<div class="example">
+<div class="example-title">דוגמה: חישוב WSPT</div>
+<table>
+<tr><th>j</th><th>t</th><th>w</th><th>w/t</th></tr>
+<tr><td>1</td><td>12</td><td>3</td><td>0.25</td></tr>
+<tr><td>2</td><td>14</td><td>4</td><td>0.286</td></tr>
+<tr><td>3</td><td>16</td><td>5</td><td><span class="answer">0.313 ← הכי גבוה</span></td></tr>
+</table>
+<p>סידור WSPT: ג'וב 3 ראשון (w/t הכי גבוה), אחריו 2, אחריו 1.</p>
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+WSPT הוא ההכללה של SPT למקרה שלג'ובים יש משקולות שונות. במקום לסדר לפי t, מסדרים לפי היחס w חלקי t — מי שהיחס שלו הכי גבוה, בא ראשון. אינטואיציה: ג'וב עם משקל גבוה וזמן קצר — כדאי לעשות אותו ראשון כי הוא יקר מאוד להשאיר ממתין.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 11: SUMMARY TABLE ═══════════ -->
+<div class="slide" id="s11">
+<span class="slide-num">11/25</span>
+<h2>טבלת סיכום — מתי משתמשים בכל כלל</h2>
+<table>
+<tr><th>פונקצית מטרה</th><th>כלל</th><th>מיון לפי</th></tr>
+<tr><td>∑C<sub>j</sub>, ∑F<sub>j</sub>, ∑W<sub>j</sub>, ∑L<sub>j</sub></td><td><span class="keyword">SPT</span></td><td>t<sub>j</sub> עולה</td></tr>
+<tr><td>L<sub>max</sub>, T<sub>max</sub></td><td><span class="keyword">EDD</span></td><td>d<sub>j</sub> עולה</td></tr>
+<tr><td>∑w<sub>j</sub>C<sub>j</sub>, ∑w<sub>j</sub>F<sub>j</sub></td><td><span class="keyword">WSPT</span></td><td>w<sub>j</sub>/t<sub>j</sub> יורד</td></tr>
+<tr><td>∑U<sub>j</sub> (מספר מפגרות)</td><td><span class="keyword">Hodgson-Moore</span></td><td>אלגוריתם חמדני</td></tr>
+</table>
+<div class="highlight">
+<strong>כלל אצבע לבחינה:</strong><br>
+שואלים "min ∑..." → בדוק SPT או WSPT<br>
+שואלים "min max{...}" → בדוק EDD
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+הנה הטבלה שצריך לזכור. כשרואים סכום — חושבים SPT או WSPT. כשרואים מקסימום — חושבים EDD. כשרואים מספר עבודות מפגרות — אלגוריתם הודסון-מור. שמרו את הטבלה הזו — היא המפתח לפתרון תרגיל הבית.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 12: PAIRWISE INTERCHANGE ═══════════ -->
+<div class="slide" id="s12">
+<span class="slide-num">12/25</span>
+<h2>הוכחה בהחלפה זוגית (Pairwise Interchange)</h2>
+<p>זו שיטת ההוכחה המרכזית בקורס. משתמשים בה כדי להוכיח שכלל תזמון מסוים הוא אופטימלי.</p>
+<h3>התבנית (לשינון!):</h3>
+<div class="highlight">
+<p><strong>שלב 1:</strong> נבחן שני סידורים S ו-S' שזהים חוץ משני ג'ובים סמוכים J<sub>l</sub> ו-J<sub>m</sub>.</p>
+<p><strong>שלב 2:</strong> ב-S הם לפי הכלל שלנו, ב-S' הפוך.</p>
+<p><strong>שלב 3:</strong> נחשב F(S) - F(S') ונראה שזה ≤ 0.</p>
+</div>
+<p>תרשים גאנט:</p>
+<div class="formula" style="font-size:16px;">
+S:  |  A  |  J_l  |  J_m  |  B  |<br>
+S': |  A  |  J_m  |  J_l  |  B  |<br>
+<br>
+t_A     t_A+t_l   t_A+t_l+t_m<br>
+t_A     t_A+t_m   t_A+t_m+t_l
+</div>
+<p>A = ג'ובים לפני, B = ג'ובים אחרי. הם זהים בשני הסידורים!</p>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+הוכחה בהחלפה זוגית — זו השיטה שתראו שוב ושוב. הרעיון: ניקח סידור כלשהו שלא לפי הכלל. בהכרח יש בו שני ג'ובים סמוכים שלא בסדר הנכון. נראה שאם מחליפים אותם, פונקצית המטרה לא גדלה. לכן, כל סידור שלא לפי הכלל ניתן לשפר — ומכאן שהכלל אופטימלי.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 13: SPT PROOF ═══════════ -->
+<div class="slide" id="s13">
+<span class="slide-num">13/25</span>
+<h2>הוכחת SPT — דרך 2 (החלפה זוגית)</h2>
+<p>נוכיח: SPT ממזער ∑F<sub>j</sub>.</p>
+<div class="highlight">
+<p><strong>נתון:</strong> S — סידור SPT (t<sub>l</sub> ≤ t<sub>m</sub>), S' — J<sub>m</sub> לפני J<sub>l</sub>.</p>
+<p><strong>נדרש:</strong> ∑F(S) ≤ ∑F(S')</p>
+</div>
+<div class="formula" style="font-size:15px;">
+∑F(S)  = ∑F(A) + (t_A + t_l) + (t_A + t_l + t_m) + ∑F(B)<br>
+∑F(S') = ∑F(A) + (t_A + t_m) + (t_A + t_m + t_l) + ∑F(B)<br>
+<br>
+∑F(S') - ∑F(S) = (t_A + t_m) - (t_A + t_l) = t_m - t_l ≥ 0  ✓
+</div>
+<p>כי t<sub>l</sub> ≤ t<sub>m</sub> (סידור SPT), אז ∑F(S) ≤ ∑F(S'). מש"ל. □</p>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+בואו נראה את ההוכחה בפועל. ב-S, ג'וב l לפני m — כי t_l קטן מ-t_m. ב-S', הפוך. כשמחשבים את ההפרש, כל הג'ובים ב-A וב-B זהים ומתקצרים. נשאר רק ההבדל בין שני הג'ובים הסמוכים: t_m פחות t_l. וזה חיובי כי t_l קטן מ-t_m. לכן S טוב יותר מ-S'. וזה אומר שכל סידור שלא SPT ניתן לשפר — ולכן SPT אופטימלי.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 14: EXERCISE 1 FROM HW ═══════════ -->
+<div class="slide" id="s14">
+<span class="slide-num">14/25</span>
+<h2>תרגול — שאלה 1 מהתרגיל (חלקית)</h2>
+<table>
+<tr><th>j</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+<tr><td>t<sub>j</sub></td><td>12</td><td>14</td><td>16</td><td>18</td><td>14</td></tr>
+<tr><td>d<sub>j</sub></td><td>30</td><td>36</td><td>52</td><td>24</td><td>40</td></tr>
+<tr><td>w<sub>j</sub></td><td>3</td><td>4</td><td>5</td><td>3</td><td>1</td></tr>
+</table>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ תרגלו: סעיף 1 — min ∑Cj</div>
+<p>1. מהו הכלל? 2. מיינו. 3. חשבו Cj. 4. סכמו.</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 פתרון</summary>
+<p>כלל: SPT → מיון לפי t: 1(12), 2(14), 5(14), 3(16), 4(18)</p>
+<p>C: 12, 26, 40, 56, 74</p>
+<p><span class="answer">∑Cj = 208</span></p>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ תרגלו: סעיף 2 — min Lmax</div>
+<p>1. מהו הכלל? 2. מיינו. 3. חשבו Cj ו-Lj. 4. מצאו max.</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 פתרון</summary>
+<p>כלל: EDD → מיון לפי d: 4(24), 1(30), 2(36), 5(40), 3(52)</p>
+<p>C: 18, 30, 44, 58, 74</p>
+<p>L: -6, 0, 8, 18, 22</p>
+<p><span class="answer">Lmax = 22</span></p>
+</details>
+</div>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+עכשיו נתרגל עם הנתונים מתרגיל הבית. נסו קודם לבד — זהו את הכלל, מיינו, חשבו, ואז בדקו את עצמכם. סעיף 1 — מה ממזערים? סכום Cj. אז הכלל הוא SPT. מיינו לפי t. סעיף 2 — ממזערים Lmax. הכלל הוא EDD. מיינו לפי d. תעצרו ותנסו בעצמכם לפני שפותחים את הפתרון.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 15: MORE EXERCISES ═══════════ -->
+<div class="slide" id="s15">
+<span class="slide-num">15/25</span>
+<h2>תרגול — סעיפים 3-5</h2>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ סעיף 3 — min Tmax</div>
+<p>רמז: מה הקשר בין Tmax ל-Lmax על מכונה בודדת?</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 פתרון</summary>
+<p>T = max(L, 0). על מכונה בודדת, min Tmax = min Lmax → אותו סידור EDD!</p>
+<p><span class="answer">Tmax = 22, סידור (4,1,2,5,3)</span></p>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ סעיף 4 — min max{wj·Lj}</div>
+<p>רמז: אין כלל פשוט! צריך לנסות סידורים. שימו לב לג'וב עם w גבוה.</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 פתרון</summary>
+<p>EDD: max{wL} = 5·22 = 110 (ג'וב 3 אחרון). מנסים (4,1,2,3,5): max = 40.</p>
+<p><span class="answer">סידור (4,1,2,3,5), max{wjLj} = 40</span></p>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ סעיף 5 — min ∑wjCj</div>
+<p>רמז: ממזערים סכום משוקלל → WSPT</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 פתרון</summary>
+<p>w/t: 3:.31, 2:.29, 1:.25, 4:.17, 5:.07</p>
+<p><span class="answer">סידור (3,2,1,4,5)</span></p>
+</details>
+</div>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+סעיף 3 — Tmax. כאן הטריק: על מכונה בודדת, Tmax שווה ל-max של Lmax ואפס. אז אותו סידור EDD עובד. סעיף 4 — max{wjLj}. כאן אין כלל ישיר. צריך לנסות סידורים ולחפש את הטוב ביותר. שימו לב שג'וב 3 עם w=5 — אם הוא אחרון הוא "הורג" את פונקצית המטרה. סעיף 5 — ∑wjCj. זה WSPT — מיון לפי w/t יורד.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 16: COMPLEXITY ═══════════ -->
+<div class="slide" id="s16">
+<span class="slide-num">16/25</span>
+<h2>סיבוכיות — P vs NP-Hard</h2>
+<div class="two-col">
+<div>
+<h3 style="color:#4ade80;">קבוצת P (קלות)</h3>
+<p>קיים אלגוריתם פולינומיאלי O(n<sup>k</sup>)</p>
+<ul>
+<li>1||∑C<sub>j</sub> → SPT, O(nlogn)</li>
+<li>1||L<sub>max</sub> → EDD, O(nlogn)</li>
+<li>1||∑w<sub>j</sub>C<sub>j</sub> → WSPT, O(nlogn)</li>
+<li>1||∑U<sub>j</sub> → Hodgson-Moore, O(nlogn)</li>
+</ul>
+</div>
+<div>
+<h3 style="color:#f87171;">NP-Hard (קשות)</h3>
+<p>לא ידוע אלגוריתם פולינומיאלי</p>
+<ul>
+<li>1||∑T<sub>j</sub> — סכום פיגורים</li>
+<li>1|r<sub>j</sub>≥0|L<sub>max</sub> — עם זמני הגעה</li>
+<li>1||∑w<sub>j</sub>T<sub>j</sub> — סכום פיגורים משוקלל</li>
+</ul>
+</div>
+</div>
+<div class="warning">
+<div class="warning-title">⚠️ "אלגוריתם שבתאי"</div>
+<p>לבדוק כל n! סידורים אפשריים — עובד אבל <strong>אקספוננציאלי</strong>.<br>
+עבור n=25: 25! × 10<sup>-10</sup> שניות = <strong>מאות שנים!</strong></p>
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+סיבוכיות זה נושא חשוב. בעיות בקבוצת P — יש אלגוריתם יעיל. כל הבעיות שפתרנו עם SPT, EDD, WSPT — הן בP. אלגוריתמי מיון לוקחים O(nlogn). בעיות NP-hard — אין אלגוריתם יעיל ידוע. למשל, ∑Tj על מכונה בודדת — זו בעיה קשה! המרצה שלכם הציג את "אלגוריתם שבתאי" — לבדוק את כל הסידורים. זה עובד אבל לוקח n! צעדים. עבור 25 ג'ובים זה מאות שנים.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 17: PAIRWISE FOR HW Q4 ═══════════ -->
+<div class="slide" id="s17">
+<span class="slide-num">17/25</span>
+<h2>הוכחה בהחלפה זוגית — לא סמוכים (שאלה 4)</h2>
+<p>בשאלה 4 בתרגיל, ג'ובים l ו-m <strong>לא בהכרח סמוכים</strong>!</p>
+<div class="formula" style="font-size:15px;">
+S*: ...m, [B], l...<br>
+S': ...l, [B], m...<br>
+<br>
+A = לפני m<br>
+B = ג'ובים בין m ל-l
+</div>
+<h3>מה משתנה?</h3>
+<table>
+<tr><th>ג'ובים</th><th>שינוי ב-C</th><th>שינוי ב-T</th></tr>
+<tr><td>ב-B</td><td>C'<sub>b</sub> = C<sub>b</sub> - t<sub>m</sub> + t<sub>l</sub> ≤ C<sub>b</sub></td><td>T'<sub>b</sub> ≤ T<sub>b</sub> ✓</td></tr>
+<tr><td>ג'וב l</td><td>C'<sub>l</sub> = A+t<sub>l</sub> ≤ C<sub>l</sub></td><td>T'<sub>l</sub> ≤ T<sub>l</sub> ✓</td></tr>
+<tr><td>ג'וב m</td><td>C'<sub>m</sub> = C<sub>l</sub> (= A+t<sub>l</sub>+∑t<sub>B</sub>+t<sub>m</sub>)</td><td>T'<sub>m</sub> ≤ T<sub>l</sub> ✓ (כי d<sub>l</sub> ≤ d<sub>m</sub>)</td></tr>
+</table>
+<p>⇒ ∑T'<sub>j</sub> ≤ ∑T<sub>j</sub>. מש"ל.</p>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+בשאלה 4 יש טוויסט — הג'ובים לא סמוכים. יש ג'ובים ביניהם, קבוצה B. צריך לבדוק 3 קבוצות: הג'ובים ב-B — הם מסיימים מוקדם יותר כי t_l קטן מ-t_m. ג'וב l — מסיים מוקדם יותר כי הוא זז קדימה. ג'וב m — מסיים במקום של l הישן. המפתח: כי d_l קטן או שווה ל-d_m, הפיגור של m במקומו החדש קטן מהפיגור של l במקומו הישן.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 18: HW Q2 ═══════════ -->
+<div class="slide" id="s18">
+<span class="slide-num">18/25</span>
+<h2>שאלה 2 — קיצור ג'וב</h2>
+<p>ניתן לקצר ג'וב אחד למחצית. האם תמיד כדאי לקצר הארוך?</p>
+
+<div class="exercise">
+<div class="exercise-title">א) עבור ∑Cj — כן!</div>
+<p>קיצור ג'וב j חוסך t<sub>j</sub>/2 מ-C<sub>j</sub> ומכל הבאים אחריו.</p>
+<p>⇒ t<sub>j</sub> גדול יותר = חיסכון גדול יותר ⇒ לקצר הארוך עדיף.</p>
+</div>
+
+<div class="exercise">
+<div class="exercise-title">ב) עבור Lmax — לא!</div>
+<p><strong>דוגמה נגדית:</strong> t<sub>1</sub>=6, t<sub>2</sub>=10, d<sub>1</sub>=5, d<sub>2</sub>=100</p>
+<p>Lmax=1 (ג'וב 1). קיצור ג'וב 2 (הארוך) → Lmax=1 (לא עזר!).</p>
+<p>קיצור ג'וב 1 → Lmax=-2 (שיפור!).</p>
+<p>ה-bottleneck הוא ג'וב 1 (d קטן), לא ג'וב 2 (הארוך).</p>
+</div>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+שאלה 2 — שאלת הוכחה/דוגמה נגדית. עבור סכום Cj — כן, תמיד כדאי לקצר הארוך. ההסבר: הג'וב הארוך מעכב את הכי הרבה ג'ובים, אז קיצורו חוסך הכי הרבה. עבור Lmax — לא! והדוגמה הנגדית חכמה: יש ג'וב קצר עם דדליין צמוד, וג'וב ארוך עם דדליין רחוק. ה-Lmax נקבע על ידי הג'וב הקצר, לא הארוך. קיצור הארוך לא עוזר.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 19: HW Q3 ═══════════ -->
+<div class="slide" id="s19">
+<span class="slide-num">19/25</span>
+<h2>שאלה 3 — max(w<sub>j</sub>T<sub>j</sub>)</h2>
+
+<h3>1) האם פונקציה מקובלת?</h3>
+<div class="highlight">
+<p><span class="answer">כן.</span> T<sub>j</sub> = max(C<sub>j</sub>-d<sub>j</sub>, 0) → לא יורד ב-C<sub>j</sub>.<br>
+w<sub>j</sub>·T<sub>j</sub> → לא יורד ב-C<sub>j</sub>.<br>
+max של פונקציות לא יורדות → לא יורדת.</p>
+</div>
+
+<h3>2) איך למצוא אופטימום?</h3>
+<p>הבעיה NP-hard באופן כללי. אם w<sub>j</sub>=w לכל j → max(wT<sub>j</sub>) = w·T<sub>max</sub> → EDD.</p>
+
+<h3>3) שינוי נתונים</h3>
+<ul>
+<li><strong>a. d<sub>j</sub> השתנו:</strong> סידור עשוי להשתנות + ערך ישתנה.</li>
+<li><strong>b. d<sub>j</sub> קטנו ב-1:</strong> סידור <span class="answer">נשאר</span> (סדר יחסי קבוע), ערך <span class="answer">עולה</span>.</li>
+</ul>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+שאלה 3 — שלושה חלקים. חלק 1: האם max(wjTj) מקובלת? כן — כי Tj לא יורד ב-Cj, כפל בw לא משנה את המונוטוניות, ומקסימום של לא-יורדות הוא לא-יורד. חלק 2: איך פותרים? בכללי זה NP-hard. אבל אם כל המשקולות שוות — זה פשוט wTmax ואז EDD מספיק. חלק 3b — אם כל dj קטנו ב-1, הסדר לא משתנה כי הסדר היחסי נשמר, אבל הערך עולה כי כולם קרובים יותר לפיגור.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 20: HW Q4 ═══════════ -->
+<div class="slide" id="s20">
+<span class="slide-num">20/25</span>
+<h2>שאלה 4 — הוכחת dj=d → SPT</h2>
+
+<h3>סעיף 1: הוכחנו (שקף 17) שאם t<sub>l</sub>≤t<sub>m</sub> ו-d<sub>l</sub>≤d<sub>m</sub> → l לפני m.</h3>
+
+<h3>סעיף 2: כש-d<sub>j</sub>=d לכל j</h3>
+<div class="highlight">
+<p>לכל זוג l,m עם t<sub>l</sub>≤t<sub>m</sub>:</p>
+<p>d<sub>l</sub> = d<sub>m</sub> = d ⇒ d<sub>l</sub> ≤ d<sub>m</sub> ✓</p>
+<p>לפי סעיף 1 ⇒ l לפני m ⇒ סדר אופטימלי = <span class="keyword">SPT</span></p>
+<p>מיון = <span class="answer">O(nlogn) — פולינומיאלי!</span></p>
+</div>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+סעיף 2 של שאלה 4 מסתמך על סעיף 1. כשכל ה-dj שווים, כל זוג מקיים dl שווה dm. אז התנאי dl≤dm מתקיים תמיד. ולכן לפי סעיף 1, לכל זוג עם tl≤tm, l בא לפני m. זה בדיוק הגדרה של SPT! ומיון SPT לוקח O(nlogn) — פולינומיאלי.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 21: HODGSON-MOORE ═══════════ -->
+<div class="slide" id="s21">
+<span class="slide-num">21/25</span>
+<h2>אלגוריתם הודסון-מור — min ∑U<sub>j</sub></h2>
+<p>ממזער את מספר העבודות המפגרות.</p>
+<div class="highlight">
+<strong>האלגוריתם:</strong><br>
+1. מיין לפי EDD<br>
+2. לכל ג'וב k (לפי EDD):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;הוסף ל-E<br>
+&nbsp;&nbsp;&nbsp;&nbsp;אם ∑t<sub>j</sub> (ב-E) > d<sub>k</sub>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;הסר את הג'וב עם t הגבוה ביותר מ-E, העבר ל-T<br>
+3. E = מקדימות, T = מפגרות
+</div>
+<p>סיבוכיות: O(nlogn)</p>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+אלגוריתם הודסון-מור — חמדני וחכם. מתחילים לפי EDD. בכל שלב מוסיפים ג'וב לקבוצה E (מקדימות). אם סכום הזמנים חורג מהדדליין, מסירים את הג'וב הארוך ביותר — כי הוא "תופס" הכי הרבה מקום. בסוף יש לנו קבוצה מינימלית של מפגרות.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 22: REDUCTION ═══════════ -->
+<div class="slide" id="s22">
+<span class="slide-num">22/25</span>
+<h2>רדוקציה חישובית</h2>
+<div class="highlight">
+<strong>רדוקציה:</strong> שיטה להמיר בעיה אחת (Pr1) לבעיה אחרת (Pr2).<br><br>
+אם יש רדוקציה פולינומיאלית מ-Pr1 ל-Pr2:<br>
+• Pr2 ∈ P ⇒ Pr1 ∈ P<br>
+• <strong>Pr1 ∈ NP-Hard ⇒ Pr2 ∈ NP-Hard</strong>
+</div>
+<p>דוגמה מהקורס: בעיית החלוקה (Partition) → 1|r<sub>j</sub>≥0|L<sub>max</sub></p>
+<p>⇒ מוכיחים שהבעיה NP-Hard.</p>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+רדוקציה זה כלי עוצמתי. אם אני יודע שבעיה A קשה, ואני יכול להפוך כל מקרה של A למקרה של B — אז B גם קשה. בקורס, משתמשים בבעיית החלוקה — שידוע שהיא NP-hard — ומראים שאפשר להפוך אותה לבעיית תזמון. וזה אומר שבעיית התזמון גם NP-hard.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 23: CHEAT SHEET ═══════════ -->
+<div class="slide" id="s23">
+<span class="slide-num">23/25</span>
+<h2>דף נוסחאות — צ'יט שיט</h2>
+<table>
+<tr><th>מד</th><th>נוסחה</th></tr>
+<tr><td>F<sub>j</sub></td><td>C<sub>j</sub> - r<sub>j</sub></td></tr>
+<tr><td>W<sub>j</sub></td><td>F<sub>j</sub> - t<sub>j</sub></td></tr>
+<tr><td>L<sub>j</sub></td><td>C<sub>j</sub> - d<sub>j</sub></td></tr>
+<tr><td>T<sub>j</sub></td><td>max(0, C<sub>j</sub> - d<sub>j</sub>)</td></tr>
+<tr><td>U<sub>j</sub></td><td>1 אם T<sub>j</sub>>0, אחרת 0</td></tr>
+</table>
+<br>
+<table>
+<tr><th>פ.מ</th><th>כלל</th><th>מיון</th></tr>
+<tr><td>∑C, ∑F, ∑W, ∑L</td><td>SPT</td><td>t↑</td></tr>
+<tr><td>Lmax, Tmax</td><td>EDD</td><td>d↑</td></tr>
+<tr><td>∑wC, ∑wF, ∑wL</td><td>WSPT</td><td>w/t↓</td></tr>
+<tr><td>∑U</td><td>H&M</td><td>EDD+חמדני</td></tr>
+</table>
+
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+הנה דף הנוסחאות. שמרו אותו. בבחינה, השאלה הראשונה תמיד: מה פונקצית המטרה? תענו — ותדעו איזה כלל להשתמש.
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 24: PRACTICE PROBLEMS ═══════════ -->
+<div class="slide" id="s24">
+<span class="slide-num">24/25</span>
+<h2>תרגילים נוספים לתרגול</h2>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ תרגיל 1</div>
+<p>3 ג'ובים: t=(3,5,2), d=(4,7,10). מצא: ∑Cj, Lmax, Tmax.</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 פתרון</summary>
+<p>SPT: (3,1,2). C=(2,5,10). ∑C=17.</p>
+<p>EDD: (1,2,3). C=(3,8,10). L=(-1,1,0). Lmax=1.</p>
+<p>Tmax=1 (אותו סידור).</p>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ תרגיל 2</div>
+<p>4 ג'ובים: t=(6,4,8,2), w=(2,3,1,4). מצא סידור WSPT ו-∑wjCj.</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 פתרון</summary>
+<p>w/t: 1:0.33, 2:0.75, 3:0.125, 4:2.0</p>
+<p>WSPT: (4,2,1,3). C=(2,6,12,20).</p>
+<p>∑wC = 4·2 + 3·6 + 2·12 + 1·20 = 8+18+24+20 = 70.</p>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-title">🏋️ תרגיל 3 — הוכחה</div>
+<p>הוכח: סידור EDD ממזער Lmax בעזרת החלפה זוגית.</p>
+<details>
+<summary style="color:#a78bfa;cursor:pointer;">📎 רמז</summary>
+<p>ב-S: dl≤dm (EDD). ב-S': dm לפני. Lmax(S') = max(tA+tm-dm, tA+tm+tl-dl). Lmax(S) = max(tA+tl-dl, tA+tl+tm-dm). הראה ש-Lmax(S) ≤ Lmax(S').</p>
+</details>
+</div>
+</div>
+
+<!-- ═══════════ SLIDE 25: SUMMARY ═══════════ -->
+<div class="slide" id="s25">
+<span class="slide-num">25/25</span>
+<h1>סיכום</h1>
+<div class="sep"></div>
+<ul style="font-size:20px;">
+<li>✅ הגדרות: C, F, W, L, T, U — ומה ההבדלים ביניהם</li>
+<li>✅ פונקציות מטרה: סכום vs מקסימום</li>
+<li>✅ כללי תזמון: SPT (t↑), EDD (d↑), WSPT (w/t↓)</li>
+<li>✅ הוכחה בהחלפה זוגית — התבנית</li>
+<li>✅ פונקציה מקובלת — הגדרה + דוגמה נגדית</li>
+<li>✅ סיבוכיות: P vs NP-Hard</li>
+<li>✅ Hodgson-Moore: min ∑Uj</li>
+<li>✅ רדוקציה: להוכחת קושי</li>
+</ul>
+<div class="highlight" style="margin-top:24px;">
+<strong>מה עכשיו?</strong> פתחו את תרגיל הבית, תנסו לפתור כל סעיף לבד, ואז בדקו עם הפתרונות.
+</div>
+<div class="script">
+<div class="script-label">🎙️ סקריפט</div>
+סיימנו! עברנו על כל מה שצריך לדעת. הגדרות, כללי תזמון, הוכחות, סיבוכיות, ותרגלנו. עכשיו התור שלכם — פתחו את התרגיל ונסו לפתור לבד. הפתרון כבר אצלכם, אבל הערך האמיתי הוא בניסיון העצמאי. בהצלחה!
+</div>
+</div>
+
+</body>
+</html>

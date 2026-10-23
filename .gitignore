@@ -6,3 +6,11 @@ __pycache__/
 node_modules/
 .env
 .DS_Store
+
+# project contract: settings are tracked, local overrides are not
+!.claude/
+.claude/*
+!.claude/settings.json
+generated-pdfs/
+*.pdf
+*.zip

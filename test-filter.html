@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Filter Test</title>
+<style>
+body { font-family: sans-serif; padding: 40px; direction: rtl; }
+.box { padding: 20px; margin: 20px 0; font-size: 24px; border: 2px solid #ccc; }
+.with-filter { filter: url(#test-filter); }
+.no-filter { }
+h2 { font-size: 18px; color: #333; }
+</style>
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;">
+  <filter id="test-filter" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="3" seed="2" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<h1>בדיקת SVG Filter</h1>
+
+<h2>בלי פילטר:</h2>
+<div class="box no-filter">שלום עולם, זהו טקסט רגיל בלי שום אפקט</div>
+
+<h2>עם פילטר (אמור להיות מעוות/גלי):</h2>
+<div class="box with-filter">שלום עולם, זהו טקסט עם SVG filter displacement</div>
+
+<p style="margin-top:40px;font-size:16px;color:red;font-weight:bold;">
+אם שני הטקסטים נראים אותו דבר = הפילטר לא עובד בדפדפן שלך.<br>
+אם הטקסט השני מעוות/גלי = הפילטר עובד.
+</p>
+
+</body>
+</html>

@@ -22,7 +22,7 @@ export function applyFont(font) {
   const ed = getEditor();
   if (ed) {
     ed.style.fontFamily = stack;
-    ed.style.fontWeight = font.weight;
+    ed.style.fontWeight = font.weight || 300;
   }
   const prev = document.querySelector('.font-preview');
   if (prev) { prev.style.fontFamily = `'${font.css}','GveretLevin',cursive`; prev.textContent = 'אבג abc'; }
