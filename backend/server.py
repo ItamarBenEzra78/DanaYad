@@ -1,11 +1,11 @@
 """
 DanaYad Handwriting Backend — FastAPI server
 Renders text as SVG with per-character glyph variation.
-Generates pixel-perfect PDFs by screenshotting the live app via Playwright.
+Generates PDFs by screenshotting the live app via Playwright (so Chrome
+renders the real SVG ink filter) and composing pages with the same code as
+the browser export (window.DanaYad in js/app.js).
 """
-import io
-import json
-import math
+import base64
 import os
 
 from fastapi import FastAPI
@@ -13,7 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from PIL import Image
 from playwright.async_api import async_playwright
 
 from glyph_engine import HandwritingRenderer
@@ -31,10 +30,19 @@ BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_PATH = os.environ.get("FONT_PATH", os.path.join(BACKEND_DIR, "fonts", "Rubik.ttf"))
 renderer = HandwritingRenderer(FONT_PATH)
 
-PAGE_WIDTH = 794
 PAGE_HEIGHT = 1123
+CAPTURE_SCALE = 2
+BACKEND_TIMING = "danayad-backend"  # js/export/PdfExporter.js looks for it
 SERVER_PORT = int(os.environ.get("PORT", 8000))
 FRONTEND_DIR = os.path.join(BACKEND_DIR, "..")
+
+
+@app.middleware("http")
+async def advertise_backend(request, call_next):
+    """Lets the frontend detect this server from its own page load, without a probe request."""
+    response = await call_next(request)
+    response.headers["Server-Timing"] = BACKEND_TIMING
+    return response
 
 
 class RenderRequest(BaseModel):
@@ -70,7 +78,7 @@ async def generate_pdf(req: PdfRequest):
         browser = await p.chromium.launch()
         page = await browser.new_page(
             viewport={"width": 1200, "height": PAGE_HEIGHT},
-            device_scale_factor=2,
+            device_scale_factor=CAPTURE_SCALE,
         )
 
         local_url = f"http://127.0.0.1:{SERVER_PORT}/"
@@ -86,8 +94,8 @@ async def generate_pdf(req: PdfRequest):
             const editor = document.getElementById('rotate-container');
             const svg = document.querySelector('svg');
 
-            // Set content before detaching
             oe.className = oeClass;
+            oe.style.cssText = oeStyle;
             editor.style.cssText = edStyle;
             editor.innerHTML = editorHtml;
 
@@ -99,27 +107,11 @@ async def generate_pdf(req: PdfRequest):
                 if (el) el.setAttribute('scale', val);
             });
 
-            // Remove markers
-            oe.querySelectorAll('.page-break-marker').forEach(m => m.remove());
-
-            // Detach output-edit from all parent containers —
-            // rebuild body with just SVG filter + output-edit
+            // Keep only the SVG filter and the sheet on the page.
             document.body.replaceChildren();
             document.body.style.cssText = 'margin:0;padding:0;background:#fff;';
             if (svg) document.body.appendChild(svg);
             document.body.appendChild(oe);
-
-            // Exact A4 at 96dpi: 794×1123, padding acts as page margins
-            oe.style.cssText = [
-                oeStyle,
-                'margin:0',
-                'box-shadow:none',
-                'box-sizing:border-box',
-                'width:794px',
-                'min-height:1123px',
-            ].join(';');
-
-            return { w: oe.offsetWidth, h: oe.scrollHeight };
         }"""
 
         await page.evaluate(inject_js, {
@@ -131,42 +123,34 @@ async def generate_pdf(req: PdfRequest):
             "hw": hw,
         })
 
-        await page.wait_for_timeout(1500)
+        # Same print geometry and page breaks as the browser export.
+        breaks = await page.evaluate("""async () => {
+            await document.fonts.ready;
+            return DanaYad.prepareSheet(document.getElementById('output-edit'));
+        }""")
+        line_height = await page.evaluate(
+            "parseFloat(getComputedStyle(document.getElementById('rotate-container')).lineHeight) || 24")
+        await page.wait_for_timeout(500)
 
-        element = await page.query_selector("#output-edit")
-        shot = await element.screenshot(type="png")
+        sheet = page.locator("#output-edit")
+        content = await sheet.screenshot(type="png")
+        await page.evaluate("DanaYad.hideSheetText(document.getElementById('output-edit'))")
+        background = await sheet.screenshot(type="png")
+
+        def data_url(png):
+            return "data:image/png;base64," + base64.b64encode(png).decode("ascii")
+
+        pdf_b64 = await page.evaluate("(args) => DanaYad.pdfFromScreenshots(args)", {
+            "content": data_url(content),
+            "background": data_url(background),
+            "breaks": breaks,
+            "lineHeight": line_height,
+            "scale": CAPTURE_SCALE,
+        })
         await browser.close()
 
-    scale = 2  # must match device_scale_factor
-    full_img = Image.open(io.BytesIO(shot))
-    img_w, img_h = full_img.size
-    page_h_px = PAGE_HEIGHT * scale
-    total_pages = max(1, math.ceil(img_h / page_h_px))
-
-    target_w = PAGE_WIDTH * scale
-    target_h = PAGE_HEIGHT * scale
-
-    pages = []
-    for i in range(total_pages):
-        y_start = i * page_h_px
-        y_end = min(y_start + page_h_px, img_h)
-        crop = full_img.crop((0, y_start, img_w, y_end))
-
-        page_img = Image.new("RGB", (target_w, target_h), "white")
-        resized = crop.resize((target_w, int(crop.height * target_w / crop.width)), Image.LANCZOS)
-        page_img.paste(resized, (0, 0))
-
-        pages.append(page_img)
-
-    pdf_buf = io.BytesIO()
-    a4_width_inches = 210 / 25.4
-    dpi = round(target_w / a4_width_inches)
-    pages[0].save(
-        pdf_buf, "PDF", save_all=True, append_images=pages[1:], resolution=dpi,
-    )
-
     return Response(
-        content=pdf_buf.getvalue(),
+        content=base64.b64decode(pdf_b64),
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=DanaYad_Document.pdf"},
     )

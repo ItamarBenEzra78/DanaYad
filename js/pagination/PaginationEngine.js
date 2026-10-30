@@ -13,53 +13,70 @@ export function reflowPages() {
   requestAnimationFrame(_doReflow);
 }
 
+/**
+ * Every visual line of the editor as {y, lineText} (y = line bottom, editor
+ * coordinates), sorted top to bottom.
+ *
+ * Text fragments come from Range.getClientRects(): one rect per line box,
+ * or one per letter once the text is scrambled. Fragments whose middle
+ * halves overlap sit on the same line and are merged; a table row, image or
+ * math block is one unbreakable unit, so the lines inside it merge into it.
+ */
 function _collectLineEnds(editor) {
-  const editorRect = editor.getBoundingClientRect();
-  const scrollOff = editor.scrollTop;
-  const results = [];
-  const seen = new Set();
+  const doc = editor.ownerDocument;
+  const origin = editor.getBoundingClientRect().top - editor.scrollTop;
+  const items = [];
+  const range = doc.createRange();
+  const addRect = (r, text, seg, atomic) => {
+    if (r.height <= 0) return;
+    const top = r.top - origin, bottom = r.bottom - origin;
+    const inset = atomic ? 0 : r.height / 4;
+    items.push({ top, bottom, coreTop: top + inset, coreBottom: bottom - inset, text, seg });
+  };
 
-  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
-  let tNode;
-  while (tNode = walker.nextNode()) {
-    if (tNode.parentElement && tNode.parentElement.closest('.page-break-marker')) continue;
-    const text = tNode.textContent;
-    let searchFrom = 0;
-    while (true) {
-      const nl = text.indexOf('\n', searchFrom);
-      if (nl === -1) break;
-      searchFrom = nl + 1;
-
-      const range = document.createRange();
-      range.setStart(tNode, nl);
-      range.setEnd(tNode, Math.min(nl + 1, text.length));
-      const rects = range.getClientRects();
-      if (rects.length === 0) continue;
-
-      const y = Math.round(rects[0].bottom - editorRect.top + scrollOff);
-      if (y > 0 && !seen.has(y)) {
-        seen.add(y);
-        const prevNl = text.lastIndexOf('\n', nl - 1);
-        const lineText = text.substring(prevNl + 1, nl);
-        results.push({ y, lineText });
+  const walker = doc.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+  let seg = 0;
+  for (let t; (t = walker.nextNode());) {
+    if (t.parentElement && t.parentElement.closest('.page-break-marker')) continue;
+    const text = t.data;
+    for (let start = 0; start <= text.length; seg++) {
+      let end = text.indexOf('\n', start);
+      if (end === -1) end = text.length;
+      if (end > start) {
+        range.setStart(t, start);
+        range.setEnd(t, end);
+        const piece = text.slice(start, end);
+        for (const r of range.getClientRects()) addRect(r, piece, seg, false);
       }
+      start = end + 1;
+    }
+  }
+  editor.querySelectorAll('tr, img, hr, .math, .katex').forEach(el => {
+    addRect(el.getBoundingClientRect(), '', seg++, true);
+  });
+
+  items.sort((a, b) => a.coreTop - b.coreTop);
+  const lines = [];
+  for (const it of items) {
+    const line = lines[lines.length - 1];
+    if (line && it.coreTop < line.coreBottom) {
+      line.coreBottom = Math.max(line.coreBottom, it.coreBottom);
+      line.bottom = Math.max(line.bottom, it.bottom);
+      line.parts.push(it);
+    } else {
+      lines.push({ coreBottom: it.coreBottom, bottom: it.bottom, parts: [it] });
     }
   }
 
-  for (const child of editor.children) {
-    if (!child.getBoundingClientRect) continue;
-    if (child.classList && child.classList.contains('page-break-marker')) continue;
-    const rect = child.getBoundingClientRect();
-    if (rect.height === 0) continue;
-    const y = Math.round(rect.bottom - editorRect.top + scrollOff);
-    if (y > 0 && !seen.has(y)) {
-      seen.add(y);
-      results.push({ y, lineText: (child.textContent || '').trim().substring(0, 80) });
-    }
-  }
-
-  results.sort((a, b) => a.y - b.y);
-  return results;
+  return lines.map(line => {
+    const seen = new Set();
+    const text = line.parts
+      .sort((a, b) => a.seg - b.seg)
+      .filter(p => !seen.has(p.seg) && seen.add(p.seg))
+      .map(p => p.text)
+      .join('');
+    return { y: Math.round(line.bottom), lineText: text.trim().substring(0, 80) };
+  }).filter(l => l.y > 0);
 }
 
 function _isSeparator(t) { return /^[═─━]{5,}$/.test(t.trim()); }
@@ -76,7 +93,15 @@ function _isHeadingLike(t) {
 }
 
 export function computePageBreaks(editor) {
-  const lines = _collectLineEnds(editor);
+  // Line Drift rotates the editor; measure the unrotated layout.
+  const transform = editor.style.transform;
+  if (transform) editor.style.transform = 'none';
+  let lines;
+  try {
+    lines = _collectLineEnds(editor);
+  } finally {
+    if (transform) editor.style.transform = transform;
+  }
   if (lines.length === 0) return [0];
 
   const breaks = [0];

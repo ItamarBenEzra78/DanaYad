@@ -18,7 +18,7 @@ import { scrambleText, unscrambleText } from './handwriting/ScrambleEngine.js';
 import { updateLineDrift } from './handwriting/LineDrift.js';
 
 // Pagination
-import { reflowPages, updatePageIndicator } from './pagination/PaginationEngine.js';
+import { reflowPages, updatePageIndicator, computePageBreaks } from './pagination/PaginationEngine.js';
 
 // Drawing
 import { toggleDrawMode, isDrawMode, initCanvasEvents } from './drawing/DrawingCanvas.js';
@@ -26,7 +26,8 @@ import { setDrawColor, toggleEraser, clearCanvas, undoCanvas, canvasHistory } fr
 import { toggleRuler } from './drawing/RulerTool.js';
 
 // Export
-import { openPdfModal, closePdfModal, exportToPdf } from './export/PdfExporter.js';
+import { openPdfModal, closePdfModal, exportToPdf, prepareSheet, hideSheetText, pdfFromScreenshots } from './export/PdfExporter.js';
+import { insertPlainText } from './editor/PasteHandler.js';
 
 // ── Expose functions to window for inline onclick handlers ──
 window.updateFontSize = updateFontSize;
@@ -70,6 +71,9 @@ window.openPdfModal = openPdfModal;
 window.closePdfModal = closePdfModal;
 window.exportToPdf = exportToPdf;
 
+// Used by the backend (Playwright) to paginate and compose exactly like the browser export.
+window.DanaYad = { computePageBreaks, prepareSheet, hideSheetText, pdfFromScreenshots, scrambleText, unscrambleText };
+
 window.globalUndo = function () {
   if (isDrawMode()) {
     undoCanvas();
@@ -103,8 +107,7 @@ window.onload = () => {
     editor.addEventListener('input', () => { syncToolbar(); reflowPages(); });
     editor.addEventListener('paste', e => {
       e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-      document.execCommand('insertText', false, text);
+      insertPlainText((e.clipboardData || window.clipboardData).getData('text/plain'));
       setTimeout(reflowPages, 50);
     });
   }

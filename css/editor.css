@@ -4,8 +4,11 @@
 
 /* ── Editor containers ── */
 #output-edit{direction:rtl;text-align:right;cursor:text;}
-#rotate-container{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;direction:rtl;text-align:right;min-height:100%;font-feature-settings:"calt" 1,"salt" 1;font-weight:300;-webkit-font-smoothing:antialiased;}
+#rotate-container{font-family:var(--font);font-size:16px;line-height:1.6;color:var(--text);outline:none;white-space:pre-wrap;word-wrap:break-word;direction:rtl;text-align:right;min-height:100%;font-feature-settings:"calt" 1;font-weight:300;-webkit-font-smoothing:antialiased;}
 #rotate-container:empty::before{content:'התחל לכתוב כאן...';color:var(--muted);pointer-events:none;display:block;}
+
+/* ── Lists: the global reset removes the indent, which pushed markers into the page margin ── */
+#rotate-container ol,#rotate-container ul{padding-inline-start:1.8em;}
 
 /* ── Table styles inside editor ── */
 #rotate-container table{width:100%;border-collapse:collapse;direction:rtl;margin:8px 0;}
