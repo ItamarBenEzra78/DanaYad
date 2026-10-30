@@ -1,0 +1,5 @@
+# End-to-end tests: python3 -m pytest tests/e2e  (also needs backend/requirements.txt)
+pytest>=8
+playwright>=1.40
+pypdf>=4
+Pillow>=10
