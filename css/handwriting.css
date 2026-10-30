@@ -3,3 +3,12 @@
 .hw-toggle{display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;}
 .hw-toggle input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
 .hw-toggle label{font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+
+/* ── Scramble (js/handwriting/ScrambleEngine.js) ── */
+#rotate-container .hw-c{display:inline-block;position:relative;line-height:1;}
+#rotate-container .hw-w{white-space:nowrap;}
+/* longer than its line: moves down as one unit like plain text, wraps inside only if it must */
+#rotate-container .hw-w.hw-w-long{display:inline-block;max-width:100%;white-space:pre-wrap;}
+#rotate-container .hw-ltr{unicode-bidi:isolate;}
+#output-edit.glyph-alts .hw-alt1{font-family:'GveretLevinAlt1',var(--font);}
+#output-edit.glyph-alts .hw-alt2{font-family:'GveretLevinAlt2',var(--font);}

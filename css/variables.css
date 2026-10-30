@@ -9,6 +9,21 @@
   font-display: swap;
 }
 
+/* Gveret Levin glyph alternates (ss01 / ss02 mapped to plain code points by
+   tools/make_alt_fonts.py) — selected per letter by ScrambleEngine */
+@font-face {
+  font-family: 'GveretLevinAlt1';
+  src: url('../fonts/GveretLevin-Alt1.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinAlt2';
+  src: url('../fonts/GveretLevin-Alt2.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+
 /* Playpen Sans Hebrew — Hebrew handwriting font (from Google Fonts, bundled) */
 @font-face {
   font-family: 'PlaypenSansHebrew';
