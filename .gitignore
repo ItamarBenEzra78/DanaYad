@@ -17,3 +17,8 @@ generated-pdfs/
 
 # Test evidence (tests/e2e writes test-output/after)
 test-output/
+
+# Session work files (homework solution PDF and preview images are heavy)
+docs/*.pdf
+docs/*.png
+docs/preview/

@@ -10,10 +10,14 @@
  *              gets one line per equation
  *   headings   "שאלה 3" gets its number in a circle and a line under it
  *   rhythm     uneven vertical space between blocks, more before a heading
+ *   formulas   x_j, x^2, sum_{j}, frac{a}{b}, sqrt{x} drawn as handwritten math
+ *              (js/handwriting/Formulas.js)
  *   clauses    a line ends after a comma or full stop once it has run
  *              55–85% of the width, instead of at the margin (applied after
  *              scrambling, when words are measurable)
  */
+
+import { renderFormulas } from './Formulas.js';
 
 const ORIG = 'hwOrig';          // dataset key: innerHTML before this module touched the block
 const BLOCKS = 'div, p, li, h1, h2, h3, h4';
@@ -168,6 +172,7 @@ export function layoutBeforeScramble(ed, rand) {
   markHeadings(ed);
   circleSections(ed);
   markLines(ed);
+  renderFormulas(ed, remember);
   rhythm(ed, rand);
 }
 

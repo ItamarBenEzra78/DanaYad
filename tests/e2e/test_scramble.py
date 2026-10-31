@@ -172,3 +172,20 @@ def test_alternates_only_with_gveret_levin(make_app, static_url):
     assert not app.page.evaluate("document.getElementById('output-edit').classList.contains('glyph-alts')")
     app.page.locator(".font-card", has_text="גברת לווין").first.click()
     assert app.page.evaluate("document.getElementById('output-edit').classList.contains('glyph-alts')")
+
+
+def test_formulas_render_and_reset(make_app, static_url):
+    app = make_app(static_url)
+    app.set_html("<div>Q = I + P + P^2 = (I − P)^-1</div><div>sum_{j} W_j = frac{319}{16}, sqrt{x^2}</div><div>report_v2.pdf</div>")
+    before = app.html()
+    app.page.evaluate("scrambleText(3)")
+    app.settle()
+    n = lambda sel: app.page.evaluate("s => document.querySelectorAll('#rotate-container ' + s).length", sel)
+    assert n(".hw-sup") == 3 and n(".hw-sub") == 1
+    assert n(".hw-sum") == 1 and n(".hw-frac") == 1 and n(".hw-sqrt") == 1
+    assert n("svg.hw-sym") == 2
+    assert app.page.evaluate("document.querySelector('#rotate-container div:last-child').innerHTML").count("hw-sub") == 0, \
+        "a file name outside a math block must stay plain"
+    app.page.evaluate("unscrambleText()")
+    app.settle()
+    assert app.html() == before
