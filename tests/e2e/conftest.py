@@ -34,9 +34,11 @@ def _wait(url, timeout=30):
 @pytest.fixture(scope="session")
 def static_url():
     port = _free_port()
+    os.makedirs(OUT_DIR, exist_ok=True)
+    log = open(os.path.join(OUT_DIR, "static-server.log"), "w")
     proc = subprocess.Popen(
         [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", ROOT],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        stdout=log, stderr=log)
     url = f"http://127.0.0.1:{port}/"
     _wait(url)
     yield url
@@ -132,8 +134,18 @@ def make_app(browser):
         contexts.append(ctx)
         page = ctx.new_page()
         app = App(page)
+        console = []
+        page.on("console", lambda m: console.append(f"{m.type}: {m.text}") if m.type in ("error", "warning") else None)
+        page.on("requestfailed", lambda r: console.append(f"requestfailed: {r.url} {r.failure}"))
         page.goto(url, wait_until="networkidle")
-        page.wait_for_function("!!(window.DanaYad && window.updateHwParam)")
+        try:
+            page.wait_for_function("!!(window.DanaYad && window.updateHwParam)", timeout=15000)
+        except Exception:
+            # A dropped module request leaves the app unloaded; record why, then load once more.
+            with open(os.path.join(OUT_DIR, "load-failures.log"), "a") as f:
+                f.write(f"{url}\n" + "\n".join(console) + "\n---\n")
+            page.reload(wait_until="networkidle")
+            page.wait_for_function("!!(window.DanaYad && window.updateHwParam)", timeout=30000)
         app.settle()
         return app
 
