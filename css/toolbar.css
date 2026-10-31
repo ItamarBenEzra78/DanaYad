@@ -16,3 +16,9 @@
 
 /* ── Ruler mode indicator ── */
 .fb.ruler-active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;}
+
+/* ── Pen colours and highlighter ── */
+.pen-swatches{display:inline-flex;gap:3px;align-items:center;}
+.fb.pen-swatch{min-width:18px;width:18px;height:18px;padding:0;border-radius:50%;background:var(--pen);border:2px solid transparent;}
+.fb.pen-swatch:hover{background:var(--pen);border-color:var(--border);}
+.fb.pen-swatch.active{border-color:var(--text);box-shadow:0 0 0 1px #fff inset;}

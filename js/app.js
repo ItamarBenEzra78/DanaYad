@@ -4,7 +4,7 @@
 import { updateFontSize, updateLineHeight, updateLetterSpacing, setBackground } from './controls/StyleControls.js';
 
 // Editor
-import { toggleBold, toggleItalic, toggleUnderline, alignLeft, alignCenter, alignRight, insertBullet, insertNumbered, syncToolbar } from './editor/FormattingToolbar.js';
+import { toggleBold, toggleItalic, toggleUnderline, alignLeft, alignCenter, alignRight, insertBullet, insertNumbered, syncToolbar, setPenColor, toggleHighlight } from './editor/FormattingToolbar.js';
 import { toggleTextEraser, handleKey } from './editor/TextEraser.js';
 import { toggleTablePopup, insertTable } from './editor/TableManager.js';
 import { insertSymbol, showSymbolGrid } from './editor/SymbolInserter.js';
@@ -44,6 +44,8 @@ window.alignRight = alignRight;
 window.insertBullet = insertBullet;
 window.insertNumbered = insertNumbered;
 window.syncToolbar = syncToolbar;
+window.setPenColor = setPenColor;
+window.toggleHighlight = toggleHighlight;
 
 window.toggleTextEraser = toggleTextEraser;
 window.handleKey = handleKey;

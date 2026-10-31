@@ -12,7 +12,9 @@
 
 /* ── Table styles inside editor ── */
 #rotate-container table{width:100%;border-collapse:collapse;direction:rtl;margin:8px 0;}
-#rotate-container th,#rotate-container td{border:1px solid #555;padding:6px 8px;text-align:right;min-width:40px;vertical-align:top;}
+#rotate-container th,#rotate-container td{border:1.5px solid currentColor;padding:6px 8px;text-align:right;min-width:40px;vertical-align:top;}
+/* a highlighter stroke: a translucent band a little taller than the text, like a marker tip */
+#rotate-container [style*="background-color"]{box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0.12em 0.15em;border-radius:0.25em 0.1em 0.3em 0.12em;}
 #rotate-container th{background:rgba(0,0,0,0.04);font-weight:700;}
 
 /* ── Math ── */

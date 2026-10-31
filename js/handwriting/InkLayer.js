@@ -133,9 +133,12 @@ export async function applyInkLayer(canvas, scale, options = {}) {
         pGrid.at(cx, cy, d);
         const pv = d[1];                       // -1 .. 1
 
+        // Light pixels are a highlighter band, not ink: keep their coverage as drawn.
+        const inv0 = cov > 0.001 ? 1 / cov : 0;
+        const light = (0.299 * rb[i] + 0.587 * gb[i] + 0.114 * bb[i]) * inv0 > 150; // luma: yellow ~206, pens 50-90
         // weight: lower threshold = thicker stroke
         const t = p.base - p.weight * wv;
-        let alpha = smoothstep(t - p.sharpen, t + p.sharpen, cov);
+        let alpha = light ? a[i] : smoothstep(t - p.sharpen, t + p.sharpen, cov);
         // ragged edge
         if (alpha > 0.05 && alpha < 0.95) {
           alpha *= 1 - p.edge * (hashNoise(x, Y, p.seed) - 0.5);
