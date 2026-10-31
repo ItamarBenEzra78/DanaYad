@@ -59,6 +59,7 @@ class PdfRequest(BaseModel):
     editor_style: str
     root_style: str
     hw_params: dict
+    ink_layer: bool = True
 
 
 @app.post("/api/render")
@@ -133,8 +134,18 @@ async def generate_pdf(req: PdfRequest):
         await page.wait_for_timeout(500)
 
         sheet = page.locator("#output-edit")
-        content = await sheet.screenshot(type="png")
-        await page.evaluate("DanaYad.hideSheetText(document.getElementById('output-edit'))")
+        # Text alone on a transparent background (the SVG filter is already rendered), then the paper alone.
+        await page.evaluate("""() => {
+            document.body.style.background = 'transparent';
+            DanaYad.hideSheetPaper(document.getElementById('output-edit'));
+        }""")
+        content = await sheet.screenshot(type="png", omit_background=True)
+        await page.evaluate("""() => {
+            const oe = document.getElementById('output-edit');
+            oe.style.removeProperty('background');
+            document.body.style.background = '#fff';
+            DanaYad.hideSheetText(oe);
+        }""")
         background = await sheet.screenshot(type="png")
 
         def data_url(png):
@@ -146,6 +157,7 @@ async def generate_pdf(req: PdfRequest):
             "breaks": breaks,
             "lineHeight": line_height,
             "scale": CAPTURE_SCALE,
+            "ink": req.ink_layer and "hw-filter" in req.output_edit_class.split(),
         })
         await browser.close()
 

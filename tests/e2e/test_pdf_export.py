@@ -17,6 +17,11 @@ from samples import HEBREW, MIXED, PASTED_LIST, RICH_HTML, long_document
 PATHS = ["browser", "backend"]
 MARGIN_SLACK = 16       # CSS px: the ink filter displaces up to 6.5px, scrambled glyphs overhang a little
 MIN_PREVIEW_IOU = 0.6   # PDF vs screen ink overlap (best of +-2px); the pre-fix browser PDF scored 0.31
+# The ink layer (pen pressure, pooling, ragged edges) changes strokes on purpose, so the
+# fidelity scenarios export without it; the *_ink scenarios keep it and check shape only.
+INK_SCENARIOS = {"hebrew_ink", "mixed_scrambled_ink", "long_scrambled_ink"}
+INK_MIN_IOU = 0.3       # still the same text in the same place
+INK_COUNT_RANGE = (0.7, 1.9)  # ink pixels vs the preview: thicker is fine, vanished or blotted is not
 # html2canvas draws collapsed table borders about twice as thick as Chrome; text matches.
 PREVIEW_IOU_OVERRIDE = {"rich_browser": 0.5, "rich_scrambled_browser": 0.5}
 
@@ -41,6 +46,9 @@ SCENARIOS = {
     "effects_off": lambda app: (app.paste(MIXED), app.page.evaluate("document.getElementById('hw-enabled').click()")),
     "long": lambda app: app.paste(long_document()),
     "long_scrambled": lambda app: (app.paste(long_document()), app.page.evaluate("scrambleText(12)")),
+    "hebrew_ink": lambda app: app.paste(HEBREW),
+    "mixed_scrambled_ink": lambda app: (app.paste(MIXED), app.page.evaluate("scrambleText(7)")),
+    "long_scrambled_ink": lambda app: (app.paste(long_document()), app.page.evaluate("scrambleText(12)")),
 }
 
 
@@ -52,6 +60,7 @@ def _url(path, static_url, backend_url):
 @pytest.mark.parametrize("path", PATHS)
 def test_export(make_app, static_url, backend_url, out_dir, path, scenario):
     app = make_app(_url(path, static_url, backend_url))
+    app.page.evaluate("(on) => { DanaYad.exportOptions.ink = on; }", scenario in INK_SCENARIOS)
     SCENARIOS[scenario](app)
     app.settle()
     breaks = app.breaks()
@@ -88,8 +97,14 @@ def test_export(make_app, static_url, backend_url, out_dir, path, scenario):
     if len(pages) == 1:
         screen = Image.open(preview).convert("RGB")
         top = 100  # the formatting bar overlaps the sheet's top edge in the preview
-        iou = pc.best_offset_iou(screen.crop((0, top, screen.width, pc.PAGE_H * s)),
-                         pages[0]["image"].crop((0, top, screen.width, pc.PAGE_H * s)))
+        a = screen.crop((0, top, screen.width, pc.PAGE_H * s))
+        b = pages[0]["image"].crop((0, top, screen.width, pc.PAGE_H * s))
+        iou = pc.best_offset_iou(a, b)
         with open(os.path.join(out_dir, "iou.txt"), "a") as f:
             f.write(f"{name}\t{iou:.3f}\n")
-        assert iou >= PREVIEW_IOU_OVERRIDE.get(name, MIN_PREVIEW_IOU), f"PDF differs from the preview (ink IoU {iou:.2f})"
+        if scenario in INK_SCENARIOS:
+            ratio = pc.region_ink(pc.ink_mask(b), (0, 0, b.width, b.height)) / max(1, pc.region_ink(pc.ink_mask(a), (0, 0, a.width, a.height)))
+            assert iou >= INK_MIN_IOU, f"ink layer moved the text (IoU {iou:.2f})"
+            assert INK_COUNT_RANGE[0] <= ratio <= INK_COUNT_RANGE[1], f"ink layer changed the amount of ink by x{ratio:.2f}"
+        else:
+            assert iou >= PREVIEW_IOU_OVERRIDE.get(name, MIN_PREVIEW_IOU), f"PDF differs from the preview (ink IoU {iou:.2f})"

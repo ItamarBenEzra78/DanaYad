@@ -133,6 +133,7 @@ def make_app(browser):
         page = ctx.new_page()
         app = App(page)
         page.goto(url, wait_until="networkidle")
+        page.wait_for_function("!!(window.DanaYad && window.updateHwParam)")
         app.settle()
         return app
 

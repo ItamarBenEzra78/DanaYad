@@ -2,6 +2,7 @@ import { getEditor, getOutputEdit } from '../utils/dom.js';
 import { API_URL, PAGE_HEIGHT, PAGE_PADDING_TOP, PAGE_PADDING_BOTTOM, CONTENT_HEIGHT } from '../config.js';
 import { HW } from '../handwriting/HandwritingEngine.js';
 import { readFilterLayers, applyInkFilter } from '../handwriting/InkDisplacement.js';
+import { applyInkLayer } from '../handwriting/InkLayer.js';
 import { computePageBreaks } from '../pagination/PaginationEngine.js';
 
 const A4_WIDTH_MM = 210;
@@ -13,6 +14,9 @@ const SHEET_TAIL = 100;  // extra background below the text, for the last page's
 const INK_THRESHOLD = 160 * 3; // sum of RGB below this counts as ink (backgrounds are lighter)
 const PDF_FILENAME = 'DanaYad_Document.pdf';
 const BACKEND_TIMING = 'danayad-backend';
+
+/** Export switches; `ink` is the pen-on-paper layer (js/handwriting/InkLayer.js). */
+export const exportOptions = { ink: true };
 
 export function openPdfModal() {
   document.getElementById('pdf-overlay').classList.add('open');
@@ -32,6 +36,7 @@ export function closePdfModal() {
  */
 export function prepareSheet(sheet) {
   const editor = sheet.querySelector('#rotate-container');
+  sheet.classList.add('print-sheet'); // PaginationEngine leaves a print sheet alone (no markers)
   sheet.querySelectorAll('.page-break-marker').forEach(m => m.remove());
   const set = (el, prop, val) => el.style.setProperty(prop, val, 'important');
   set(sheet, 'width', SHEET_WIDTH + 'px');
@@ -50,6 +55,11 @@ export function prepareSheet(sheet) {
 /** Hide the text but keep the layout, to capture the sheet's background alone. */
 export function hideSheetText(sheet) {
   sheet.querySelector('#rotate-container').style.visibility = 'hidden';
+}
+
+/** Drop the paper, to capture the text alone on a transparent background. */
+export function hideSheetPaper(sheet) {
+  sheet.style.setProperty('background', 'transparent', 'important');
 }
 
 /* ── Page composition (shared by both export paths) ────────────────── */
@@ -145,7 +155,9 @@ export function composePages(content, background, breaks, lineHeight, scale) {
   const W = content.width;
   const pageH = Math.round(PAGE_HEIGHT * scale);
   const padTop = Math.round(PAGE_PADDING_TOP * scale);
-  const window = Math.round((lineHeight / 2) * scale);
+  // Scrambled, variant-font letters overhang their line box by up to a line, so the seam
+  // may wander a full line height around the nominal cut.
+  const window = Math.round(lineHeight * scale);
   const nominal = breaks.map(y => Math.round((y + PAGE_PADDING_TOP) * scale));
   const seams = nominal.map((y, i) => (i === 0 ? new Int32Array(W) : _seam(content, y, window)));
   seams.push(new Int32Array(W).fill(content.height));
@@ -195,9 +207,14 @@ function _loadCanvas(src) {
   });
 }
 
-/** Backend entry: screenshots (data URLs) → base64 PDF, through the same composer. */
-export async function pdfFromScreenshots({ content, background, breaks, lineHeight, scale }) {
+/**
+ * Backend entry: screenshots (data URLs; `content` is the text alone on a
+ * transparent background, with the SVG filter already rendered by Chrome)
+ * → base64 PDF, through the same ink layer and composer as the browser path.
+ */
+export async function pdfFromScreenshots({ content, background, breaks, lineHeight, scale, ink = true }) {
   const [c, b] = await Promise.all([_loadCanvas(content), _loadCanvas(background)]);
+  if (ink) await applyInkLayer(c, scale);
   const uri = pagesToPdf(composePages(c, b, breaks, lineHeight, scale)).output('datauristring');
   return uri.slice(uri.indexOf(',') + 1);
 }
@@ -249,6 +266,7 @@ function _captureEditorState() {
       jitter: HW.jitter,
       tremor: HW.tremor,
     },
+    ink_layer: exportOptions.ink,
   };
 }
 
@@ -339,10 +357,12 @@ async function _exportClientSide() {
   let breaks = null;
   let lineHeight = 24;
 
+  // Two captures: the text alone (transparent) and the paper alone. The ink
+  // filter and the ink layer touch the text only, so the paper stays flat.
   const capture = (textless) => html2canvas(outputEdit, {
     scale: CAPTURE_SCALE,
     useCORS: true,
-    backgroundColor: '#ffffff',
+    backgroundColor: textless ? '#ffffff' : null,
     onclone: (doc) => {
       const sheet = doc.getElementById('output-edit');
       sheet.classList.remove('hw-filter'); // applied below, on the bitmap
@@ -351,6 +371,7 @@ async function _exportClientSide() {
       if (textless) {
         hideSheetText(sheet);
       } else {
+        hideSheetPaper(sheet);
         breaks = b;
         lineHeight = parseFloat(doc.defaultView.getComputedStyle(sheet.querySelector('#rotate-container')).lineHeight) || lineHeight;
       }
@@ -360,7 +381,10 @@ async function _exportClientSide() {
   const content = await capture(false);
   const background = await capture(true);
   if (filtered) {
-    await applyInkFilter([content, background], readFilterLayers(document.getElementById('ink-tremor')), CAPTURE_SCALE);
+    // The screen filter sits on #rotate-container, i.e. inside the sheet's padding.
+    await applyInkFilter([content], readFilterLayers(document.getElementById('ink-tremor')), CAPTURE_SCALE,
+      { x: PAGE_PADDING_SIDE, y: PAGE_PADDING_TOP });
+    if (exportOptions.ink) await applyInkLayer(content, CAPTURE_SCALE);
   }
   _overlayDrawing(content.getContext('2d'), outputEdit);
 

@@ -24,6 +24,81 @@
   font-display: block;
 }
 
+/* Gveret Levin shape variants (tools/make_variant_fonts.py): the same letters with
+   deformed outlines, so repeated letters differ. ScrambleEngine picks one per letter. */
+@font-face {
+  font-family: 'GveretLevinVar1';
+  src: url('../fonts/GveretLevin-Var1.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar2';
+  src: url('../fonts/GveretLevin-Var2.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar3';
+  src: url('../fonts/GveretLevin-Var3.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar4';
+  src: url('../fonts/GveretLevin-Var4.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar5';
+  src: url('../fonts/GveretLevin-Var5.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar6';
+  src: url('../fonts/GveretLevin-Var6.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar7';
+  src: url('../fonts/GveretLevin-Var7.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar8';
+  src: url('../fonts/GveretLevin-Var8.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar9';
+  src: url('../fonts/GveretLevin-Var9.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar10';
+  src: url('../fonts/GveretLevin-Var10.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar11';
+  src: url('../fonts/GveretLevin-Var11.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: 'GveretLevinVar12';
+  src: url('../fonts/GveretLevin-Var12.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+}
+
 /* Playpen Sans Hebrew — Hebrew handwriting font (from Google Fonts, bundled) */
 @font-face {
   font-family: 'PlaypenSansHebrew';

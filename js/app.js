@@ -26,7 +26,7 @@ import { setDrawColor, toggleEraser, clearCanvas, undoCanvas, canvasHistory } fr
 import { toggleRuler } from './drawing/RulerTool.js';
 
 // Export
-import { openPdfModal, closePdfModal, exportToPdf, prepareSheet, hideSheetText, pdfFromScreenshots } from './export/PdfExporter.js';
+import { openPdfModal, closePdfModal, exportToPdf, prepareSheet, hideSheetText, hideSheetPaper, pdfFromScreenshots, exportOptions } from './export/PdfExporter.js';
 import { insertPlainText } from './editor/PasteHandler.js';
 
 // ── Expose functions to window for inline onclick handlers ──
@@ -72,7 +72,7 @@ window.closePdfModal = closePdfModal;
 window.exportToPdf = exportToPdf;
 
 // Used by the backend (Playwright) to paginate and compose exactly like the browser export.
-window.DanaYad = { computePageBreaks, prepareSheet, hideSheetText, pdfFromScreenshots, scrambleText, unscrambleText };
+window.DanaYad = { computePageBreaks, prepareSheet, hideSheetText, hideSheetPaper, pdfFromScreenshots, exportOptions, scrambleText, unscrambleText };
 
 window.globalUndo = function () {
   if (isDrawMode()) {

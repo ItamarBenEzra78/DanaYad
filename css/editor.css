@@ -72,6 +72,7 @@
 }
 
 /* ── Page break markers ── */
+.print-sheet .page-break-marker{display:none;}
 .page-break-marker{
   position:absolute;
   left:0;right:0;

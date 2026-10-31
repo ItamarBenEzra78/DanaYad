@@ -136,7 +136,7 @@ export function readFilterLayers(filterEl) {
  * layers can be read at displaced, off-grid points by bilinear lookup.
  * The grid step resolves the layer's highest octave.
  */
-class FieldGrid {
+export class FieldGrid {
   constructor(layer, x0, y0, x1, y1, minStep) {
     const n = layer.noise;
     const fmax = Math.max(n.fx, n.fy) * 2 ** (n.octaves - 1);
@@ -178,12 +178,13 @@ const BAND_ROWS = 256;
 const nextFrame = () => new Promise(r => setTimeout(r, 0));
 
 /**
- * Apply the filter layers in place to one or more same-sized canvases
- * (e.g. the sheet and its background), `scale` device px per CSS px, with
- * the canvas origin at the filtered element's border-box origin.
+ * Apply the filter layers in place to one or more same-sized canvases,
+ * `scale` device px per CSS px. The noise is anchored where the browser
+ * anchors it: at the filtered element's border-box origin, which lies
+ * `origin` CSS px (x, y) from the canvas origin.
  * Works in horizontal bands so memory stays bounded for long documents.
  */
-export async function applyInkFilter(canvases, layers, scale) {
+export async function applyInkFilter(canvases, layers, scale, origin = { x: 0, y: 0 }) {
   if (!layers.length || !canvases.length) return;
   const W = canvases[0].width, H = canvases[0].height;
   const ctxs = canvases.map(c => c.getContext('2d', { willReadFrequently: true }));
@@ -202,16 +203,17 @@ export async function applyInkFilter(canvases, layers, scale) {
     // Layer k is read at points already displaced by the layers after it.
     const marginCss = reachCss + 2;
     const grids = layers.map(l => new FieldGrid(
-      l, -marginCss, y0 / scale - marginCss, W / scale + marginCss, y1 / scale + marginCss, minStep));
+      l, -marginCss - origin.x, y0 / scale - marginCss - origin.y, W / scale + marginCss - origin.x, y1 / scale + marginCss - origin.y, minStep));
     const outs = ctxs.map(() => new ImageData(W, y1 - y0));
 
     for (let Y = y0; Y < y1; Y++) {
       for (let X = 0; X < W; X++) {
-        let x = (X + 0.5) / scale, y = (Y + 0.5) / scale;
+        let x = (X + 0.5) / scale - origin.x, y = (Y + 0.5) / scale - origin.y;
         for (let k = grids.length - 1; k >= 0; k--) {
           grids[k].at(x, y, d);
           x += d[0]; y += d[1];
         }
+        x += origin.x; y += origin.y;
         const sx = x * scale - 0.5, sy = y * scale - 0.5 - sy0;
         const o = ((Y - y0) * W + X) * 4;
         for (let c = 0; c < srcs.length; c++) sampleBilinear(srcs[c], sx, sy, outs[c].data, o);

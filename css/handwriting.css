@@ -1,14 +1,28 @@
 /* ── Handwriting realism effects ── */
-#output-edit.hw-filter{filter:url(#ink-tremor);}
+/* on the text only, so the paper (background of #output-edit) stays flat */
+#output-edit.hw-filter #rotate-container{filter:url(#ink-tremor);}
 .hw-toggle{display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;}
 .hw-toggle input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
 .hw-toggle label{font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
 
 /* ── Scramble (js/handwriting/ScrambleEngine.js) ── */
 #rotate-container .hw-c{display:inline-block;position:relative;line-height:1;}
-#rotate-container .hw-w{white-space:nowrap;}
+#rotate-container .hw-w{white-space:nowrap;position:relative;}
 /* longer than its line: moves down as one unit like plain text, wraps inside only if it must */
 #rotate-container .hw-w.hw-w-long{display:inline-block;max-width:100%;white-space:pre-wrap;}
 #rotate-container .hw-ltr{unicode-bidi:isolate;}
+/* shape variant per letter (fonts/GveretLevin-Var*.ttf); the contextual .hw-alt* forms win when both apply */
+#output-edit.glyph-alts .hw-v1{font-family:'GveretLevinVar1',var(--font);}
+#output-edit.glyph-alts .hw-v2{font-family:'GveretLevinVar2',var(--font);}
+#output-edit.glyph-alts .hw-v3{font-family:'GveretLevinVar3',var(--font);}
+#output-edit.glyph-alts .hw-v4{font-family:'GveretLevinVar4',var(--font);}
+#output-edit.glyph-alts .hw-v5{font-family:'GveretLevinVar5',var(--font);}
+#output-edit.glyph-alts .hw-v6{font-family:'GveretLevinVar6',var(--font);}
+#output-edit.glyph-alts .hw-v7{font-family:'GveretLevinVar7',var(--font);}
+#output-edit.glyph-alts .hw-v8{font-family:'GveretLevinVar8',var(--font);}
+#output-edit.glyph-alts .hw-v9{font-family:'GveretLevinVar9',var(--font);}
+#output-edit.glyph-alts .hw-v10{font-family:'GveretLevinVar10',var(--font);}
+#output-edit.glyph-alts .hw-v11{font-family:'GveretLevinVar11',var(--font);}
+#output-edit.glyph-alts .hw-v12{font-family:'GveretLevinVar12',var(--font);}
 #output-edit.glyph-alts .hw-alt1{font-family:'GveretLevinAlt1',var(--font);}
 #output-edit.glyph-alts .hw-alt2{font-family:'GveretLevinAlt2',var(--font);}

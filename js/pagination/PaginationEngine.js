@@ -145,7 +145,7 @@ export function computePageBreaks(editor) {
 function _doReflow() {
   _rafPending = false;
   const editor = getEditor();
-  if (!editor) return;
+  if (!editor || editor.closest('.print-sheet')) return; // an export in progress: keep its layout
 
   editor.querySelectorAll('.page-break-marker,.page-gap').forEach(el => el.remove());
   editor.style.minHeight = CONTENT_HEIGHT + 'px';

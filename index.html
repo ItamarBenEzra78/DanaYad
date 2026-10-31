@@ -41,10 +41,10 @@
     <feDisplacementMap id="hw-wobble-scale" in="SourceGraphic" in2="wobble" scale="7" xChannelSelector="R" yChannelSelector="G" result="wobbled"/>
     <!-- Layer 2: character jitter — per-character positional variation -->
     <feTurbulence id="hw-jitter" type="turbulence" baseFrequency="0.035 0.025" numOctaves="3" seed="5" result="jitter"/>
-    <feDisplacementMap id="hw-jitter-scale" in="wobbled" in2="jitter" scale="4" xChannelSelector="G" yChannelSelector="R" result="jittered"/>
+    <feDisplacementMap id="hw-jitter-scale" in="wobbled" in2="jitter" scale="2" xChannelSelector="G" yChannelSelector="R" result="jittered"/>
     <!-- Layer 3: ink micro-tremor — fine pen shake -->
     <feTurbulence id="hw-ink" type="fractalNoise" baseFrequency="0.09" numOctaves="4" seed="8" result="texture"/>
-    <feDisplacementMap id="hw-ink-scale" in="jittered" in2="texture" scale="2" xChannelSelector="R" yChannelSelector="G"/>
+    <feDisplacementMap id="hw-ink-scale" in="jittered" in2="texture" scale="0.5" xChannelSelector="R" yChannelSelector="G"/>
   </filter>
 </svg>
 
@@ -113,13 +113,13 @@
       </div>
       <div class="ctrl-row">
         <label>רעד אותיות</label>
-        <input type="range" id="hw-jitter" min="0" max="8" step="0.5" value="4" oninput="updateHwParam()">
-        <span class="val" id="hw-jitter-val">4</span>
+        <input type="range" id="hw-jitter" min="0" max="8" step="0.5" value="2" oninput="updateHwParam()">
+        <span class="val" id="hw-jitter-val">2</span>
       </div>
       <div class="ctrl-row">
         <label>רעד דיו</label>
-        <input type="range" id="hw-tremor" min="0" max="5" step="0.5" value="2" oninput="updateHwParam()">
-        <span class="val" id="hw-tremor-val">2</span>
+        <input type="range" id="hw-tremor" min="0" max="5" step="0.5" value="0.5" oninput="updateHwParam()">
+        <span class="val" id="hw-tremor-val">0.5</span>
       </div>
     </div>
 

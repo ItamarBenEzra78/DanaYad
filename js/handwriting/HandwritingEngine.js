@@ -4,8 +4,8 @@ import { getOutputEdit } from '../utils/dom.js';
 export const HW = {
   enabled: true,
   drift: 7,   // layer 1: baseline wobble
-  jitter: 4,  // layer 2: per-character jitter
-  tremor: 2,  // layer 3: ink micro-tremor
+  jitter: 2,  // layer 2: per-character jitter (letter shapes vary through the variant fonts now)
+  tremor: 0.5, // layer 3: ink micro-tremor; higher values fray the edges like a pencil
 };
 
 /**

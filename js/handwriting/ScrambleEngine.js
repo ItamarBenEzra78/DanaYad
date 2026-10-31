@@ -9,13 +9,20 @@ import { reflowPages } from '../pagination/PaginationEngine.js';
  *   <span class="hw-ltr" dir="ltr">  isolates a Latin / number run: inline-blocks are
  *                                    bidi-neutral, so without it "120" would read "021"
  *   <span class="hw-w">              one word: no line break between its letters
- *   <span class="hw-c">              one grapheme (letter + niqqud), rotated and resized
+ *   <span class="hw-c">              one grapheme (letter + niqqud), rotated and resized,
+ *                                    in one of the shape-variant fonts (.hw-v1 .. .hw-v12)
  */
 
 const ROTATE_SPREAD = 6;   // degrees, total
 const SIZE_SPREAD = 0.25;  // em, total
 const SHIFT_SPREAD = 0.25; // em, total
 const ALT_CHANCE = 0.35;   // letters with a Gveret Levin alternate that get one
+const VARIANTS = 12;       // fonts/GveretLevin-Var1..12.ttf: shape variants, one per letter
+const WORD_GAP_MIN = 0.04; // em, extra space before a word (a hand never writes words touching)
+const WORD_GAP_SPREAD = 0.14; // em, random extra on top
+const INDENT_SPREAD = 0.4; // em, random indent of a paragraph's first word
+const DRIFT_STEP = 0.07;   // em, baseline random walk per word
+const DRIFT_MAX = 0.2;     // em, bound of that walk
 const SKIP = '.page-break-marker, .math, .katex, script, style';
 const GENERATED = '.hw-c, .hw-w, .hw-ltr, .hw-scramble'; // .hw-scramble: pre-2026-10 format
 
@@ -131,6 +138,24 @@ function scrambleNode(textNode, rand) {
   const spansWords = r => cls.slice(r[0], r[1] + 1).some((c, k) => isSpace(r[0] + k));
   const base = i => (gs[i] || '')[0];
   let prevAlt = 0;
+  // Baseline wanders slowly along the text (a random walk, one step per word), and
+  // word gaps vary, so lines are not ruler-straight and spacing is not metronomic.
+  let drift = 0;
+  let firstWord = !textNode.previousSibling;
+  let afterSpace = firstWord;
+  const wordGap = () => {
+    let gap = WORD_GAP_MIN + rand() * WORD_GAP_SPREAD;
+    if (firstWord) { gap += rand() * INDENT_SPREAD; firstWord = false; }
+    return `${gap.toFixed(3)}em`;
+  };
+  // The gap goes on the side facing the previous text: inline-start of a word, or
+  // inline-end of a multi-word LTR run (its own direction is LTR, so that is its right).
+  const styleWord = word => {
+    drift = Math.max(-DRIFT_MAX, Math.min(DRIFT_MAX, drift + (rand() - 0.5) * 2 * DRIFT_STEP));
+    word.style.top = `${drift.toFixed(3)}em`;
+    if (afterSpace) word.style.marginInlineStart = wordGap();
+    afterSpace = false;
+  };
 
   const atom = i => {
     const span = document.createElement('span');
@@ -138,6 +163,7 @@ function scrambleNode(textNode, rand) {
     const alt = pickAlt(base(i), base(i - 1), prevAlt, base(i + 1), rand);
     prevAlt = alt;
     if (alt) span.classList.add('hw-alt' + alt);
+    else span.classList.add('hw-v' + (1 + Math.floor(rand() * VARIANTS)));
     span.style.transform = `rotate(${((rand() - 0.5) * ROTATE_SPREAD).toFixed(1)}deg)`;
     span.style.fontSize = `${(1 + (rand() - 0.5) * SIZE_SPREAD).toFixed(3)}em`;
     span.style.top = `${((rand() - 0.5) * SHIFT_SPREAD).toFixed(3)}em`;
@@ -159,12 +185,15 @@ function scrambleNode(textNode, rand) {
         let j = i;
         while (j < to && isSpace(j)) j++;
         parent.appendChild(document.createTextNode(gs.slice(i, j).join('')));
+        afterSpace = true;
         i = j;
         continue;
       }
       const run = runAt[i];
       if (!inRun && run && spansWords(run)) {
         const s = ltrSpan();
+        if (afterSpace) s.style.marginInlineEnd = wordGap();
+        afterSpace = false;
         emit(s, run[0], run[1] + 1, true);
         parent.appendChild(s);
         i = run[1] + 1;
@@ -172,6 +201,7 @@ function scrambleNode(textNode, rand) {
       }
       const word = document.createElement('span');
       word.className = 'hw-w';
+      styleWord(word);
       while (i < to && !isSpace(i)) {
         const r = runAt[i];
         if (!inRun && r && spansWords(r)) break;
