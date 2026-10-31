@@ -36,3 +36,26 @@
 #rotate-container table.hw-grid{width:auto;margin:0 1.2em 0 auto;}
 #rotate-container table.hw-grid th{background:none;font-weight:inherit;padding:.2em .7em;}
 #rotate-container table.hw-grid td{text-align:center;padding:.2em .6em;min-width:2.2em;}
+/* a result line: a drawn arrow before it, text a touch larger */
+#rotate-container .hw-result{margin-inline-start:1.2em;font-size:1.06em;}
+#rotate-container .hw-arrow{display:inline-block;position:relative;width:1.8em;height:.9em;margin-inline-end:.35em;vertical-align:-.15em;}
+#rotate-container .hw-arrow::before{content:'';position:absolute;right:.15em;left:.15em;top:50%;border-top:1.5px solid currentColor;}
+#rotate-container .hw-arrow::after{content:'';position:absolute;left:.1em;top:50%;width:.45em;height:.45em;border-left:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-50%) rotate(45deg);}
+/* ⊗ in the margin of a proof / check line */
+#rotate-container .hw-mark{display:inline-block;position:relative;width:1.1em;height:1.1em;border:1.5px solid currentColor;border-radius:50%;margin-inline-end:.4em;vertical-align:-.2em;}
+#rotate-container .hw-mark::before,#rotate-container .hw-mark::after{content:'';position:absolute;left:50%;top:15%;height:70%;border-left:1.5px solid currentColor;transform:translateX(-50%) rotate(45deg);}
+#rotate-container .hw-mark::after{transform:translateX(-50%) rotate(-45deg);}
+/* ── Formulas (js/handwriting/Formulas.js) ── */
+#rotate-container .hw-sub{font-size:.68em;vertical-align:-.35em;margin-inline-start:.04em;}
+#rotate-container .hw-sup{font-size:.68em;vertical-align:.55em;margin-inline-start:.04em;}
+#rotate-container .hw-frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:-.6em;margin:0 .15em;line-height:1.15;}
+#rotate-container .hw-num{border-bottom:1.5px solid currentColor;padding:0 .25em .05em;}
+#rotate-container .hw-den{padding:.05em .25em 0;}
+#rotate-container .hw-sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:-.5em;margin:0 .15em;line-height:1;}
+#rotate-container .hw-lim{font-size:.6em;min-height:1em;}
+#rotate-container .hw-sym{width:1.1em;height:1.4em;display:inline-block;vertical-align:middle;overflow:visible;}
+#rotate-container .hw-sqrt{display:inline-flex;align-items:flex-end;vertical-align:baseline;}
+#rotate-container .hw-root{width:.8em;height:1.4em;margin-inline-end:-.05em;}
+#rotate-container .hw-rad{border-top:1.5px solid currentColor;padding:.05em .2em 0 .15em;}
+/* a formula reads left to right, whatever the line's direction */
+#rotate-container .hw-frac,#rotate-container .hw-sum,#rotate-container .hw-sqrt{direction:ltr;unicode-bidi:isolate;}

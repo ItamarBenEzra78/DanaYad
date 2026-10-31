@@ -19,6 +19,10 @@ const ORIG = 'hwOrig';          // dataset key: innerHTML before this module tou
 const BLOCKS = 'div, p, li, h1, h2, h3, h4';
 const RE_GRID = /^([^:,]{1,24}):\s*(-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?)+)\s*$/;
 const RE_HEADING = /^(שאלה|תרגיל|סעיף)\s+(\d+)\b(.*)$/;
+// (\b is ASCII-only in JS, so Hebrew words are bounded with a lookahead instead)
+const RE_SECTION = /^([א-ת])\.(?=\s|$)/;             // "א." at the start of a block
+const RE_RESULT = /^(→|=>|<=|⇐|לכן(?=\s)|ולכן(?=\s)|סה"כ(?=\s))/;
+const RE_MARK = /^(הוכחה|בדיקה)(?=[\s:])/;
 const RE_EQ = /(^|[,;]\s*)([A-Za-z][\w'^]{0,5}\s*=)/g;
 const RE_HEBREW = /[א-ת]/;
 
@@ -101,6 +105,53 @@ function markHeadings(ed) {
   }
 }
 
+/** The first text node of a block, or null. */
+function firstText(block) {
+  const w = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  let t;
+  while ((t = w.nextNode())) if (/\S/.test(t.data)) return t;
+  return null;
+}
+
+/** "א. ..." → the letter in a circle (inside whatever span colours it). */
+function circleSections(ed) {
+  for (const b of blocksOf(ed)) {
+    const t = firstText(b);
+    if (!t) continue;
+    const m = RE_SECTION.exec(t.data);
+    if (!m || t.data.trimStart() !== t.data) continue;
+    remember(b);
+    const circ = document.createElement('span');
+    circ.className = 'hw-circ';
+    circ.textContent = m[1];
+    const rest = t.data.slice(m[0].length);
+    t.replaceWith(circ, ...(rest ? [document.createTextNode(rest)] : []));
+  }
+}
+
+/** A result line gets a drawn arrow; a proof / check line gets a ⊗ mark, like a grader's pen. */
+function markLines(ed) {
+  for (const b of blocksOf(ed)) {
+    const t = firstText(b);
+    if (!t) continue;
+    const text = t.data;
+    let m;
+    if ((m = RE_RESULT.exec(text))) {
+      remember(b);
+      const arrow = document.createElement('span');
+      arrow.className = 'hw-arrow';
+      const keep = /^[→⇐]|^=>|^<=/.test(m[1]) ? text.slice(m[0].length).trimStart() : text;
+      t.replaceWith(arrow, document.createTextNode(keep));
+      b.classList.add('hw-result');
+    } else if ((m = RE_MARK.exec(text))) {
+      remember(b);
+      const mark = document.createElement('span');
+      mark.className = 'hw-mark';
+      t.replaceWith(mark, document.createTextNode(text));
+    }
+  }
+}
+
 function rhythm(ed, rand) {
   for (const b of blocksOf(ed)) {
     if (b.closest('table')) continue;
@@ -115,6 +166,8 @@ export function layoutBeforeScramble(ed, rand) {
   convertGrids(ed);
   splitEquations(ed);
   markHeadings(ed);
+  circleSections(ed);
+  markLines(ed);
   rhythm(ed, rand);
 }
 
@@ -167,5 +220,7 @@ export function undoLayout(ed) {
   ed.querySelectorAll(`[data-hw-orig]`).forEach(b => {
     b.innerHTML = b.dataset[ORIG];
     delete b.dataset[ORIG];
+    b.classList.remove('hw-result');
+    if (!b.getAttribute('class')) b.removeAttribute('class');
   });
 }

@@ -13,6 +13,9 @@
  *   crossings where strokes cross or the ink is dense it goes darker
  *   edges     optionally ragged (a dry marker); off by default, a ballpoint
  *             leaves a clean edge
+ *   ends      a stroke thins and lightens where it starts and stops. With no
+ *             stroke data, an end is where the ink's local centre of mass is
+ *             displaced from the pixel (mid-stroke it is symmetric)
  *
  * Deterministic for a given seed, so the backend and the browser agree.
  * Runs in horizontal bands so memory stays bounded for long documents.
@@ -27,6 +30,7 @@ const DEFAULTS = {
   crossings: 0.08, // extra darkness where ink is dense
   edge: 0,         // raggedness of stroke edges (0 = clean pen line, 0.3 = dry marker)
   sharpen: 0.1,    // half-width of the coverage ramp: small = crisp edge
+  taper: 0.22,     // how much thinner a stroke gets at its ends (pen lifting off / landing)
 };
 
 const BAND_ROWS = 256;
@@ -117,6 +121,11 @@ export async function applyInkLayer(canvas, scale, options = {}) {
     blur121(a, W, h, ab, tmp); blur121(r, W, h, rb, tmp); blur121(g, W, h, gb, tmp); blur121(b, W, h, bb, tmp);
     const dens = new Float32Array(N);
     boxBlur(a, W, h, 3 * scale, dens, tmp);
+    // first moments of the ink around each pixel, for the stroke-end measure
+    const mx = new Float32Array(N), my = new Float32Array(N);
+    for (let yy = 0, k = 0; yy < h; yy++) for (let x = 0; x < W; x++, k++) { mx[k] = a[k] * x; my[k] = a[k] * yy; }
+    const mxb = new Float32Array(N), myb = new Float32Array(N);
+    boxBlur(mx, W, h, 3 * scale, mxb, tmp); boxBlur(my, W, h, 3 * scale, myb, tmp);
 
     const margin = 4;
     const wGrid = new FieldGrid(weightLayer, -margin, sy0 / scale - margin, W / scale + margin, sy1 / scale + margin, 1 / scale);
@@ -136,8 +145,14 @@ export async function applyInkLayer(canvas, scale, options = {}) {
         // Light pixels are a highlighter band, not ink: keep their coverage as drawn.
         const inv0 = cov > 0.001 ? 1 / cov : 0;
         const light = (0.299 * rb[i] + 0.587 * gb[i] + 0.114 * bb[i]) * inv0 > 150; // luma: yellow ~206, pens 50-90
-        // weight: lower threshold = thicker stroke
-        const t = p.base - p.weight * wv;
+        // stroke end: centre of mass of nearby ink displaced from this pixel
+        let endness = 0;
+        if (dens[i] > 0.01) {
+          const ox = mxb[i] / dens[i] - x, oy = myb[i] / dens[i] - yy;
+          endness = smoothstep(0.9 * scale, 2.2 * scale, Math.hypot(ox, oy));
+        }
+        // weight: lower threshold = thicker stroke; ends raise it (thinner)
+        const t = p.base - p.weight * wv + p.taper * endness;
         let alpha = light ? a[i] : smoothstep(t - p.sharpen, t + p.sharpen, cov);
         // ragged edge
         if (alpha > 0.05 && alpha < 0.95) {
@@ -148,7 +163,7 @@ export async function applyInkLayer(canvas, scale, options = {}) {
 
         // colour from the blurred premultiplied planes
         const inv = cov > 0.001 ? 1 / cov : 0;
-        let lum = 1 + p.pooling * pv * 0.5;
+        let lum = (1 + p.pooling * pv * 0.5) * (1 + 0.18 * endness);
         const dense = dens[i];
         lum *= 1 - p.crossings * Math.max(0, dense - 0.4) / 0.6;
         const q = i * 4;
