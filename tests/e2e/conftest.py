@@ -37,7 +37,7 @@ def static_url():
     os.makedirs(OUT_DIR, exist_ok=True)
     log = open(os.path.join(OUT_DIR, "static-server.log"), "w")
     proc = subprocess.Popen(
-        [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", ROOT],
+        [sys.executable, os.path.join(os.path.dirname(__file__), "static_server.py"), str(port), ROOT],
         stdout=log, stderr=log)
     url = f"http://127.0.0.1:{port}/"
     _wait(url)
@@ -131,6 +131,9 @@ def make_app(browser):
 
     def _make(url):
         ctx = browser.new_context(viewport={"width": 1400, "height": 1000}, device_scale_factor=2, accept_downloads=True)
+        # Never report test runs to the site's analytics.
+        ctx.route("**/*google-analytics.com/**", lambda route: route.abort())
+        ctx.route("**/*googletagmanager.com/**", lambda route: route.abort())
         contexts.append(ctx)
         page = ctx.new_page()
         app = App(page)
