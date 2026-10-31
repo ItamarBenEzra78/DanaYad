@@ -1,5 +1,6 @@
 import { getEditor } from '../utils/dom.js';
 import { reflowPages } from '../pagination/PaginationEngine.js';
+import { layoutBeforeScramble, wrapClauses, undoLayout } from './WritingLayout.js';
 
 /*
  * Per-letter jitter ("scramble"). Every text node is replaced in place, so
@@ -241,6 +242,7 @@ export function scrambleText(seed) {
   if (ed.querySelector(GENERATED)) unwrapGenerated(ed);
   _seed = Number.isFinite(seed) ? seed : _seed + 1;
   const rand = mulberry32(_seed);
+  layoutBeforeScramble(ed, rand);
 
   const walker = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT, {
     acceptNode: n => (n.parentElement && n.parentElement.closest(SKIP)) || !/\S/.test(n.data)
@@ -252,11 +254,13 @@ export function scrambleText(seed) {
   nodes.forEach(n => scrambleNode(n, rand));
 
   releaseLongWords(ed);
+  wrapClauses(ed, rand);
   reflowPages();
 }
 
 function unwrapGenerated(ed) {
   ed.querySelectorAll(GENERATED).forEach(el => el.replaceWith(...el.childNodes));
+  undoLayout(ed);
   ed.normalize();
 }
 

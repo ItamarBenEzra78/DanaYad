@@ -69,14 +69,14 @@ export function hideSheetPaper(sheet) {
  * a line box, but handwriting (and the ink filter) overflows line boxes, and
  * once letters are scrambled the descenders of one line can reach below the
  * ascenders of the next, so often no straight row is free of ink. The cut is
- * therefore a seam: one row per column, within +-window of the nominal row,
+ * therefore a seam: one row per column, between `up` above and `down` below the nominal row,
  * stepping at most one row between neighbouring columns, chosen by dynamic
  * programming to stay clearest of ink (then: fewest steps, closest to nominal).
  */
-function _seam(sheet, nominal, window) {
+function _seam(sheet, nominal, up, down) {
   const W = sheet.width;
-  const y0 = Math.max(0, nominal - window);
-  const R = Math.min(sheet.height, nominal + window + 1) - y0;
+  const y0 = Math.max(0, nominal - up);
+  const R = Math.min(sheet.height, nominal + down + 1) - y0;
   const seam = new Int32Array(W).fill(nominal);
   if (R <= 0) return seam;
   const { data } = sheet.getContext('2d', { willReadFrequently: true }).getImageData(0, y0, W, R);
@@ -155,11 +155,13 @@ export function composePages(content, background, breaks, lineHeight, scale) {
   const W = content.width;
   const pageH = Math.round(PAGE_HEIGHT * scale);
   const padTop = Math.round(PAGE_PADDING_TOP * scale);
-  // Scrambled, variant-font letters overhang their line box by up to a line, so the seam
-  // may wander a full line height around the nominal cut.
-  const window = Math.round(lineHeight * scale);
+  // The nominal cut is the bottom of the last line box. Descenders of that line reach
+  // below it, so the seam may dip a full line height down; above it lies the line itself,
+  // so it may rise only a little (otherwise a line's lower half lands on the next page).
+  const up = Math.round((lineHeight / 4) * scale);
+  const down = Math.round(lineHeight * scale);
   const nominal = breaks.map(y => Math.round((y + PAGE_PADDING_TOP) * scale));
-  const seams = nominal.map((y, i) => (i === 0 ? new Int32Array(W) : _seam(content, y, window)));
+  const seams = nominal.map((y, i) => (i === 0 ? new Int32Array(W) : _seam(content, y, up, down)));
   seams.push(new Int32Array(W).fill(content.height));
 
   return breaks.map((_, i) => {

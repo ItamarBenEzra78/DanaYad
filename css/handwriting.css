@@ -26,3 +26,13 @@
 #output-edit.glyph-alts .hw-v12{font-family:'GveretLevinVar12',var(--font);}
 #output-edit.glyph-alts .hw-alt1{font-family:'GveretLevinAlt1',var(--font);}
 #output-edit.glyph-alts .hw-alt2{font-family:'GveretLevinAlt2',var(--font);}
+
+/* ── Writing layout (js/handwriting/WritingLayout.js) ── */
+#rotate-container .hw-eqline{display:block;}
+#rotate-container .hw-eqline:not(.hw-eqlead){margin-inline-start:1.6em;}
+#rotate-container .hw-heading{display:inline-block;padding-bottom:.08em;border-bottom:1.5px solid currentColor;}
+#rotate-container .hw-circ{display:inline-block;width:1.45em;height:1.45em;line-height:1.35em;text-align:center;border:1.5px solid currentColor;border-radius:50%;margin:0 .15em;vertical-align:-.15em;}
+#rotate-container .hw-grid-wrap{margin:.4em 0 .6em;}
+#rotate-container table.hw-grid{width:auto;margin:0 1.2em 0 auto;}
+#rotate-container table.hw-grid th{background:none;font-weight:inherit;padding:.2em .7em;}
+#rotate-container table.hw-grid td{text-align:center;padding:.2em .6em;min-width:2.2em;}
