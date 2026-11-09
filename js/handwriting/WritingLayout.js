@@ -8,7 +8,8 @@
  *              row) become a hand-drawn table
  *   equations  a run of equations on one line ("A = 1, B = 3 + 1 = 4, ...")
  *              gets one line per equation
- *   headings   "שאלה 3" gets its number in a circle and a line under it
+ *   headings   "שאלה 3" gets its number in a circle and a line under it;
+ *              "סעיף 2" only the line
  *   rhythm     uneven vertical space between blocks, more before a heading
  *   formulas   x_j, x^2, sum_{j}, frac{a}{b}, sqrt{x} drawn as handwritten math
  *              (js/handwriting/Formulas.js)
@@ -110,7 +111,9 @@ function markHeadings(ed) {
     if (!m || b.children.length > 1) continue;
     remember(b);
     const color = b.firstElementChild && b.firstElementChild.style ? b.firstElementChild.style.color : '';
-    b.innerHTML = `<span class="hw-heading"${color ? ` style="color:${color}"` : ''}>${esc(m[1])} <span class="hw-circ">${m[2]}</span>${esc(m[3])}</span>`;
+    // a question number is circled; a section ("סעיף 2") is only underlined
+    const number = m[1] === 'סעיף' ? m[2] : `<span class="hw-circ">${m[2]}</span>`;
+    b.innerHTML = `<span class="hw-heading"${color ? ` style="color:${color}"` : ''}>${esc(m[1])} ${number}${esc(m[3])}</span>`;
   }
 }
 

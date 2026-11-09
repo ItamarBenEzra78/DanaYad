@@ -248,3 +248,13 @@ def test_no_line_break_inside_a_number_list(make_app, static_url):
     bad = app.page.evaluate("""() => Array.from(document.querySelectorAll('br.hw-br'))
         .filter(br => br.nextElementSibling && /^[\\d(]/.test(br.nextElementSibling.textContent)).length""")
     assert bad == 0
+
+
+def test_question_number_is_circled_section_number_is_not(make_app, static_url):
+    app = make_app(static_url)
+    app.set_html("<div>שאלה 2</div><div>סעיף 3</div><div>טקסט</div>")
+    app.page.evaluate("scrambleText(9)")
+    app.settle()
+    n = lambda sel: app.page.evaluate("s => document.querySelectorAll('#rotate-container ' + s).length", sel)
+    assert n(".hw-heading") == 2
+    assert n("div:nth-child(1) .hw-circ") == 1 and n("div:nth-child(2) .hw-circ") == 0
