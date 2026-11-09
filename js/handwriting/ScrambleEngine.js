@@ -144,7 +144,7 @@ function scrambleNode(textNode, rand) {
   let drift = 0;
   // Scripts, limits and circled numbers hug their base; a formula token is not a paragraph start.
   const host = textNode.parentElement;
-  const tight = !!(host && host.closest('.hw-sub, .hw-sup, .hw-lim, .hw-circ'));
+  const tight = !!(host && host.closest('.hw-sub, .hw-sup, .hw-lim'));
   const inFormula = tight || !!(host && host.closest('.hw-var, .hw-num, .hw-den, .hw-rad'));
   let firstWord = !textNode.previousSibling && !inFormula;
   let afterSpace = firstWord;

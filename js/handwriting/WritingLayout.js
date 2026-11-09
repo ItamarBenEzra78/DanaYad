@@ -8,8 +8,8 @@
  *              row) become a hand-drawn table
  *   equations  a run of equations on one line ("A = 1, B = 3 + 1 = 4, ...")
  *              gets one line per equation
- *   headings   "שאלה 3" gets its number in a circle and a line under it;
- *              "סעיף 2" only the line
+ *   headings   "שאלה 3" / "סעיף 2" get a line under them (no circles: Itamar
+ *              found them distracting)
  *   rhythm     uneven vertical space between blocks, more before a heading
  *   formulas   x_j, x^2, sum_{j}, frac{a}{b}, sqrt{x} drawn as handwritten math
  *              (js/handwriting/Formulas.js)
@@ -28,7 +28,6 @@ const RE_GRID = new RegExp(String.raw`^([^:,]{1,24}):\s*(${CELL}(?:\s*,\s*${CELL
 const WIDE_GRID = 10;            // columns from which cells get tighter
 const RE_HEADING = /^(שאלה|תרגיל|סעיף)\s+(\d+)\b(.*)$/;
 // (\b is ASCII-only in JS, so Hebrew words are bounded with a lookahead instead)
-const RE_SECTION = /^([א-ת])\.(?=\s|$)/;             // "א." at the start of a block
 const RE_RESULT = /^(→|=>|<=|⇐|לכן(?=\s)|ולכן(?=\s)|סה"כ(?=\s))/;
 const RE_MARK = /^(הוכחה|בדיקה)(?=[\s:])/;
 const RE_EQ = /(^|[,;]\s*)([A-Za-z][\w'^]{0,5}\s*=)/g;
@@ -111,9 +110,7 @@ function markHeadings(ed) {
     if (!m || b.children.length > 1) continue;
     remember(b);
     const color = b.firstElementChild && b.firstElementChild.style ? b.firstElementChild.style.color : '';
-    // a question number is circled; a section ("סעיף 2") is only underlined
-    const number = m[1] === 'סעיף' ? m[2] : `<span class="hw-circ">${m[2]}</span>`;
-    b.innerHTML = `<span class="hw-heading"${color ? ` style="color:${color}"` : ''}>${esc(m[1])} ${number}${esc(m[3])}</span>`;
+    b.innerHTML = `<span class="hw-heading"${color ? ` style="color:${color}"` : ''}>${esc(m[1])} ${m[2]}${esc(m[3])}</span>`;
   }
 }
 
@@ -123,22 +120,6 @@ function firstText(block) {
   let t;
   while ((t = w.nextNode())) if (/\S/.test(t.data)) return t;
   return null;
-}
-
-/** "א. ..." → the letter in a circle (inside whatever span colours it). */
-function circleSections(ed) {
-  for (const b of blocksOf(ed)) {
-    const t = firstText(b);
-    if (!t) continue;
-    const m = RE_SECTION.exec(t.data);
-    if (!m || t.data.trimStart() !== t.data) continue;
-    remember(b);
-    const circ = document.createElement('span');
-    circ.className = 'hw-circ';
-    circ.textContent = m[1];
-    const rest = t.data.slice(m[0].length);
-    t.replaceWith(circ, ...(rest ? [document.createTextNode(rest)] : []));
-  }
 }
 
 /** A result line gets a drawn arrow; a proof / check line gets a ⊗ mark, like a grader's pen. */
@@ -178,7 +159,6 @@ export function layoutBeforeScramble(ed, rand) {
   convertGrids(ed);
   splitEquations(ed);
   markHeadings(ed);
-  circleSections(ed);
   markLines(ed);
   renderFormulas(ed, remember);
   rhythm(ed, rand);
