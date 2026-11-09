@@ -48,14 +48,23 @@
 /* ── Formulas (js/handwriting/Formulas.js) ── */
 #rotate-container .hw-sub{font-size:.68em;vertical-align:-.35em;margin-inline-start:.04em;}
 #rotate-container .hw-sup{font-size:.68em;vertical-align:.55em;margin-inline-start:.04em;}
-#rotate-container .hw-frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:-.6em;margin:0 .15em;line-height:1.15;}
+/* inline-flex takes its baseline from the numerator: raise it so the bar sits on the math axis */
+#rotate-container .hw-frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:.62em;margin:0 .2em;line-height:1.15;}
 #rotate-container .hw-num{border-bottom:1.5px solid currentColor;padding:0 .25em .05em;}
 #rotate-container .hw-den{padding:.05em .25em 0;}
-#rotate-container .hw-sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:-.5em;margin:0 .15em;line-height:1;}
+#rotate-container .hw-sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:.5em;margin:0 .15em;line-height:1;}
 #rotate-container .hw-lim{font-size:.6em;min-height:1em;}
-#rotate-container .hw-sym{width:1.1em;height:1.4em;display:inline-block;vertical-align:middle;overflow:visible;}
+#rotate-container .hw-sym{width:1.35em;height:1.75em;display:inline-block;vertical-align:middle;overflow:visible;}
 #rotate-container .hw-sqrt{display:inline-flex;align-items:flex-end;vertical-align:baseline;}
 #rotate-container .hw-root{width:.8em;height:1.4em;margin-inline-end:-.05em;}
 #rotate-container .hw-rad{border-top:1.5px solid currentColor;padding:.05em .2em 0 .15em;}
 /* a formula reads left to right, whatever the line's direction */
 #rotate-container .hw-frac,#rotate-container .hw-sum,#rotate-container .hw-sqrt{direction:ltr;unicode-bidi:isolate;}
+/* a math line: written left to right, starting from the right margin like the Hebrew around it */
+#rotate-container .hw-math{direction:ltr;unicode-bidi:isolate;text-align:right;padding-right:1.4em;}
+#rotate-container span.hw-eqline.hw-math{margin-inline-start:0;}
+#rotate-container .hw-var{direction:ltr;unicode-bidi:isolate;white-space:nowrap;}
+/* wide grids (10+ columns): tighter cells so a full planning horizon fits the page */
+#rotate-container table.hw-grid-wide{font-size:.9em;margin-right:.3em;}
+#rotate-container table.hw-grid-wide td{padding:.2em .28em;min-width:1.7em;}
+#rotate-container table.hw-grid-wide th{padding:.2em .4em;}

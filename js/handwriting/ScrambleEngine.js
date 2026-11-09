@@ -142,7 +142,11 @@ function scrambleNode(textNode, rand) {
   // Baseline wanders slowly along the text (a random walk, one step per word), and
   // word gaps vary, so lines are not ruler-straight and spacing is not metronomic.
   let drift = 0;
-  let firstWord = !textNode.previousSibling;
+  // Scripts, limits and circled numbers hug their base; a formula token is not a paragraph start.
+  const host = textNode.parentElement;
+  const tight = !!(host && host.closest('.hw-sub, .hw-sup, .hw-lim, .hw-circ'));
+  const inFormula = tight || !!(host && host.closest('.hw-var, .hw-num, .hw-den, .hw-rad'));
+  let firstWord = !textNode.previousSibling && !inFormula;
   let afterSpace = firstWord;
   const wordGap = () => {
     let gap = WORD_GAP_MIN + rand() * WORD_GAP_SPREAD;
@@ -154,7 +158,7 @@ function scrambleNode(textNode, rand) {
   const styleWord = word => {
     drift = Math.max(-DRIFT_MAX, Math.min(DRIFT_MAX, drift + (rand() - 0.5) * 2 * DRIFT_STEP));
     word.style.top = `${drift.toFixed(3)}em`;
-    if (afterSpace) word.style.marginInlineStart = wordGap();
+    if (afterSpace && !tight) word.style.marginInlineStart = wordGap();
     afterSpace = false;
   };
 

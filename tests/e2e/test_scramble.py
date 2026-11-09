@@ -189,3 +189,62 @@ def test_formulas_render_and_reset(make_app, static_url):
     app.page.evaluate("unscrambleText()")
     app.settle()
     assert app.html() == before
+
+
+LEFT_TO_RIGHT_JS = """(sel) => Array.from(document.querySelectorAll(sel)).map(el =>
+    Array.from(el.querySelectorAll('.hw-c')).map(c => [c.getBoundingClientRect().left, c.textContent])
+      .sort((a, b) => a[0] - b[0]).map(x => x[1]).join(''))"""
+
+
+def test_math_line_reads_left_to_right(make_app, static_url):
+    app = make_app(static_url)
+    app.set_html("<div>Y_t = max{SS, Y_{t-1} − R_t + X_t}</div><div>80 ≤ k &lt; 200</div><div>1-2: C = frac{k + 40}{2}</div>")
+    before = app.html()
+    app.page.evaluate("scrambleText(5)")
+    app.settle()
+    lines = app.page.evaluate(LEFT_TO_RIGHT_JS, "#rotate-container .hw-math")
+    assert lines[0] == "Yt=max{SS,Yt-1−Rt+Xt}"
+    assert lines[1] == "80≤k<200"
+    assert lines[2].startswith("1-2:C=")
+    # ≤ comes from the handwriting math font, not a fallback face
+    assert app.page.evaluate("document.fonts.check(\"16px 'GveretLevinMath'\", '≤')")
+    app.page.evaluate("unscrambleText()")
+    app.settle()
+    assert app.html() == before
+
+
+def test_variables_in_hebrew_keep_their_scripts(make_app, static_url):
+    app = make_app(static_url)
+    app.set_html("<div>הווקטור V_t הוא D_t מוזז L.T תקופות אחורה, ולפיו נקבע Q_t. הקובץ report_v2.pdf נשאר.</div>")
+    app.page.evaluate("scrambleText(6)")
+    app.settle()
+    tokens = app.page.evaluate(LEFT_TO_RIGHT_JS, "#rotate-container .hw-var")
+    assert tokens == ["Vt", "Dt", "Qt"], "each variable is its letter followed by its subscript"
+    assert app.page.evaluate("document.querySelectorAll('#rotate-container .hw-sub').length") == 3
+
+
+def test_grid_with_empty_cells_and_formula_labels(make_app, static_url):
+    app = make_app(static_url)
+    app.set_html("<div>t: 8, 9, 10</div><div>X_t: -, 400, -</div><div>V_t = Q_t: 200, 0, -</div><div>טקסט רגיל</div>")
+    before = app.html()
+    app.page.evaluate("scrambleText(7)")
+    app.settle()
+    n = lambda sel: app.page.evaluate("s => document.querySelectorAll('#rotate-container ' + s).length", sel)
+    assert n("table.hw-grid") == 1 and n("table.hw-grid tr") == 3 and n("table.hw-grid td") == 9
+    assert app.page.evaluate("Array.from(document.querySelectorAll('#rotate-container td')).filter(td => !td.textContent).length") == 3
+    assert n("th .hw-sub") == 3
+    label = app.page.evaluate(LEFT_TO_RIGHT_JS, "#rotate-container tr:last-child th")
+    assert label == ["Vt=Qt"]
+    app.page.evaluate("unscrambleText()")
+    app.settle()
+    assert app.html() == before
+
+
+def test_no_line_break_inside_a_number_list(make_app, static_url):
+    app = make_app(static_url)
+    app.set_html("<div>מאילוצי ספק מזמינים פעם בשתי תקופות ולא בכל תקופה, כלומר בתקופות 8, 10, 12, 14, 16, 18, 20, 22, 24, 26 וכך הלאה, וכל הזמנה מכסה שתי תקופות.</div>")
+    app.page.evaluate("scrambleText(8)")
+    app.settle()
+    bad = app.page.evaluate("""() => Array.from(document.querySelectorAll('br.hw-br'))
+        .filter(br => br.nextElementSibling && /^[\\d(]/.test(br.nextElementSibling.textContent)).length""")
+    assert bad == 0

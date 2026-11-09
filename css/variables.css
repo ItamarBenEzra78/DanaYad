@@ -99,6 +99,15 @@
   font-display: block;
 }
 
+/* Comparison signs Gveret Levin lacks (≤ ≥ ≠), composed from its own strokes by tools/make_math_font.py */
+@font-face {
+  font-family: 'GveretLevinMath';
+  src: url('../fonts/GveretLevin-Math.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: block;
+  unicode-range: U+2260, U+2264-2265;
+}
+
 /* Playpen Sans Hebrew — Hebrew handwriting font (from Google Fonts, bundled) */
 @font-face {
   font-family: 'PlaypenSansHebrew';
@@ -110,7 +119,7 @@
 
 /* ── CSS custom properties ── */
 :root {
-  --font: 'GveretLevin', 'Playpen Sans Hebrew', cursive;
+  --font: 'GveretLevin', 'GveretLevinMath', 'Playpen Sans Hebrew', cursive;
   --bg: #F8F6F2;
   --surface: #EDE9E3;
   --surface2: #F3F0EB;

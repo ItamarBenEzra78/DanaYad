@@ -51,7 +51,7 @@ function _collectLineEnds(editor) {
       start = end + 1;
     }
   }
-  editor.querySelectorAll('tr, img, hr, .math, .katex').forEach(el => {
+  editor.querySelectorAll('tr, img, hr, .math, .katex, .hw-frac, .hw-sum, .hw-sqrt, table.hw-grid').forEach(el => {
     addRect(el.getBoundingClientRect(), '', seg++, true);
   });
 
@@ -83,11 +83,11 @@ function _isSeparator(t) { return /^[═─━]{5,}$/.test(t.trim()); }
 
 function _isHeadingLike(t) {
   const s = t.trim();
-  if (!s || s.length > 60) return false;
+  if (!s || s.length >= 80) return false;
   if (_isSeparator(s)) return true;
   if (/^תרגיל\s/.test(s)) return true;
   if (/^[א-ת][\.\)]/.test(s) && s.length < 45) return true;
-  if (s.endsWith(':') && s.length < 45) return true;
+  if (s.endsWith(':')) return true; // a line that introduces what follows (a table, a formula) stays with it
   if (/^סיכום/.test(s)) return true;
   return false;
 }

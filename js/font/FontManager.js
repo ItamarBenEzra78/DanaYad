@@ -17,7 +17,7 @@ export function loadGoogleFont(font) {
 export function applyFont(font) {
   currentFont = font;
   loadGoogleFont(font);
-  const stack = `'${font.css}','GveretLevin','Playpen Sans Hebrew',cursive`;
+  const stack = `'${font.css}','GveretLevin','GveretLevinMath','Playpen Sans Hebrew',cursive`;
   document.documentElement.style.setProperty('--font', stack);
   // ScrambleEngine's glyph alternates (fonts/GveretLevin-Alt*.ttf) belong to Gveret Levin only.
   getOutputEdit().classList.toggle('glyph-alts', font.css === 'GveretLevin');

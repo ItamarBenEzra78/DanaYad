@@ -17,11 +17,14 @@
  *              scrambling, when words are measurable)
  */
 
-import { renderFormulas } from './Formulas.js';
+import { renderFormulas, mathToHtml } from './Formulas.js';
 
 const ORIG = 'hwOrig';          // dataset key: innerHTML before this module touched the block
 const BLOCKS = 'div, p, li, h1, h2, h3, h4';
-const RE_GRID = /^([^:,]{1,24}):\s*(-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?)+)\s*$/;
+// A grid row: "label: cell, cell, ..." where a cell is a number, "-" (left empty) or a short symbol (y, F).
+const CELL = String.raw`(?:-?\d+(?:\.\d+)?|-|[A-Za-z]\w{0,3})`;
+const RE_GRID = new RegExp(String.raw`^([^:,]{1,24}):\s*(${CELL}(?:\s*,\s*${CELL})+)\s*$`);
+const WIDE_GRID = 10;            // columns from which cells get tighter
 const RE_HEADING = /^(שאלה|תרגיל|סעיף)\s+(\d+)\b(.*)$/;
 // (\b is ASCII-only in JS, so Hebrew words are bounded with a lookahead instead)
 const RE_SECTION = /^([א-ת])\.(?=\s|$)/;             // "א." at the start of a block
@@ -67,8 +70,10 @@ function convertGrids(ed) {
       const wrap = document.createElement('div');
       wrap.className = 'hw-grid-wrap';
       wrap.dataset[ORIG] = run.map(r => r.block.outerHTML).join('');
-      const rows = run.map(r => `<tr><th>${esc(r.label)}</th>${r.cells.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('');
-      wrap.innerHTML = `<table class="hw-grid" dir="rtl">${rows}</table>`;
+      // a label such as "V_t = Q_t" is a formula and reads left to right
+      const th = label => `<th${RE_HEBREW.test(label) ? '' : ' dir="ltr"'}>${mathToHtml(label)}</th>`;
+      const rows = run.map(r => `<tr>${th(r.label)}${r.cells.map(c => `<td>${c === '-' ? '' : esc(c)}</td>`).join('')}</tr>`).join('');
+      wrap.innerHTML = `<table class="hw-grid${cols >= WIDE_GRID ? ' hw-grid-wide' : ''}" dir="rtl">${rows}</table>`;
       first.replaceWith(wrap);
       run.slice(1).forEach(r => r.block.remove());
       i += run.length;
@@ -197,7 +202,10 @@ export function wrapClauses(ed, rand) {
         lineStart = { edge: rtl ? r.right : r.left, top: r.top };
       }
       const used = rtl ? lineStart.edge - r.left : r.right - lineStart.edge;
-      if (used >= target && CLAUSE_END.test(w.textContent) && w !== words[words.length - 1]) {
+      // never inside a list of numbers ("1, 3, 5"): a clause continues with a word
+      const next = words[words.indexOf(w) + 1];
+      const intoNumber = next && /^[\d(]/.test(next.textContent);
+      if (used >= target && CLAUSE_END.test(w.textContent) && next && !intoNumber) {
         const br = document.createElement('br');
         br.className = 'hw-br';
         w.after(br);
@@ -226,6 +234,10 @@ export function undoLayout(ed) {
     b.innerHTML = b.dataset[ORIG];
     delete b.dataset[ORIG];
     b.classList.remove('hw-result');
+    if (!b.getAttribute('class')) b.removeAttribute('class');
+  });
+  ed.querySelectorAll('.hw-math').forEach(b => {
+    b.classList.remove('hw-math');
     if (!b.getAttribute('class')) b.removeAttribute('class');
   });
 }

@@ -11,9 +11,25 @@
  * stroked SVG paths; the ink filter and the ink layer treat them like any
  * other stroke. Everything is markup inside the block, so scrambling,
  * pagination and the reset button work as for any other text.
+ *
+ * Direction: a line without Hebrew that looks like math (=, <, ≤, ^, frac…)
+ * is a math line: converted whole and written left to right (.hw-math). In
+ * a Hebrew line only self-contained tokens (D_t, P^2, frac{a}{b}) are
+ * converted, each wrapped in its own left-to-right isolate (.hw-var), so a
+ * subscript can never end up on the wrong side of its letter.
  */
 
-const RE_MATH_BLOCK = /[=]|\b(frac|sum|sqrt)\b/;
+const RE_HEBREW = /[\u05D0-\u05EA]/;
+const RE_MATH_LINE = /[=<>≤≥^]|\b(frac|sum|sqrt)\b/;
+const RE_TRIGGER = /[_^]|\b(frac|sum|sqrt)\b/;
+// A token that stands on its own inside a sentence: frac{..}{..}, sqrt{..}, sum with limits,
+// or a one/two-letter variable with scripts (D_t, Y_{t-1}, P^2). Not "report_v2".
+const RE_TOKEN = new RegExp([
+  String.raw`(?<![A-Za-z])frac\{[^{}]*\}\{[^{}]*\}`,
+  String.raw`(?<![A-Za-z])sqrt\{[^{}]*\}`,
+  String.raw`(?<![A-Za-z])sum(?:_(?:\{[^}]*\}|\w+))?(?:\^(?:\{[^}]*\}|\w+))?(?![A-Za-z])`,
+  String.raw`(?<![A-Za-z0-9_^])[A-Za-z]{1,2}(?:_(?:\{[^}]*\}|[A-Za-z0-9]{1,3})|\^(?:\{[^}]*\}|-?\d+))+(?![A-Za-z0-9_])`,
+].join('|'), 'g');
 
 const SIGMA = '<svg class="hw-sym" viewBox="0 0 20 26" aria-label="Σ"><path d="M17 3 H4 L11 13 L4 23 H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ROOT = '<svg class="hw-sym hw-root" viewBox="0 0 16 26" aria-label="√"><path d="M1 15 L5 24 L11 2 H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -94,22 +110,39 @@ export function mathToHtml(text) {
 const BLOCKS = 'div, p, li, h1, h2, h3, h4, span.hw-eqline';
 
 /**
- * Convert the notation in every text node of math-like blocks. `remember`
- * records a block's original markup so the reset button can restore it.
+ * Convert the notation in the editor. `remember` records a block's original
+ * markup so the reset button can restore it.
  */
 export function renderFormulas(ed, remember) {
   const blocks = Array.from(ed.querySelectorAll(BLOCKS)).filter(b => !b.querySelector(BLOCKS) || b.tagName === 'LI');
   for (const b of blocks) {
-    if (b.closest('table.hw-grid') || !RE_MATH_BLOCK.test(b.textContent)) continue;
+    if (b.closest('table')) continue;
+    const text = b.textContent;
+    const mathLine = !RE_HEBREW.test(text) && RE_MATH_LINE.test(text);
+    if (mathLine) b.classList.add('hw-math');
     const walker = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
     const nodes = [];
-    for (let t; (t = walker.nextNode());) if (/[_^]|\b(frac|sum|sqrt)\b/.test(t.data)) nodes.push(t);
+    for (let t; (t = walker.nextNode());) if (RE_TRIGGER.test(t.data)) nodes.push(t);
     if (!nodes.length) continue;
     const owner = b.closest('div, p, li') || b;
-    remember(owner);
+    let touched = false;
     for (const t of nodes) {
+      let html;
+      if (mathLine) {
+        html = mathToHtml(t.data);
+      } else {
+        let last = 0;
+        html = '';
+        for (const m of t.data.matchAll(RE_TOKEN)) {
+          html += esc(t.data.slice(last, m.index)) + `<span class="hw-var" dir="ltr">${mathToHtml(m[0])}</span>`;
+          last = m.index + m[0].length;
+        }
+        if (last === 0) continue;
+        html += esc(t.data.slice(last));
+      }
+      if (!touched) { remember(owner); touched = true; }
       const tpl = document.createElement('template');
-      tpl.innerHTML = mathToHtml(t.data);
+      tpl.innerHTML = html;
       t.replaceWith(tpl.content);
     }
   }
