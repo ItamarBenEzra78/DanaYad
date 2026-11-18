@@ -45,6 +45,8 @@
 #rotate-container .hw-mark::before,#rotate-container .hw-mark::after{content:'';position:absolute;left:50%;top:15%;height:70%;border-left:1.5px solid currentColor;transform:translateX(-50%) rotate(45deg);}
 #rotate-container .hw-mark::after{transform:translateX(-50%) rotate(-45deg);}
 /* ── Formulas (js/handwriting/Formulas.js) ── */
+/* digits in a calculation: a hair apart, so 14 never reads as one letter */
+#rotate-container .hw-d{margin:0 .03em;}
 #rotate-container .hw-sub{font-size:.68em;vertical-align:-.35em;margin-inline-start:.04em;}
 #rotate-container .hw-sup{font-size:.68em;vertical-align:.55em;margin-inline-start:.04em;}
 /* inline-flex takes its baseline from the numerator: raise it so the bar sits on the math axis */

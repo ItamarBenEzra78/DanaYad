@@ -72,7 +72,7 @@ function convertGrids(ed) {
       wrap.dataset[ORIG] = run.map(r => r.block.outerHTML).join('');
       // a label such as "V_t = Q_t" is a formula and reads left to right
       const th = label => `<th${RE_HEBREW.test(label) ? '' : ' dir="ltr"'}>${mathToHtml(label)}</th>`;
-      const rows = run.map(r => `<tr>${th(r.label)}${r.cells.map(c => `<td>${c === '-' ? '' : esc(c)}</td>`).join('')}</tr>`).join('');
+      const rows = run.map(r => `<tr>${th(r.label)}${r.cells.map(c => c === '-' ? '<td></td>' : `<td${/[\u05D0-\u05EA]/.test(c) ? '' : ' dir="ltr"'}>${esc(c)}</td>`).join('')}</tr>`).join('');
       wrap.innerHTML = `<table class="hw-grid${cols >= WIDE_GRID ? ' hw-grid-wide' : ''}" dir="rtl">${rows}</table>`;
       first.replaceWith(wrap);
       run.slice(1).forEach(r => r.block.remove());

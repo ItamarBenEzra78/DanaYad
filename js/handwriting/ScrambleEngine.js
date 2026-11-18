@@ -24,6 +24,7 @@ const WORD_GAP_SPREAD = 0.14; // em, random extra on top
 const INDENT_SPREAD = 0.4; // em, random indent of a paragraph's first word
 const DRIFT_STEP = 0.07;   // em, baseline random walk per word
 const DRIFT_MAX = 0.2;     // em, bound of that walk
+const CALM = 0.2;          // formulas: fraction of the jitter above; no baseline shift, digits in the base font
 const SKIP = '.page-break-marker, .math, .katex, script, style';
 const GENERATED = '.hw-c, .hw-w, .hw-ltr, .hw-scramble'; // .hw-scramble: pre-2026-10 format
 
@@ -146,18 +147,22 @@ function scrambleNode(textNode, rand) {
   const host = textNode.parentElement;
   const tight = !!(host && host.closest('.hw-sub, .hw-sup, .hw-lim'));
   const inFormula = tight || !!(host && host.closest('.hw-var, .hw-num, .hw-den, .hw-rad'));
+  // A calculation is written carefully: no baseline wave, even spacing, steady digits.
+  const calm = inFormula || !!(host && host.closest('.hw-math, .hw-sum, .hw-frac, .hw-sqrt, table.hw-grid'));
   let firstWord = !textNode.previousSibling && !inFormula;
   let afterSpace = firstWord;
   const wordGap = () => {
-    let gap = WORD_GAP_MIN + rand() * WORD_GAP_SPREAD;
+    let gap = WORD_GAP_MIN + rand() * (calm ? CALM * WORD_GAP_SPREAD : WORD_GAP_SPREAD);
     if (firstWord) { gap += rand() * INDENT_SPREAD; firstWord = false; }
     return `${gap.toFixed(3)}em`;
   };
   // The gap goes on the side facing the previous text: inline-start of a word, or
   // inline-end of a multi-word LTR run (its own direction is LTR, so that is its right).
   const styleWord = word => {
-    drift = Math.max(-DRIFT_MAX, Math.min(DRIFT_MAX, drift + (rand() - 0.5) * 2 * DRIFT_STEP));
-    word.style.top = `${drift.toFixed(3)}em`;
+    if (!calm) {
+      drift = Math.max(-DRIFT_MAX, Math.min(DRIFT_MAX, drift + (rand() - 0.5) * 2 * DRIFT_STEP));
+      word.style.top = `${drift.toFixed(3)}em`;
+    }
     if (afterSpace && !tight) word.style.marginInlineStart = wordGap();
     afterSpace = false;
   };
@@ -168,10 +173,12 @@ function scrambleNode(textNode, rand) {
     const alt = pickAlt(base(i), base(i - 1), prevAlt, base(i + 1), rand);
     prevAlt = alt;
     if (alt) span.classList.add('hw-alt' + alt);
-    else span.classList.add('hw-v' + (1 + Math.floor(rand() * VARIANTS)));
-    span.style.transform = `rotate(${((rand() - 0.5) * ROTATE_SPREAD).toFixed(1)}deg)`;
-    span.style.fontSize = `${(1 + (rand() - 0.5) * SIZE_SPREAD).toFixed(3)}em`;
-    span.style.top = `${((rand() - 0.5) * SHIFT_SPREAD).toFixed(3)}em`;
+    else if (!(calm && !RE_LETTER.test(gs[i]))) span.classList.add('hw-v' + (1 + Math.floor(rand() * VARIANTS)));
+    if (calm && RE_DIGIT.test(gs[i])) span.classList.add('hw-d');
+    const k = calm ? CALM : 1;
+    span.style.transform = `rotate(${((rand() - 0.5) * ROTATE_SPREAD * k).toFixed(1)}deg)`;
+    span.style.fontSize = `${(1 + (rand() - 0.5) * SIZE_SPREAD * k).toFixed(3)}em`;
+    if (!calm) span.style.top = `${((rand() - 0.5) * SHIFT_SPREAD).toFixed(3)}em`;
     span.textContent = gs[i];
     return span;
   };
