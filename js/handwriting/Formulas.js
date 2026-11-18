@@ -88,7 +88,7 @@ export function mathToHtml(text) {
           if (text[p] === '_' && !lo) { lo = scriptArg(text, p + 1); if (lo) p = lo.end; }
           else if (text[p] === '^' && !hi) { hi = scriptArg(text, p + 1); if (hi) p = hi.end; }
         }
-        out += `<span class="hw-sum"><span class="hw-lim hw-hi">${hi ? mathToHtml(hi.text) : ''}</span>${SIGMA}<span class="hw-lim hw-lo">${lo ? mathToHtml(lo.text) : ''}</span></span>`;
+        out += `<span class="hw-sum${lo || hi ? '' : ' hw-sum-bare'}"><span class="hw-lim hw-hi">${hi ? mathToHtml(hi.text) : ''}</span>${SIGMA}<span class="hw-lim hw-lo">${lo ? mathToHtml(lo.text) : ''}</span></span>`;
         i = p;
         continue;
       }

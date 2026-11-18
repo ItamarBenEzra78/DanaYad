@@ -51,9 +51,14 @@
 #rotate-container .hw-frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:.62em;margin:0 .2em;line-height:1.15;}
 #rotate-container .hw-num{border-bottom:1.5px solid currentColor;padding:0 .25em .05em;}
 #rotate-container .hw-den{padding:.05em .25em 0;}
-#rotate-container .hw-sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:.5em;margin:0 .15em;line-height:1;}
-#rotate-container .hw-lim{font-size:.6em;min-height:1em;}
-#rotate-container .hw-sym{width:1.35em;height:1.75em;display:inline-block;vertical-align:middle;overflow:visible;}
+/* Σ is centred on the text line: both limit slots keep the same height, so the box's middle is the middle of Σ */
+#rotate-container .hw-sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;position:relative;top:-.1em;margin:0 .2em 0 .1em;line-height:1;}
+#rotate-container .hw-lim{font-size:.7em;height:1em;line-height:1em;white-space:nowrap;}
+#rotate-container .hw-sym{width:1.35em;height:1.75em;display:block;overflow:visible;}
+/* no limits: a compact Σ the height of a capital letter and a half, no empty slots */
+#rotate-container .hw-sum-bare{margin-right:.02em;}
+#rotate-container .hw-sum-bare .hw-lim{display:none;}
+#rotate-container .hw-sum-bare .hw-sym{width:.95em;height:1.25em;}
 #rotate-container .hw-sqrt{display:inline-flex;align-items:flex-end;vertical-align:baseline;}
 #rotate-container .hw-root{width:.8em;height:1.4em;margin-inline-end:-.05em;}
 #rotate-container .hw-rad{border-top:1.5px solid currentColor;padding:.05em .2em 0 .15em;}
