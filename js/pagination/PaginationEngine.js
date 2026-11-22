@@ -85,7 +85,7 @@ function _isHeadingLike(t) {
   const s = t.trim();
   if (!s || s.length >= 80) return false;
   if (_isSeparator(s)) return true;
-  if (/^תרגיל\s/.test(s)) return true;
+  if (/^(תרגיל|חלק|שאלה|סעיף)\s/.test(s)) return true;
   if (/^[א-ת][\.\)]/.test(s) && s.length < 45) return true;
   if (s.endsWith(':')) return true; // a line that introduces what follows (a table, a formula) stays with it
   if (/^סיכום/.test(s)) return true;

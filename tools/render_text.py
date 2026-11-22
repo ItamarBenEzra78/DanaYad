@@ -6,7 +6,7 @@ Starts a local static server, loads the editor in headless Chromium, puts
 each line of the text in its own paragraph, turns on scramble (per-letter
 variants, writing layout, formulas) and runs the app's own PDF export.
 Conventions applied to the text, like a pen-colour habit: a line starting
-with "שאלה N" / "תרגיל" is written in blue, and "סעיף N" or a section letter ("א.") in red.
+with "חלק N" / "שאלה N" / "תרגיל" is written in blue, and "סעיף N" or a section letter ("א.") in red.
 
 Needs: pip install playwright pypdf Pillow && playwright install chromium
 """
@@ -22,7 +22,7 @@ import urllib.request
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 BLUE, RED = "#1D4ED8", "#B91C1C"
-RE_HEADING = re.compile(r"^(שאלה \d|תרגיל)")
+RE_HEADING = re.compile(r"^(חלק \d|שאלה \d|תרגיל)")
 RE_SECTION = re.compile(r"^[א-ת]\. ")
 RE_SUBHEADING = re.compile(r"^סעיף \d")
 

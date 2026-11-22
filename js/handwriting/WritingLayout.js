@@ -26,7 +26,7 @@ const BLOCKS = 'div, p, li, h1, h2, h3, h4';
 const CELL = String.raw`(?:-?\d+(?:\.\d+)?|-|[A-Za-z]\w{0,3})`;
 const RE_GRID = new RegExp(String.raw`^([^:,]{1,24}):\s*(${CELL}(?:\s*,\s*${CELL})+)\s*$`);
 const WIDE_GRID = 10;            // columns from which cells get tighter
-const RE_HEADING = /^(שאלה|תרגיל|סעיף)\s+(\d+)\b(.*)$/;
+const RE_HEADING = /^(חלק|שאלה|תרגיל|סעיף)\s+(\d+)\b(.*)$/;
 // (\b is ASCII-only in JS, so Hebrew words are bounded with a lookahead instead)
 const RE_RESULT = /^(→|=>|<=|⇐|לכן(?=\s)|ולכן(?=\s)|סה"כ(?=\s))/;
 const RE_MARK = /^(הוכחה|בדיקה)(?=[\s:])/;
@@ -73,7 +73,9 @@ function convertGrids(ed) {
       // a label such as "V_t = Q_t" is a formula and reads left to right
       const th = label => `<th${RE_HEBREW.test(label) ? '' : ' dir="ltr"'}>${mathToHtml(label)}</th>`;
       const rows = run.map(r => `<tr>${th(r.label)}${r.cells.map(c => c === '-' ? '<td></td>' : `<td${/[\u05D0-\u05EA]/.test(c) ? '' : ' dir="ltr"'}>${esc(c)}</td>`).join('')}</tr>`).join('');
-      wrap.innerHTML = `<table class="hw-grid${cols >= WIDE_GRID ? ' hw-grid-wide' : ''}" dir="rtl">${rows}</table>`;
+      // a matrix with named rows and columns (P^1: A, D, E ...) is written left to right, as in the course
+      const matrix = run.length >= 2 && run[0].cells.every(c => /^[A-Za-z]/.test(c)) && run.every(r => !RE_HEBREW.test(r.label));
+      wrap.innerHTML = `<table class="hw-grid${cols >= WIDE_GRID ? ' hw-grid-wide' : ''}" dir="${matrix ? 'ltr' : 'rtl'}">${rows}</table>`;
       first.replaceWith(wrap);
       run.slice(1).forEach(r => r.block.remove());
       i += run.length;

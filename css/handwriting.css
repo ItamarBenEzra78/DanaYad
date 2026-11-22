@@ -33,6 +33,7 @@
 #rotate-container .hw-heading{display:inline-block;padding-bottom:.08em;border-bottom:1.5px solid currentColor;}
 #rotate-container .hw-grid-wrap{margin:.4em 0 .6em;}
 #rotate-container table.hw-grid{width:auto;margin:0 1.2em 0 auto;}
+#rotate-container table.hw-grid[dir="ltr"]{direction:ltr;}
 #rotate-container table.hw-grid th{background:none;font-weight:inherit;padding:.2em .7em;}
 #rotate-container table.hw-grid td{text-align:center;padding:.2em .6em;min-width:2.2em;}
 /* a result line: a drawn arrow before it, text a touch larger */
